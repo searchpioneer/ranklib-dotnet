@@ -1,13 +1,10 @@
 namespace RankLib.Stats;
 
-public class SignificanceTest 
+public class SignificanceTest
 {
-    public virtual double Test(Dictionary<String, Double> target, Dictionary<String, Double> baseline) 
-    {
-        return 0;
-    }
+	public virtual double Test(Dictionary<string, double> target, Dictionary<string, double> baseline) => 0;
 
-    protected virtual void MakeRCall() 
-    {
-    }
+	protected virtual void MakeRCall()
+	{
+	}
 }

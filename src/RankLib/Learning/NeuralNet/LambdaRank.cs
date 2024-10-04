@@ -1,145 +1,137 @@
-﻿using RankLib.Metric;
+using RankLib.Metric;
 
 namespace RankLib.Learning.NeuralNet;
 
 public class LambdaRank : RankNet
 {
-    protected float[][]? targetValue = null;
+	protected float[][]? targetValue = null;
 
-    public LambdaRank() { }
+	public LambdaRank() { }
 
-    public LambdaRank(List<RankList> samples, int[] features, MetricScorer scorer)
-        : base(samples, features, scorer)
-    { }
+	public LambdaRank(List<RankList> samples, int[] features, MetricScorer scorer)
+		: base(samples, features, scorer)
+	{ }
 
-    protected override int[][] BatchFeedForward(RankList rl)
-    {
-        int[][] pairMap = new int[rl.Size()][];
-        targetValue = new float[rl.Size()][];
-        
-        for (int i = 0; i < rl.Size(); i++)
-        {
-            AddInput(rl.Get(i));
-            Propagate(i);
+	protected override int[][] BatchFeedForward(RankList rl)
+	{
+		var pairMap = new int[rl.Count][];
+		targetValue = new float[rl.Count][];
 
-            int count = 0;
-            for (int j = 0; j < rl.Size(); j++)
-            {
-                if (rl.Get(i).GetLabel() > rl.Get(j).GetLabel() || rl.Get(i).GetLabel() < rl.Get(j).GetLabel())
-                {
-                    count++;
-                }
-            }
+		for (var i = 0; i < rl.Count; i++)
+		{
+			AddInput(rl[i]);
+			Propagate(i);
 
-            pairMap[i] = new int[count];
-            targetValue[i] = new float[count];
+			var count = 0;
+			for (var j = 0; j < rl.Count; j++)
+			{
+				if (rl[i].Label > rl[j].Label || rl[i].Label < rl[j].Label)
+				{
+					count++;
+				}
+			}
 
-            int k = 0;
-            for (int j = 0; j < rl.Size(); j++)
-            {
-                if (rl.Get(i).GetLabel() > rl.Get(j).GetLabel() || rl.Get(i).GetLabel() < rl.Get(j).GetLabel())
-                {
-                    pairMap[i][k] = j;
-                    targetValue[i][k] = rl.Get(i).GetLabel() > rl.Get(j).GetLabel() ? 1 : 0;
-                    k++;
-                }
-            }
-        }
+			pairMap[i] = new int[count];
+			targetValue[i] = new float[count];
 
-        return pairMap;
-    }
+			var k = 0;
+			for (var j = 0; j < rl.Count; j++)
+			{
+				if (rl[i].Label > rl[j].Label || rl[i].Label < rl[j].Label)
+				{
+					pairMap[i][k] = j;
+					targetValue[i][k] = rl[i].Label > rl[j].Label ? 1 : 0;
+					k++;
+				}
+			}
+		}
 
-    protected override void BatchBackPropagate(int[][] pairMap, float[][] pairWeight)
-    {
-        for (int i = 0; i < pairMap.Length; i++)
-        {
-            var p = new PropParameter(i, pairMap, pairWeight, targetValue);
+		return pairMap;
+	}
 
-            // Back-propagate
-            _outputLayer.ComputeDelta(p); // Starting at the output layer
-            for (int j = _layers.Count - 2; j >= 1; j--)
-            {
-                _layers[j].UpdateDelta(p);
-            }
+	protected override void BatchBackPropagate(int[][] pairMap, float[][] pairWeight)
+	{
+		for (var i = 0; i < pairMap.Length; i++)
+		{
+			var p = new PropParameter(i, pairMap, pairWeight, targetValue);
 
-            // Weight update
-            _outputLayer.UpdateWeight(p);
-            for (int j = _layers.Count - 2; j >= 1; j--)
-            {
-                _layers[j].UpdateWeight(p);
-            }
-        }
-    }
+			// Back-propagate
+			_outputLayer.ComputeDelta(p); // Starting at the output layer
+			for (var j = _layers.Count - 2; j >= 1; j--)
+			{
+				_layers[j].UpdateDelta(p);
+			}
 
-    protected override RankList InternalReorder(RankList rl)
-    {
-        return Rank(rl);
-    }
+			// Weight update
+			_outputLayer.UpdateWeight(p);
+			for (var j = _layers.Count - 2; j >= 1; j--)
+			{
+				_layers[j].UpdateWeight(p);
+			}
+		}
+	}
 
-    protected override float[][] ComputePairWeight(int[][] pairMap, RankList rl)
-    {
-        double[][] changes = _scorer.SwapChange(rl);
-        float[][] weight = new float[pairMap.Length][];
+	protected override RankList InternalReorder(RankList rl) => Rank(rl);
 
-        for (int i = 0; i < weight.Length; i++)
-        {
-            weight[i] = new float[pairMap[i].Length];
-            for (int j = 0; j < pairMap[i].Length; j++)
-            {
-                int sign = rl.Get(i).GetLabel() > rl.Get(pairMap[i][j]).GetLabel() ? 1 : -1;
-                weight[i][j] = (float)Math.Abs(changes[i][pairMap[i][j]]) * sign;
-            }
-        }
+	protected override float[][] ComputePairWeight(int[][] pairMap, RankList rl)
+	{
+		var changes = _scorer.SwapChange(rl);
+		var weight = new float[pairMap.Length][];
 
-        return weight;
-    }
+		for (var i = 0; i < weight.Length; i++)
+		{
+			weight[i] = new float[pairMap[i].Length];
+			for (var j = 0; j < pairMap[i].Length; j++)
+			{
+				var k = pairMap[i][j];
+				var sign = rl[i].Label > rl[k].Label ? 1 : -1;
+				weight[i][j] = (float)Math.Abs(changes[i][pairMap[i][j]]) * sign;
+			}
+		}
 
-    protected override void EstimateLoss()
-    {
-        _misorderedPairs = 0;
+		return weight;
+	}
 
-        for (int j = 0; j < _samples.Count; j++)
-        {
-            RankList rl = _samples[j];
+	protected override void EstimateLoss()
+	{
+		_misorderedPairs = 0;
 
-            for (int k = 0; k < rl.Size() - 1; k++)
-            {
-                double o1 = Eval(rl.Get(k));
-                for (int l = k + 1; l < rl.Size(); l++)
-                {
-                    if (rl.Get(k).GetLabel() > rl.Get(l).GetLabel())
-                    {
-                        double o2 = Eval(rl.Get(l));
-                        if (o1 < o2)
-                        {
-                            _misorderedPairs++;
-                        }
-                    }
-                }
-            }
-        }
+		for (var j = 0; j < _samples.Count; j++)
+		{
+			var rl = _samples[j];
 
-        _error = 1.0 - _scoreOnTrainingData;
+			for (var k = 0; k < rl.Count - 1; k++)
+			{
+				var o1 = Eval(rl[k]);
+				for (var l = k + 1; l < rl.Count; l++)
+				{
+					if (rl[k].Label > rl[l].Label)
+					{
+						var o2 = Eval(rl[l]);
+						if (o1 < o2)
+						{
+							_misorderedPairs++;
+						}
+					}
+				}
+			}
+		}
 
-        if (_error > _lastError)
-        {
-            _straightLoss++;
-        }
-        else
-        {
-            _straightLoss = 0;
-        }
+		_error = 1.0 - _scoreOnTrainingData;
 
-        _lastError = _error;
-    }
+		if (_error > _lastError)
+		{
+			_straightLoss++;
+		}
+		else
+		{
+			_straightLoss = 0;
+		}
 
-    public override Ranker CreateNew()
-    {
-        return new LambdaRank();
-    }
+		_lastError = _error;
+	}
 
-    public override string Name()
-    {
-        return "LambdaRank";
-    }
+	public override Ranker CreateNew() => new LambdaRank();
+
+	public override string Name() => "LambdaRank";
 }

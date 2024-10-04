@@ -1,168 +1,168 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using System.Text.RegularExpressions;
 using MathNet.Numerics.Statistics;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RankLib.Features;
 
 public partial class FeatureStats
 {
-    [GeneratedRegex(@"<feature>(\d+)</feature>")]
-    private static partial Regex FeatureIdRegex();
-    
-    // TODO: logging
-    private static readonly ILogger logger = NullLogger.Instance;
-    
-    private string _modelName;
-    private readonly string _modelFileName;
-    private readonly FileInfo _file;
+	[GeneratedRegex(@"<feature>(\d+)</feature>")]
+	private static partial Regex FeatureIdRegex();
 
-    public FeatureStats(string modelFileName)
-    {
-        _file = new FileInfo(modelFileName);
-        _modelFileName = _file.FullName;
-    }
+	// TODO: logging
+	private static readonly ILogger logger = NullLogger.Instance;
 
-    private SortedDictionary<int, int> GetFeatureWeightFeatureFrequencies(StreamReader sr)
-    {
-        var featureFrequencies = new SortedDictionary<int, int>();
+	private string _modelName;
+	private readonly string _modelFileName;
+	private readonly FileInfo _file;
 
-        try
-        {
-            while (sr.ReadLine() is { } line)
-            {
-                line = line.Trim().ToLower();
+	public FeatureStats(string modelFileName)
+	{
+		_file = new FileInfo(modelFileName);
+		_modelFileName = _file.FullName;
+	}
 
-                if (string.IsNullOrWhiteSpace(line) || line.Contains("##"))
-                    continue;
+	private SortedDictionary<int, int> GetFeatureWeightFeatureFrequencies(StreamReader sr)
+	{
+		var featureFrequencies = new SortedDictionary<int, int>();
 
-                var featureLines = line.Split(" ");
-                foreach (var featureLine in featureLines)
-                {
-                    var featureId = int.Parse(featureLine.Split(":")[0]);
+		try
+		{
+			while (sr.ReadLine() is { } line)
+			{
+				line = line.Trim().ToLower();
 
-                    if (!featureFrequencies.TryAdd(featureId, 1))
-                        featureFrequencies[featureId]++;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Exception: {ex.Message}", ex);
-        }
+				if (string.IsNullOrWhiteSpace(line) || line.Contains("##"))
+					continue;
 
-        return featureFrequencies;
-    }
+				var featureLines = line.Split(" ");
+				foreach (var featureLine in featureLines)
+				{
+					var featureId = int.Parse(featureLine.Split(":")[0]);
 
-    private SortedDictionary<int, int> GetTreeFeatureFrequencies(StreamReader sr)
-    {
-        var featureFrequencies = new SortedDictionary<int, int>();
+					if (!featureFrequencies.TryAdd(featureId, 1))
+						featureFrequencies[featureId]++;
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Exception: {ex.Message}", ex);
+		}
 
-        try
-        {
-            while (sr.ReadLine() is { } line)
-            {
-                line = line.Trim().ToLower();
+		return featureFrequencies;
+	}
 
-                if (string.IsNullOrWhiteSpace(line) || line.Contains("##"))
-                    continue;
+	private SortedDictionary<int, int> GetTreeFeatureFrequencies(StreamReader sr)
+	{
+		var featureFrequencies = new SortedDictionary<int, int>();
 
-                if (line.Contains("<feature>"))
-                {
-                    var featureIdStr = FeatureIdRegex().Match(line).Groups[1].Value;
-                    var featureId = int.Parse(featureIdStr);
+		try
+		{
+			while (sr.ReadLine() is { } line)
+			{
+				line = line.Trim().ToLower();
 
-                    if (!featureFrequencies.TryAdd(featureId, 1))
-                        featureFrequencies[featureId]++;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Exception: {ex.Message}", ex);
-        }
+				if (string.IsNullOrWhiteSpace(line) || line.Contains("##"))
+					continue;
 
-        return featureFrequencies;
-    }
+				if (line.Contains("<feature>"))
+				{
+					var featureIdStr = FeatureIdRegex().Match(line).Groups[1].Value;
+					var featureId = int.Parse(featureIdStr);
 
-    public void WriteFeatureStats()
-    {
-        SortedDictionary<int, int> featureFrequencies = null;
+					if (!featureFrequencies.TryAdd(featureId, 1))
+						featureFrequencies[featureId]++;
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			throw new Exception($"Exception: {ex.Message}", ex);
+		}
 
-        try
-        {
-            using var sr = new StreamReader(_file.FullName);
-            
-            // Read model name from the file
-            var modelLine = sr.ReadLine()?.Trim();
-            var nameParts = modelLine?.Split(" ");
-            var len = nameParts?.Length ?? 0;
+		return featureFrequencies;
+	}
 
-            if (len == 2)
-            {
-                _modelName = nameParts![1].Trim();
-            }
-            else if (len == 3)
-            {
-                _modelName = $"{nameParts![1].Trim()} {nameParts[2].Trim()}";
-            }
+	public void WriteFeatureStats()
+	{
+		SortedDictionary<int, int> featureFrequencies = null;
 
-            if (string.IsNullOrEmpty(_modelName))
-            {
-                throw new Exception("No model name defined. Quitting.");
-            }
+		try
+		{
+			using var sr = new StreamReader(_file.FullName);
 
-            // Handle models that use all features
-            if (new[] { "Coordinate Ascent", "LambdaRank", "Linear Regression", "ListNet", "RankNet" }.Contains(_modelName))
-            {
-                logger.LogInformation("{ModelName} uses all features. Can't do selected model statistics for this algorithm.", _modelName);
-                return;
-            }
+			// Read model name from the file
+			var modelLine = sr.ReadLine()?.Trim();
+			var nameParts = modelLine?.Split(" ");
+			var len = nameParts?.Length ?? 0;
 
-            // Feature:Weight models
-            if (new[] { "AdaRank", "RankBoost" }.Contains(_modelName))
-            {
-                featureFrequencies = GetFeatureWeightFeatureFrequencies(sr);
-            }
-            // Tree models
-            else if (new[] { "LambdaMART", "MART", "Random Forests" }.Contains(_modelName))
-            {
-                featureFrequencies = GetTreeFeatureFrequencies(sr);
-            }
-        }
-        catch (IOException ioe)
-        {
-            throw new Exception($"IOException on file {_modelFileName}: {ioe.Message}", ioe);
-        }
+			if (len == 2)
+			{
+				_modelName = nameParts![1].Trim();
+			}
+			else if (len == 3)
+			{
+				_modelName = $"{nameParts![1].Trim()} {nameParts[2].Trim()}";
+			}
 
-        // Calculate feature statistics
-        var featuresUsed = featureFrequencies?.Count ?? 0;
+			if (string.IsNullOrEmpty(_modelName))
+			{
+				throw new Exception("No model name defined. Quitting.");
+			}
 
-        logger.LogInformation("Model File: {ModelFileName}", _modelFileName);
-        logger.LogInformation("Algorithm: {ModelName}", _modelName);
-        logger.LogInformation("Feature frequencies:");
+			// Handle models that use all features
+			if (new[] { "Coordinate Ascent", "LambdaRank", "Linear Regression", "ListNet", "RankNet" }.Contains(_modelName))
+			{
+				logger.LogInformation("{ModelName} uses all features. Can't do selected model statistics for this algorithm.", _modelName);
+				return;
+			}
 
-        var data = new List<double>(featuresUsed);
-        
-        foreach (var entry in featureFrequencies)
-        {
-            var featureId = entry.Key;
-            var freq = entry.Value;
-            logger.LogInformation("\tFeature[{FeatureId}] : {Freq}", featureId, freq);
-            data.Add(freq);
-        }
+			// Feature:Weight models
+			if (new[] { "AdaRank", "RankBoost" }.Contains(_modelName))
+			{
+				featureFrequencies = GetFeatureWeightFeatureFrequencies(sr);
+			}
+			// Tree models
+			else if (new[] { "LambdaMART", "MART", "Random Forests" }.Contains(_modelName))
+			{
+				featureFrequencies = GetTreeFeatureFrequencies(sr);
+			}
+		}
+		catch (IOException ioe)
+		{
+			throw new Exception($"IOException on file {_modelFileName}: {ioe.Message}", ioe);
+		}
 
-        var stats = new DescriptiveStatistics(data);
+		// Calculate feature statistics
+		var featuresUsed = featureFrequencies?.Count ?? 0;
 
-        // Print out summary statistics
-        logger.LogInformation($"Total Features Used: {featuresUsed}");
-        logger.LogInformation($"Min frequency    : {stats.Minimum:0.00}");
-        logger.LogInformation($"Max frequency    : {stats.Maximum:0.00}");
-        //logger.LogInformation($"Median frequency : {stats.Median:0.00}");
-        logger.LogInformation($"Avg frequency    : {stats.Mean:0.00}");
-        logger.LogInformation($"Variance         : {stats.Variance:0.00}");
-        logger.LogInformation($"STD              : {stats.StandardDeviation:0.00}");
-    }
+		logger.LogInformation("Model File: {ModelFileName}", _modelFileName);
+		logger.LogInformation("Algorithm: {ModelName}", _modelName);
+		logger.LogInformation("Feature frequencies:");
+
+		var data = new List<double>(featuresUsed);
+
+		foreach (var entry in featureFrequencies)
+		{
+			var featureId = entry.Key;
+			var freq = entry.Value;
+			logger.LogInformation("\tFeature[{FeatureId}] : {Freq}", featureId, freq);
+			data.Add(freq);
+		}
+
+		var stats = new DescriptiveStatistics(data);
+
+		// Print out summary statistics
+		logger.LogInformation($"Total Features Used: {featuresUsed}");
+		logger.LogInformation($"Min frequency    : {stats.Minimum:0.00}");
+		logger.LogInformation($"Max frequency    : {stats.Maximum:0.00}");
+		//logger.LogInformation($"Median frequency : {stats.Median:0.00}");
+		logger.LogInformation($"Avg frequency    : {stats.Mean:0.00}");
+		logger.LogInformation($"Variance         : {stats.Variance:0.00}");
+		logger.LogInformation($"STD              : {stats.StandardDeviation:0.00}");
+	}
 
 
 }

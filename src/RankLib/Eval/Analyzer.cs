@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Stats;
@@ -7,215 +7,216 @@ namespace RankLib.Eval;
 
 public class Analyzer
 {
-    private static ILogger<Analyzer> logger = NullLogger<Analyzer>.Instance;
-    
-    private static readonly RandomPermutationTest RandomizedTest = new();
-    private static readonly double[] ImprovementRatioThreshold = { -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1000 };
-    private const int IndexOfZero = 4;
+	private static readonly ILogger<Analyzer> logger = NullLogger<Analyzer>.Instance;
 
-    public static void Main(string[] args)
-    {
-        string directory = "";
-        string baseline = "";
+	private static readonly RandomPermutationTest RandomizedTest = new();
+	private static readonly double[] ImprovementRatioThreshold = { -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1000 };
+	private const int IndexOfZero = 4;
 
-        if (args.Length < 2)
-        {
-            logger.LogInformation("Usage: Analyzer <Params>");
-            logger.LogInformation("Params:");
-            logger.LogInformation("\t-all <directory>\tDirectory of performance files (one per system)");
-            logger.LogInformation("\t-base <file>\t\tPerformance file for the baseline (MUST be in the same directory)");
-            logger.LogInformation($"\t[ -np ] \t\tNumber of permutation (Fisher randomization test) [default={RandomPermutationTest.NPermutation}]");
-            return;
-        }
+	public static void Main(string[] args)
+	{
+		var directory = "";
+		var baseline = "";
 
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "-all")
-            {
-                directory = args[++i];
-            }
-            else if (args[i] == "-base")
-            {
-                baseline = args[++i];
-            }
-            else if (args[i] == "-np")
-            {
-                RandomPermutationTest.NPermutation = int.Parse(args[++i]);
-            }
-        }
+		if (args.Length < 2)
+		{
+			logger.LogInformation("Usage: Analyzer <Params>");
+			logger.LogInformation("Params:");
+			logger.LogInformation("\t-all <directory>\tDirectory of performance files (one per system)");
+			logger.LogInformation("\t-base <file>\t\tPerformance file for the baseline (MUST be in the same directory)");
+			logger.LogInformation($"\t[ -np ] \t\tNumber of permutation (Fisher randomization test) [default={RandomPermutationTest.NPermutation}]");
+			return;
+		}
 
-        var analyzer = new Analyzer();
-        analyzer.Compare(directory, baseline);
-    }
+		for (var i = 0; i < args.Length; i++)
+		{
+			if (args[i] == "-all")
+			{
+				directory = args[++i];
+			}
+			else if (args[i] == "-base")
+			{
+				baseline = args[++i];
+			}
+			else if (args[i] == "-np")
+			{
+				RandomPermutationTest.NPermutation = int.Parse(args[++i]);
+			}
+		}
 
-    public class Result
-    {
-        public int Status = 0;
-        public int Win = 0;
-        public int Loss = 0;
-        public int[] CountByImprovementRange;
-    }
+		var analyzer = new Analyzer();
+		analyzer.Compare(directory, baseline);
+	}
 
-    private int LocateSegment(double value)
-    {
-        if (value > 0)
-        {
-            for (int i = IndexOfZero; i < ImprovementRatioThreshold.Length; i++)
-            {
-                if (value <= ImprovementRatioThreshold[i])
-                {
-                    return i;
-                }
-            }
-        }
-        else if (value < 0)
-        {
-            for (int i = 0; i <= IndexOfZero; i++)
-            {
-                if (value < ImprovementRatioThreshold[i])
-                {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
+	public class Result
+	{
+		public int Status = 0;
+		public int Win = 0;
+		public int Loss = 0;
+		public int[] CountByImprovementRange;
+	}
 
-    public Dictionary<string, double> Read(string filename)
-    {
-        var performance = new Dictionary<string, double>();
-        using (var reader = new StreamReader(filename))
-        {
-            while (reader.ReadLine() is { } line)
-            {
-                line = Regex.Replace(line.Trim(), @"\s+", "\t");
-                var parts = line.Split('\t');
-                performance[parts[1]] = double.Parse(parts[2]);
-            }
-        }
-        logger.LogInformation($"Reading {filename}... {performance.Count} ranked lists");
-        return performance;
-    }
+	private int LocateSegment(double value)
+	{
+		if (value > 0)
+		{
+			for (var i = IndexOfZero; i < ImprovementRatioThreshold.Length; i++)
+			{
+				if (value <= ImprovementRatioThreshold[i])
+				{
+					return i;
+				}
+			}
+		}
+		else if (value < 0)
+		{
+			for (var i = 0; i <= IndexOfZero; i++)
+			{
+				if (value < ImprovementRatioThreshold[i])
+				{
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
 
-    public void Compare(string directory, string baseFile)
-    {
-        directory = Path.GetFullPath(directory);
-        var targetFiles = Directory.GetFiles(directory).ToList();
+	public Dictionary<string, double> Read(string filename)
+	{
+		var performance = new Dictionary<string, double>();
+		using (var reader = new StreamReader(filename))
+		{
+			while (reader.ReadLine() is { } line)
+			{
+				line = Regex.Replace(line.Trim(), @"\s+", "\t");
+				var parts = line.Split('\t');
+				performance[parts[1]] = double.Parse(parts[2]);
+			}
+		}
+		logger.LogInformation($"Reading {filename}... {performance.Count} ranked lists");
+		return performance;
+	}
 
-        targetFiles.RemoveAll(file => Path.GetFileName(file) == baseFile);
-        targetFiles = targetFiles.Select(file => Path.Combine(directory, Path.GetFileName(file))).ToList();
+	public void Compare(string directory, string baseFile)
+	{
+		directory = Path.GetFullPath(directory);
+		var targetFiles = Directory.GetFiles(directory).ToList();
 
-        Compare(targetFiles, Path.Combine(directory, baseFile));
-    }
+		targetFiles.RemoveAll(file => Path.GetFileName(file) == baseFile);
+		targetFiles = targetFiles.Select(file => Path.Combine(directory, Path.GetFileName(file))).ToList();
 
-    public void Compare(List<string> targetFiles, string baseFile)
-    {
-        var basePerformance = Read(baseFile);
-        var targetPerformances = targetFiles.Select(Read).ToList();
+		Compare(targetFiles, Path.Combine(directory, baseFile));
+	}
 
-        var results = Compare(basePerformance, targetPerformances);
+	public void Compare(List<string> targetFiles, string baseFile)
+	{
+		var basePerformance = Read(baseFile);
+		var targetPerformances = targetFiles.Select(Read).ToList();
 
-        logger.LogInformation("Overall comparison");
-        logger.LogInformation("System\tPerformance\tImprovement\tWin\tLoss\tp-value");
+		var results = Compare(basePerformance, targetPerformances);
 
-        logger.LogInformation($"{Path.GetFileName(baseFile)} [baseline]\t{basePerformance["all"]:F4}");
+		logger.LogInformation("Overall comparison");
+		logger.LogInformation("System\tPerformance\tImprovement\tWin\tLoss\tp-value");
 
-        for (int i = 0; i < results.Length; i++)
-        {
-            if (results[i].Status == 0)
-            {
-                var delta = targetPerformances[i]["all"] - basePerformance["all"];
-                var dp = delta * 100 / basePerformance["all"];
-                logger.LogInformation($"{Path.GetFileName(targetFiles[i])}\t{targetPerformances[i]["all"]:F4}\t" +
-                                      $"{(delta > 0 ? "+" : "")}{delta:F4} ({(delta > 0 ? "+" : "")}{dp:F2}%)" +
-                                      $"\t{results[i].Win}\t{results[i].Loss}\t{RandomizedTest.Test(targetPerformances[i], basePerformance)}");
-            }
-            else
-            {
-                logger.LogInformation($"WARNING: [{targetFiles[i]}] skipped: NOT comparable to the baseline due to different ranked list IDs.");
-            }
-        }
+		logger.LogInformation($"{Path.GetFileName(baseFile)} [baseline]\t{basePerformance["all"]:F4}");
 
-        logger.LogInformation("Detailed break down");
-        string header = "";
-        string[] tmp = new string[ImprovementRatioThreshold.Length];
-        for (int i = 0; i < ImprovementRatioThreshold.Length; i++)
-        {
-            string t = $"{(int)(ImprovementRatioThreshold[i] * 100)}%";
-            tmp[i] = t;
-        }
+		for (var i = 0; i < results.Length; i++)
+		{
+			if (results[i].Status == 0)
+			{
+				var delta = targetPerformances[i]["all"] - basePerformance["all"];
+				var dp = delta * 100 / basePerformance["all"];
+				logger.LogInformation($"{Path.GetFileName(targetFiles[i])}\t{targetPerformances[i]["all"]:F4}\t" +
+									  $"{(delta > 0 ? "+" : "")}{delta:F4} ({(delta > 0 ? "+" : "")}{dp:F2}%)" +
+									  $"\t{results[i].Win}\t{results[i].Loss}\t{RandomizedTest.Test(targetPerformances[i], basePerformance)}");
+			}
+			else
+			{
+				logger.LogInformation($"WARNING: [{targetFiles[i]}] skipped: NOT comparable to the baseline due to different ranked list IDs.");
+			}
+		}
 
-        header += $"[ < {tmp[0]} )\t";
-        for (int i = 0; i < ImprovementRatioThreshold.Length - 2; i++)
-        {
-            header += i >= IndexOfZero ? $"( {tmp[i]} , {tmp[i + 1]} ]\t" : $"[ {tmp[i]} , {tmp[i + 1]} )\t";
-        }
-        header += $"( > {tmp[ImprovementRatioThreshold.Length - 2]} ]";
-        logger.LogInformation("\t" + header);
+		logger.LogInformation("Detailed break down");
+		var header = "";
+		var tmp = new string[ImprovementRatioThreshold.Length];
+		for (var i = 0; i < ImprovementRatioThreshold.Length; i++)
+		{
+			var t = $"{(int)(ImprovementRatioThreshold[i] * 100)}%";
+			tmp[i] = t;
+		}
 
-        for (int i = 0; i < targetFiles.Count; i++)
-        {
-            var resultDetails = targetFiles[i];
-            foreach (var count in results[i].CountByImprovementRange)
-            {
-                resultDetails += "\t" + count;
-            }
-            logger.LogInformation(resultDetails);
-        }
-    }
+		header += $"[ < {tmp[0]} )\t";
+		for (var i = 0; i < ImprovementRatioThreshold.Length - 2; i++)
+		{
+			header += i >= IndexOfZero ? $"( {tmp[i]} , {tmp[i + 1]} ]\t" : $"[ {tmp[i]} , {tmp[i + 1]} )\t";
+		}
+		header += $"( > {tmp[ImprovementRatioThreshold.Length - 2]} ]";
+		logger.LogInformation("\t" + header);
 
-    public Result[] Compare(Dictionary<string, double> basePerformance, List<Dictionary<string, double>> targets)
-    {
-        var results = new Result[targets.Count];
-        for (int i = 0; i < targets.Count; i++)
-        {
-            results[i] = Compare(basePerformance, targets[i]);
-        }
-        return results;
-    }
+		for (var i = 0; i < targetFiles.Count; i++)
+		{
+			var resultDetails = targetFiles[i];
+			foreach (var count in results[i].CountByImprovementRange)
+			{
+				resultDetails += "\t" + count;
+			}
+			logger.LogInformation(resultDetails);
+		}
+	}
 
-    public Result Compare(Dictionary<string, double> basePerformance, Dictionary<string, double> target)
-    {
-        var result = new Result
-        {
-            CountByImprovementRange = new int[ImprovementRatioThreshold.Length]
-        };
+	public Result[] Compare(Dictionary<string, double> basePerformance, List<Dictionary<string, double>> targets)
+	{
+		var results = new Result[targets.Count];
+		for (var i = 0; i < targets.Count; i++)
+		{
+			results[i] = Compare(basePerformance, targets[i]);
+		}
+		return results;
+	}
 
-        if (basePerformance.Count != target.Count)
-        {
-            result.Status = -1;
-            return result;
-        }
+	public Result Compare(Dictionary<string, double> basePerformance, Dictionary<string, double> target)
+	{
+		var result = new Result
+		{
+			CountByImprovementRange = new int[ImprovementRatioThreshold.Length]
+		};
 
-        foreach (var key in basePerformance.Keys)
-        {
-            if (!target.ContainsKey(key))
-            {
-                result.Status = -2;
-                return result;
-            }
+		if (basePerformance.Count != target.Count)
+		{
+			result.Status = -1;
+			return result;
+		}
 
-            if (key == "all") continue;
+		foreach (var key in basePerformance.Keys)
+		{
+			if (!target.ContainsKey(key))
+			{
+				result.Status = -2;
+				return result;
+			}
 
-            var baseValue = basePerformance[key];
-            var targetValue = target[key];
+			if (key == "all")
+				continue;
 
-            if (targetValue > baseValue)
-            {
-                result.Win++;
-            }
-            else if (targetValue < baseValue)
-            {
-                result.Loss++;
-            }
+			var baseValue = basePerformance[key];
+			var targetValue = target[key];
 
-            var change = targetValue - baseValue;
-            if (change != 0)
-            {
-                result.CountByImprovementRange[LocateSegment(change)]++;
-            }
-        }
+			if (targetValue > baseValue)
+			{
+				result.Win++;
+			}
+			else if (targetValue < baseValue)
+			{
+				result.Loss++;
+			}
 
-        return result;
-    }
+			var change = targetValue - baseValue;
+			if (change != 0)
+			{
+				result.CountByImprovementRange[LocateSegment(change)]++;
+			}
+		}
+
+		return result;
+	}
 }

@@ -1,203 +1,165 @@
-﻿namespace RankLib.Learning;
+namespace RankLib.Learning;
 
 public abstract class DataPoint
 {
-    public static bool MissingZero = false;
-    protected static readonly int FeatureIncrease = 10;
-    protected int _featureCount = 0;
-    
-    protected static readonly float Unknown = float.NaN;
+	public static bool MissingZero = false;
+	protected static readonly int FeatureIncrease = 10;
+	protected int _featureCount = 0;
 
-    // attributes
-    protected float _label = 0.0f; // [ground truth] the real label of the data point (e.g., degree of relevance)
-    protected string _id = ""; // id of this data point (e.g., query-id)
-    protected string _description = "";
-    protected float[] _fVals = null; // _fVals[0] is unused. Feature id MUST start from 1
+	protected static readonly float Unknown = float.NaN;
 
-    // helper attributes
-    protected int _knownFeatures; // number of known feature values
+	// attributes
+	protected float _label = 0.0f; // [ground truth] the real label of the data point (e.g., degree of relevance)
+	protected string _id = ""; // id of this data point (e.g., query-id)
+	protected string _description = "";
+	protected float[] _fVals = null; // _fVals[0] is unused. Feature id MUST start from 1
 
-    // internal to learning procedures
-    protected double _cached = -1.0; // the latest evaluation score of the learned model on this data point
+	// helper attributes
+	protected int _knownFeatures; // number of known feature values
 
-    protected static bool IsUnknown(float fVal)
-    {
-        return float.IsNaN(fVal);
-    }
+	// internal to learning procedures
+	protected double _cached = -1.0; // the latest evaluation score of the learned model on this data point
 
-    protected static string GetKey(string pair)
-    {
-        return pair.Substring(0, pair.IndexOf(':'));
-    }
+	protected static bool IsUnknown(float fVal) => float.IsNaN(fVal);
 
-    protected static string GetValue(string pair)
-    {
-        return pair.Substring(pair.LastIndexOf(':') + 1);
-    }
+	protected static string GetKey(string pair) => pair.Substring(0, pair.IndexOf(':'));
 
-    /// <summary>
-    /// Parse the given line of text to construct a dense array of feature values and reset metadata.
-    /// </summary>
-    /// <param name="text">The text to parse</param>
-    /// <returns>Dense array of feature values</returns>
-    protected float[] Parse(string text)
-    {
-        int maxFeature = 51;
-        float[] fval = new float[maxFeature];
-        Array.Fill(fval, Unknown);
-        int lastFeature = -1;
+	protected static string GetValue(string pair) => pair.Substring(pair.LastIndexOf(':') + 1);
 
-        try
-        {
-            int idx = text.IndexOf('#');
-            if (idx != -1)
-            {
-                _description = text.Substring(idx);
-                text = text.Substring(0, idx).Trim(); // remove the comment part at the end of the line
-            }
+	/// <summary>
+	/// Parse the given line of text to construct a dense array of feature values and reset metadata.
+	/// </summary>
+	/// <param name="text">The text to parse</param>
+	/// <returns>Dense array of feature values</returns>
+	protected float[] Parse(string text)
+	{
+		var maxFeature = 51;
+		var fval = new float[maxFeature];
+		Array.Fill(fval, Unknown);
+		var lastFeature = -1;
 
-            string[] fs = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            _label = float.Parse(fs[0]);
+		try
+		{
+			var idx = text.IndexOf('#');
+			if (idx != -1)
+			{
+				_description = text.Substring(idx);
+				text = text.Substring(0, idx).Trim(); // remove the comment part at the end of the line
+			}
 
-            if (_label < 0)
-            {
-                throw new InvalidOperationException("Relevance label cannot be negative. System will now exit.");
-            }
+			var fs = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+			_label = float.Parse(fs[0]);
 
-            _id = GetValue(fs[1]);
+			if (_label < 0)
+			{
+				throw new InvalidOperationException("Relevance label cannot be negative. System will now exit.");
+			}
 
-            for (int i = 2; i < fs.Length; i++)
-            {
-                _knownFeatures++;
-                string key = GetKey(fs[i]);
-                string val = GetValue(fs[i]);
-                int f = int.Parse(key);
+			_id = GetValue(fs[1]);
 
-                if (f <= 0)
-                {
-                    throw new InvalidOperationException("Cannot use feature numbering less than or equal to zero. Start your features at 1.");
-                }
+			for (var i = 2; i < fs.Length; i++)
+			{
+				_knownFeatures++;
+				var key = GetKey(fs[i]);
+				var val = GetValue(fs[i]);
+				var f = int.Parse(key);
 
-                if (f >= maxFeature)
-                {
-                    while (f >= maxFeature)
-                    {
-                        maxFeature += FeatureIncrease;
-                    }
+				if (f <= 0)
+				{
+					throw new InvalidOperationException("Cannot use feature numbering less than or equal to zero. Start your features at 1.");
+				}
 
-                    float[] tmp = new float[maxFeature];
-                    Array.Copy(fval, tmp, fval.Length);
-                    Array.Fill(tmp, Unknown, fval.Length, maxFeature - fval.Length);
-                    fval = tmp;
-                }
+				if (f >= maxFeature)
+				{
+					while (f >= maxFeature)
+					{
+						maxFeature += FeatureIncrease;
+					}
 
-                fval[f] = float.Parse(val);
+					var tmp = new float[maxFeature];
+					Array.Copy(fval, tmp, fval.Length);
+					Array.Fill(tmp, Unknown, fval.Length, maxFeature - fval.Length);
+					fval = tmp;
+				}
 
-                if (f > _featureCount)
-                {
-                    _featureCount = f;
-                }
+				fval[f] = float.Parse(val);
 
-                if (f > lastFeature)
-                {
-                    lastFeature = f;
-                }
-            }
+				if (f > _featureCount)
+				{
+					_featureCount = f;
+				}
 
-            // shrink fVals
-            float[] shrinkFVals = new float[lastFeature + 1];
-            Array.Copy(fval, shrinkFVals, lastFeature + 1);
-            fval = shrinkFVals;
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException("Error in DataPoint::Parse", ex);
-        }
+				if (f > lastFeature)
+				{
+					lastFeature = f;
+				}
+			}
 
-        return fval;
-    }
+			// shrink fVals
+			var shrinkFVals = new float[lastFeature + 1];
+			Array.Copy(fval, shrinkFVals, lastFeature + 1);
+			fval = shrinkFVals;
+		}
+		catch (Exception ex)
+		{
+			throw new InvalidOperationException("Error in DataPoint::Parse", ex);
+		}
 
-    // Abstract methods for feature value operations
-    public abstract float GetFeatureValue(int fid);
-    public abstract void SetFeatureValue(int fid, float fval);
-    public abstract void SetFeatureVector(float[] dfVals);
-    public abstract float[] GetFeatureVector();
+		return fval;
+	}
 
-    // Default constructor
-    protected DataPoint() { }
+	// Abstract methods for feature value operations
+	public abstract float GetFeatureValue(int fid);
+	public abstract void SetFeatureValue(int fid, float fval);
+	public abstract void SetFeatureVector(float[] dfVals);
+	public abstract float[] GetFeatureVector();
 
-    // Constructor to initialize DataPoint from text
-    protected DataPoint(string text)
-    {
-        SetFeatureVector(Parse(text));
-    }
+	// Default constructor
+	protected DataPoint() { }
 
-    public string GetID()
-    {
-        return _id;
-    }
+	// Constructor to initialize DataPoint from text
+	protected DataPoint(string text) => SetFeatureVector(Parse(text));
 
-    public void SetID(string id)
-    {
-        _id = id;
-    }
+	public string Id
+	{
+		get => _id;
+		set => _id = value;
+	}
 
-    public float GetLabel()
-    {
-        return _label;
-    }
+	public float Label
+	{
+		get => _label;
+		set => _label = value;
+	}
 
-    public void SetLabel(float label)
-    {
-        _label = label;
-    }
+	public string GetDescription() => _description;
 
-    public string GetDescription()
-    {
-        return _description;
-    }
+	public void SetDescription(string description) => _description = description;
 
-    public void SetDescription(string description)
-    {
-        _description = description;
-    }
+	public void SetCached(double c) => _cached = c;
 
-    public void SetCached(double c)
-    {
-        _cached = c;
-    }
+	public double GetCached() => _cached;
 
-    public double GetCached()
-    {
-        return _cached;
-    }
+	public void ResetCached() => _cached = -100000000.0f;
 
-    public void ResetCached()
-    {
-        _cached = -100000000.0f;
-    }
+	public int GetFeatureCount() => _featureCount;
 
-    public int GetFeatureCount()
-    {
-        return _featureCount;
-    }
+	// Override ToString method
+	public override string ToString()
+	{
+		var fval = GetFeatureVector();
+		var output = new System.Text.StringBuilder();
+		output.Append(((int)_label) + " qid:" + _id + " ");
 
-    // Override ToString method
-    public override string ToString()
-    {
-        float[] fval = GetFeatureVector();
-        var output = new System.Text.StringBuilder();
-        output.Append(((int)_label) + " qid:" + _id + " ");
+		for (var i = 1; i < fval.Length; i++)
+		{
+			if (!IsUnknown(fval[i]))
+			{
+				output.Append(i + ":" + fval[i] + (i == fval.Length - 1 ? "" : " "));
+			}
+		}
 
-        for (int i = 1; i < fval.Length; i++)
-        {
-            if (!IsUnknown(fval[i]))
-            {
-                output.Append(i + ":" + fval[i] + (i == fval.Length - 1 ? "" : " "));
-            }
-        }
-
-        output.Append(" " + _description);
-        return output.ToString();
-    }
+		output.Append(" " + _description);
+		return output.ToString();
+	}
 }
