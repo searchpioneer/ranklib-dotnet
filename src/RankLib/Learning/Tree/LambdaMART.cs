@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 using RankLib.Parsing;
@@ -8,7 +8,7 @@ namespace RankLib.Learning.Tree;
 
 public class LambdaMART : Ranker
 {
-	private static readonly ILogger<LambdaMART> logger = NullLogger<LambdaMART>.Instance;
+	private readonly ILogger<LambdaMART> _logger;
 
 	// Parameters
 	public static int nTrees = 1000; // number of trees
@@ -32,30 +32,28 @@ public class LambdaMART : Ranker
 	protected double[] weights = null;
 	protected internal double[] impacts = null;
 
-	public LambdaMART()
-	{
-	}
+	public LambdaMART(ILogger<LambdaMART>? logger = null) : base(logger) =>
+		_logger = logger ?? NullLogger<LambdaMART>.Instance;
 
-	public LambdaMART(List<RankList> samples, int[] features, MetricScorer scorer)
-		: base(samples, features, scorer)
-	{
-	}
+	public LambdaMART(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaMART>? logger = null)
+		: base(samples, features, scorer, logger) =>
+		_logger = logger ?? NullLogger<LambdaMART>.Instance;
 
 	public override void Init()
 	{
-		logger.LogInformation("Initializing...");
+		_logger.LogInformation("Initializing...");
 
-		var dpCount = _samples.Sum(rl => rl.Count);
+		var dpCount = Samples.Sum(rl => rl.Count);
 		var current = 0;
 		martSamples = new DataPoint[dpCount];
 		modelScores = new double[dpCount];
 		pseudoResponses = new double[dpCount];
-		impacts = new double[_features.Length];
+		impacts = new double[Features.Length];
 		weights = new double[dpCount];
 
-		for (var i = 0; i < _samples.Count; i++)
+		for (var i = 0; i < Samples.Count; i++)
 		{
-			var rl = _samples[i];
+			var rl = Samples[i];
 			for (var j = 0; j < rl.Count; j++)
 			{
 				martSamples[current + j] = rl[j];
@@ -67,15 +65,15 @@ public class LambdaMART : Ranker
 		}
 
 		// Sort samples by each feature
-		sortedIdx = new int[_features.Length][];
+		sortedIdx = new int[Features.Length][];
 		var threadPool = MyThreadPool.GetInstance();
 		if (threadPool.Size() == 1)
 		{
-			SortSamplesByFeature(0, _features.Length - 1);
+			SortSamplesByFeature(0, Features.Length - 1);
 		}
 		else
 		{
-			var partition = threadPool.Partition(_features.Length);
+			var partition = threadPool.Partition(Features.Length);
 			for (var i = 0; i < partition.Length - 1; i++)
 			{
 				threadPool.Execute(new SortWorker(this, partition[i], partition[i + 1] - 1));
@@ -83,8 +81,8 @@ public class LambdaMART : Ranker
 			threadPool.Await();
 		}
 
-		thresholds = new float[_features.Length][];
-		for (var f = 0; f < _features.Length; f++)
+		thresholds = new float[Features.Length][];
+		for (var f = 0; f < Features.Length; f++)
 		{
 			var values = new List<float>();
 			var fmax = float.MinValue;
@@ -92,7 +90,7 @@ public class LambdaMART : Ranker
 			for (var i = 0; i < martSamples.Length; i++)
 			{
 				var k = sortedIdx[f][i];
-				var fv = martSamples[k].GetFeatureValue(_features[f]);
+				var fv = martSamples[k].GetFeatureValue(Features[f]);
 				values.Add(fv);
 				if (fmax < fv)
 					fmax = fv;
@@ -100,7 +98,7 @@ public class LambdaMART : Ranker
 					fmin = fv;
 
 				var j = i + 1;
-				while (j < martSamples.Length && martSamples[sortedIdx[f][j]].GetFeatureValue(_features[f]) <= fv)
+				while (j < martSamples.Length && martSamples[sortedIdx[f][j]].GetFeatureValue(Features[f]) <= fv)
 				{
 					j++;
 				}
@@ -125,33 +123,33 @@ public class LambdaMART : Ranker
 			}
 		}
 
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
-			modelScoresOnValidation = new double[_validationSamples.Count][];
-			for (var i = 0; i < _validationSamples.Count; i++)
+			modelScoresOnValidation = new double[ValidationSamples.Count][];
+			for (var i = 0; i < ValidationSamples.Count; i++)
 			{
-				modelScoresOnValidation[i] = new double[_validationSamples[i].Count];
+				modelScoresOnValidation[i] = new double[ValidationSamples[i].Count];
 				Array.Fill(modelScoresOnValidation[i], 0);
 			}
 		}
 
 		hist = new FeatureHistogram();
-		hist.Construct(martSamples, pseudoResponses, sortedIdx, _features, thresholds, impacts);
+		hist.Construct(martSamples, pseudoResponses, sortedIdx, Features, thresholds, impacts);
 		sortedIdx = null;
 	}
 
 	public override void Learn()
 	{
 		ensemble = new Ensemble();
-		logger.LogInformation("Training starts...");
+		_logger.LogInformation("Training starts...");
 
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
-			PrintLogLn(new int[] { 7, 9, 9 }, new string[] { "#iter", _scorer.Name() + "-T", _scorer.Name() + "-V" });
+			PrintLogLn(new int[] { 7, 9, 9 }, new string[] { "#iter", Scorer.Name() + "-T", Scorer.Name() + "-V" });
 		}
 		else
 		{
-			PrintLogLn(new int[] { 7, 9 }, new string[] { "#iter", _scorer.Name() + "-T" });
+			PrintLogLn(new int[] { 7, 9 }, new string[] { "#iter", Scorer.Name() + "-T" });
 		}
 
 		for (var m = 0; m < nTrees; m++)
@@ -176,24 +174,24 @@ public class LambdaMART : Ranker
 			}
 			rt.ClearSamples();
 
-			_scoreOnTrainingData = ComputeModelScoreOnTraining();
-			PrintLog(new int[] { 9 }, new string[] { SimpleMath.Round(_scoreOnTrainingData, 4).ToString() });
+			ScoreOnTrainingData = ComputeModelScoreOnTraining();
+			PrintLog(new int[] { 9 }, new string[] { SimpleMath.Round(ScoreOnTrainingData, 4).ToString() });
 
-			if (_validationSamples != null)
+			if (ValidationSamples != null)
 			{
 				for (var i = 0; i < modelScoresOnValidation.Length; i++)
 				{
 					for (var j = 0; j < modelScoresOnValidation[i].Length; j++)
 					{
-						var tempQualifier = _validationSamples[i];
+						var tempQualifier = ValidationSamples[i];
 						modelScoresOnValidation[i][j] += learningRate * rt.Eval(tempQualifier[j]);
 					}
 				}
 				double score = ComputeModelScoreOnValidation();
 				PrintLog(new int[] { 9 }, new string[] { SimpleMath.Round(score, 4).ToString() });
-				if (score > _bestScoreOnValidationData)
+				if (score > BestScoreOnValidationData)
 				{
-					_bestScoreOnValidationData = score;
+					BestScoreOnValidationData = score;
 					bestModelOnValidation = ensemble.TreeCount() - 1;
 				}
 			}
@@ -210,33 +208,33 @@ public class LambdaMART : Ranker
 			ensemble.Remove(ensemble.TreeCount() - 1);
 		}
 
-		_scoreOnTrainingData = _scorer.Score(Rank(_samples));
-		logger.LogInformation($"Finished successfully. {_scorer.Name()} on training data: {SimpleMath.Round(_scoreOnTrainingData, 4)}");
+		ScoreOnTrainingData = Scorer.Score(Rank(Samples));
+		_logger.LogInformation($"Finished successfully. {Scorer.Name()} on training data: {SimpleMath.Round(ScoreOnTrainingData, 4)}");
 
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
-			_bestScoreOnValidationData = _scorer.Score(Rank(_validationSamples));
-			logger.LogInformation($"{_scorer.Name()} on validation data: {SimpleMath.Round(_bestScoreOnValidationData, 4)}");
+			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation($"{Scorer.Name()} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 
-		logger.LogInformation("-- FEATURE IMPACTS");
+		_logger.LogInformation("-- FEATURE IMPACTS");
 		var ftrsSorted = MergeSorter.Sort(impacts, false);
 		foreach (var ftr in ftrsSorted)
 		{
-			logger.LogInformation($"Feature {_features[ftr]} reduced error {impacts[ftr]}");
+			_logger.LogInformation($"Feature {Features[ftr]} reduced error {impacts[ftr]}");
 		}
 	}
 
 	public override double Eval(DataPoint dp) => ensemble.Eval(dp);
 
-	public override Ranker CreateNew() => new LambdaMART();
+	public override Ranker CreateNew() => new LambdaMART(_logger);
 
 	public override string ToString() => ensemble.ToString();
 
 	public override string Model()
 	{
 		var output = new System.Text.StringBuilder();
-		output.AppendLine($"## {Name()}");
+		output.AppendLine($"## {Name}");
 		output.AppendLine($"## No. of trees = {nTrees}");
 		output.AppendLine($"## No. of leaves = {nTreeLeaves}");
 		output.AppendLine($"## No. of threshold candidates = {nThreshold}");
@@ -252,20 +250,20 @@ public class LambdaMART : Ranker
 		var lineByLine = new ModelLineProducer();
 		lineByLine.Parse(fullText, (model, endEns) => { });
 		ensemble = new Ensemble(lineByLine.GetModel().ToString());
-		_features = ensemble.GetFeatures();
+		Features = ensemble.GetFeatures();
 	}
 
 	public override void PrintParameters()
 	{
-		logger.LogInformation($"No. of trees: {nTrees}");
-		logger.LogInformation($"No. of leaves: {nTreeLeaves}");
-		logger.LogInformation($"No. of threshold candidates: {nThreshold}");
-		logger.LogInformation($"Min leaf support: {minLeafSupport}");
-		logger.LogInformation($"Learning rate: {learningRate}");
-		logger.LogInformation($"Stop early: {nRoundToStopEarly} rounds without performance gain on validation data");
+		_logger.LogInformation($"No. of trees: {nTrees}");
+		_logger.LogInformation($"No. of leaves: {nTreeLeaves}");
+		_logger.LogInformation($"No. of threshold candidates: {nThreshold}");
+		_logger.LogInformation($"Min leaf support: {minLeafSupport}");
+		_logger.LogInformation($"Learning rate: {learningRate}");
+		_logger.LogInformation($"Stop early: {nRoundToStopEarly} rounds without performance gain on validation data");
 	}
 
-	public override string Name() => "LambdaMART";
+	public override string Name => "LambdaMART";
 
 	public Ensemble GetEnsemble() => ensemble;
 
@@ -277,12 +275,12 @@ public class LambdaMART : Ranker
 		var p = MyThreadPool.GetInstance();
 		if (p.Size() == 1)
 		{
-			ComputePseudoResponses(0, _samples.Count - 1, 0);
+			ComputePseudoResponses(0, Samples.Count - 1, 0);
 		}
 		else
 		{
 			var workers = new List<LambdaComputationWorker>();
-			var partition = p.Partition(_samples.Count);
+			var partition = p.Partition(Samples.Count);
 			var current = 0;
 			for (var i = 0; i < partition.Length - 1; i++)
 			{
@@ -293,7 +291,7 @@ public class LambdaMART : Ranker
 				{
 					for (var j = partition[i]; j <= partition[i + 1] - 1; j++)
 					{
-						current += _samples[j].Count;
+						current += Samples[j].Count;
 					}
 				}
 			}
@@ -303,13 +301,13 @@ public class LambdaMART : Ranker
 
 	protected void ComputePseudoResponses(int start, int end, int current)
 	{
-		var cutoff = _scorer.GetK();
+		var cutoff = Scorer.GetK();
 		for (var i = start; i <= end; i++)
 		{
-			var orig = _samples[i];
+			var orig = Samples[i];
 			var idx = MergeSorter.Sort(modelScores, current, current + orig.Count - 1, false);
 			var rl = new RankList(orig, idx, current);
-			var changes = _scorer.SwapChange(rl);
+			var changes = Scorer.SwapChange(rl);
 			for (var j = 0; j < rl.Count; j++)
 			{
 				var p1 = rl[j];
@@ -375,7 +373,7 @@ public class LambdaMART : Ranker
 
 	protected RankList Rank(int rankListIndex, int current)
 	{
-		var orig = _samples[rankListIndex];
+		var orig = Samples[rankListIndex];
 		var scores = new double[orig.Count];
 		for (var i = 0; i < scores.Length; i++)
 		{
@@ -385,7 +383,7 @@ public class LambdaMART : Ranker
 		return new RankList(orig, idx);
 	}
 
-	protected float ComputeModelScoreOnTraining() => ComputeModelScoreOnTraining(0, _samples.Count - 1, 0) / _samples.Count;
+	protected float ComputeModelScoreOnTraining() => ComputeModelScoreOnTraining(0, Samples.Count - 1, 0) / Samples.Count;
 
 	protected float ComputeModelScoreOnTraining(int start, int end, int current)
 	{
@@ -393,13 +391,13 @@ public class LambdaMART : Ranker
 		var c = current;
 		for (var i = start; i <= end; i++)
 		{
-			s += Convert.ToSingle(_scorer.Score(Rank(i, c)));
-			c += _samples[i].Count;
+			s += Convert.ToSingle(Scorer.Score(Rank(i, c)));
+			c += Samples[i].Count;
 		}
 		return s;
 	}
 
-	protected float ComputeModelScoreOnValidation() => ComputeModelScoreOnValidation(0, _validationSamples.Count - 1) / _validationSamples.Count;
+	protected float ComputeModelScoreOnValidation() => ComputeModelScoreOnValidation(0, ValidationSamples.Count - 1) / ValidationSamples.Count;
 
 	protected float ComputeModelScoreOnValidation(int start, int end)
 	{
@@ -407,7 +405,7 @@ public class LambdaMART : Ranker
 		for (var i = start; i <= end; i++)
 		{
 			var idx = MergeSorter.Sort(modelScoresOnValidation[i], false);
-			score += Convert.ToSingle(_scorer.Score(new RankList(_validationSamples[i], idx)));
+			score += Convert.ToSingle(Scorer.Score(new RankList(ValidationSamples[i], idx)));
 		}
 		return score;
 	}
@@ -416,7 +414,7 @@ public class LambdaMART : Ranker
 	{
 		for (var i = fStart; i <= fEnd; i++)
 		{
-			sortedIdx[i] = SortSamplesByFeature(martSamples, _features[i]);
+			sortedIdx[i] = SortSamplesByFeature(martSamples, Features[i]);
 		}
 	}
 

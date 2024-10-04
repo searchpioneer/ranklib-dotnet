@@ -1,3 +1,5 @@
+using Meziantou.Extensions.Logging.Xunit;
+using Microsoft.Extensions.Logging;
 using RankLib.Eval;
 using RankLib.Learning;
 using RankLib.Tests.Utilities;
@@ -189,6 +191,8 @@ public class EvaluatorTest
 	private void TestRanker(TmpFile dataFile, TmpFile modelFile, TmpFile rankFile, int rnum, string measure)
 	{
 		_testOutputHelper.WriteLine($"Test Ranker: {rnum}");
+
+		Evaluator.LoggerFactory = new LoggerFactory([new XUnitLoggerProvider(_testOutputHelper)]);
 
 		lock (DataPointLock)
 		{

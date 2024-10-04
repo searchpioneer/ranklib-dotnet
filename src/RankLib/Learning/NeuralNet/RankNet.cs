@@ -1,5 +1,6 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using RankLib.Learning.Tree;
 using RankLib.Metric;
 using RankLib.Utilities;
 
@@ -7,8 +8,7 @@ namespace RankLib.Learning.NeuralNet;
 
 public class RankNet : Ranker
 {
-	// TODO: logging
-	private static readonly ILogger<RankNet> _logger = NullLogger<RankNet>.Instance;
+	private readonly ILogger<RankNet> _logger;
 
 	public static int NIteration { get; set; } = 100;
 	public static int NHiddenLayer { get; set; } = 1;
@@ -26,11 +26,12 @@ public class RankNet : Ranker
 	protected double _lastError = double.MaxValue;
 	protected int _straightLoss = 0;
 
-	public RankNet() { }
+	public RankNet(ILogger<RankNet>? logger = null) =>
+		_logger = logger ?? NullLogger<RankNet>.Instance;
 
-	public RankNet(List<RankList> samples, int[] features, MetricScorer scorer) : base(samples, features, scorer)
-	{
-	}
+	public RankNet(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<RankNet>? logger = null)
+		: base(samples, features, scorer, logger) =>
+		_logger = logger ?? NullLogger<RankNet>.Instance;
 
 	protected void SetInputOutput(int nInput, int nOutput)
 	{
@@ -82,13 +83,14 @@ public class RankNet : Ranker
 		}
 	}
 
-	protected void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron) => new Synapse(_layers[sourceLayer].Get(sourceNeuron), _layers[targetLayer].Get(targetNeuron));
+	protected void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron) =>
+		new Synapse(_layers[sourceLayer].Get(sourceNeuron), _layers[targetLayer].Get(targetNeuron));
 
 	protected void AddInput(DataPoint p)
 	{
 		for (var k = 0; k < _inputLayer.Size() - 1; k++)
 		{
-			_inputLayer.Get(k).AddOutput(p.GetFeatureValue(_features[k]));
+			_inputLayer.Get(k).AddOutput(p.GetFeatureValue(Features[k]));
 		}
 		_inputLayer.Get(_inputLayer.Size() - 1).AddOutput(1.0);
 	}
@@ -219,7 +221,7 @@ public class RankNet : Ranker
 		_misorderedPairs = 0;
 		_error = 0.0;
 
-		foreach (var rl in _samples)
+		foreach (var rl in Samples)
 		{
 			for (var k = 0; k < rl.Count - 1; k++)
 			{
@@ -244,7 +246,7 @@ public class RankNet : Ranker
 	{
 		_logger.LogInformation("Initializing...");
 
-		SetInputOutput(_features.Length, 1);
+		SetInputOutput(Features.Length, 1);
 		for (var i = 0; i < NHiddenLayer; i++)
 		{
 			AddHiddenLayer(NHiddenNodePerLayer);
@@ -252,7 +254,7 @@ public class RankNet : Ranker
 		Wire();
 
 		_totalPairs = 0;
-		foreach (var rl in _samples)
+		foreach (var rl in Samples)
 		{
 			var correctRanking = rl.GetCorrectRanking();
 			for (var j = 0; j < correctRanking.Count - 1; j++)
@@ -274,21 +276,21 @@ public class RankNet : Ranker
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn(new[] { 7, 14, 9, 9 },
-			new[] { "#epoch", "% mis-ordered", _scorer.Name() + "-T", _scorer.Name() + "-V" });
+			new[] { "#epoch", "% mis-ordered", Scorer.Name() + "-T", Scorer.Name() + "-V" });
 		PrintLogLn(new[] { 7, 14, 9, 9 }, new[] { " ", "  pairs", " ", " " });
 
 		for (var i = 1; i <= NIteration; i++)
 		{
-			for (var j = 0; j < _samples.Count; j++)
+			for (var j = 0; j < Samples.Count; j++)
 			{
-				var rl = InternalReorder(_samples[j]);
+				var rl = InternalReorder(Samples[j]);
 				var pairMap = BatchFeedForward(rl);
 				var pairWeight = ComputePairWeight(pairMap, rl)!;
 				BatchBackPropagate(pairMap, pairWeight);
 				ClearNeuronOutputs();
 			}
 
-			_scoreOnTrainingData = _scorer.Score(Rank(_samples));
+			ScoreOnTrainingData = Scorer.Score(Rank(Samples));
 			EstimateLoss();
 
 			PrintLog(new[] { 7, 14 },
@@ -296,14 +298,14 @@ public class RankNet : Ranker
 
 			if (i % 1 == 0)
 			{
-				PrintLog(new[] { 9 }, new[] { SimpleMath.Round(_scoreOnTrainingData, 4).ToString() });
+				PrintLog(new[] { 9 }, new[] { SimpleMath.Round(ScoreOnTrainingData, 4).ToString() });
 
-				if (_validationSamples != null)
+				if (ValidationSamples != null)
 				{
-					var score = _scorer.Score(Rank(_validationSamples));
-					if (score > _bestScoreOnValidationData)
+					var score = Scorer.Score(Rank(ValidationSamples));
+					if (score > BestScoreOnValidationData)
 					{
-						_bestScoreOnValidationData = score;
+						BestScoreOnValidationData = score;
 						SaveBestModelOnValidation();
 					}
 
@@ -315,19 +317,19 @@ public class RankNet : Ranker
 		}
 
 		// Restore the best model if validation data was specified
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
 			RestoreBestModelOnValidation();
 		}
 
-		_scoreOnTrainingData = SimpleMath.Round(_scorer.Score(Rank(_samples)), 4);
+		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation($"{_scorer.Name()} on training data: {_scoreOnTrainingData}");
+		_logger.LogInformation($"{Scorer.Name()} on training data: {ScoreOnTrainingData}");
 
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
-			_bestScoreOnValidationData = _scorer.Score(Rank(_validationSamples));
-			_logger.LogInformation($"{_scorer.Name()} on validation data: {SimpleMath.Round(_bestScoreOnValidationData, 4)}");
+			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation($"{Scorer.Name()} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 	}
 
@@ -336,7 +338,7 @@ public class RankNet : Ranker
 	{
 		for (var k = 0; k < _inputLayer.Size() - 1; k++)
 		{
-			_inputLayer.Get(k).SetOutput(p.GetFeatureValue(_features[k]));
+			_inputLayer.Get(k).SetOutput(p.GetFeatureValue(Features[k]));
 		}
 		_inputLayer.Get(_inputLayer.Size() - 1).SetOutput(1.0);
 
@@ -367,18 +369,18 @@ public class RankNet : Ranker
 	public override string Model()
 	{
 		var output = new System.Text.StringBuilder();
-		output.AppendLine($"## {Name()}");
+		output.AppendLine($"## {Name}");
 		output.AppendLine($"## Epochs = {NIteration}");
-		output.AppendLine($"## No. of features = {_features.Length}");
+		output.AppendLine($"## No. of features = {Features.Length}");
 		output.AppendLine($"## No. of hidden layers = {_layers.Count - 2}");
 		for (var i = 1; i < _layers.Count - 1; i++)
 		{
 			output.AppendLine($"## Layer {i}: {_layers[i].Size()} neurons");
 		}
 
-		for (var i = 0; i < _features.Length; i++)
+		for (var i = 0; i < Features.Length; i++)
 		{
-			output.Append($"{_features[i]}{(i == _features.Length - 1 ? "" : " ")}");
+			output.Append($"{Features[i]}{(i == Features.Length - 1 ? "" : " ")}");
 		}
 		output.AppendLine();
 		output.AppendLine($"{_layers.Count - 2}");
@@ -396,10 +398,10 @@ public class RankNet : Ranker
 		var lines = fullText.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
 		var features = lines[0].Split(' ');
-		_features = new int[features.Length];
+		Features = new int[features.Length];
 		for (var i = 0; i < features.Length; i++)
 		{
-			_features[i] = int.Parse(features[i]);
+			Features[i] = int.Parse(features[i]);
 		}
 
 		var nhl = int.Parse(lines[1]);
@@ -410,7 +412,7 @@ public class RankNet : Ranker
 			nn[lineIndex - 2] = int.Parse(lines[lineIndex]);
 		}
 
-		SetInputOutput(_features.Length, 1);
+		SetInputOutput(Features.Length, 1);
 		for (var j = 0; j < nhl; j++)
 		{
 			AddHiddenLayer(nn[j]);
@@ -438,5 +440,5 @@ public class RankNet : Ranker
 		_logger.LogInformation($"Learning rate: {LearningRate}");
 	}
 
-	public override string Name() => "RankNet";
+	public override string Name => "RankNet";
 }

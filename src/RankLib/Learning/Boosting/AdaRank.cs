@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
@@ -9,8 +9,7 @@ namespace RankLib.Learning.Boosting;
 
 public class AdaRank : Ranker
 {
-	// TODO: logging
-	private static readonly ILogger<AdaRank> _logger = NullLogger<AdaRank>.Instance;
+	private readonly ILogger<AdaRank> _logger;
 
 	// Parameters
 	public static int NIteration = 500;
@@ -35,9 +34,11 @@ public class AdaRank : Ranker
 	protected double _backupTrainScore = 0.0;
 	protected double _lastTrainedScore = -1.0;
 
-	public AdaRank() { }
+	public AdaRank(ILogger<AdaRank>? logger = null) => _logger = logger ?? NullLogger<AdaRank>.Instance;
 
-	public AdaRank(List<RankList> samples, int[] features, MetricScorer scorer) : base(samples, features, scorer) { }
+	public AdaRank(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<AdaRank>? logger = null) : base(
+		samples, features, scorer, logger) =>
+		_logger = logger ?? NullLogger<AdaRank>.Instance;
 
 	private void UpdateBestModelOnValidation()
 	{
@@ -50,29 +51,29 @@ public class AdaRank : Ranker
 	private WeakRanker? LearnWeakRanker()
 	{
 		var bestScore = -1.0;
-		WeakRanker? bestWR = null;
+		WeakRanker? bestWeakRanker = null;
 
-		foreach (var i in _features)
+		foreach (var i in Features)
 		{
 			if (_featureQueue.Contains(i) || _usedFeatures.ContainsKey(i))
 				continue;
 
 			var wr = new WeakRanker(i);
 			var s = 0.0;
-			for (var j = 0; j < _samples.Count; j++)
+			for (var j = 0; j < Samples.Count; j++)
 			{
-				var t = _scorer.Score(wr.Rank(_samples[j])) * _sweight[j];
+				var t = Scorer.Score(wr.Rank(Samples[j])) * _sweight[j];
 				s += t;
 			}
 
 			if (bestScore < s)
 			{
 				bestScore = s;
-				bestWR = wr;
+				bestWeakRanker = wr;
 			}
 		}
 
-		return bestWR;
+		return bestWeakRanker;
 	}
 
 	private int Learn(int startIteration, bool withEnqueue)
@@ -81,28 +82,28 @@ public class AdaRank : Ranker
 
 		for (; t <= NIteration; t++)
 		{
-			PrintLog(new[] { 7 }, new[] { t.ToString() });
+			PrintLog([7], [t.ToString()]);
 
-			var bestWR = LearnWeakRanker();
-			if (bestWR == null)
+			var bestWeakRanker = LearnWeakRanker();
+			if (bestWeakRanker == null)
 				break;
 
 			if (withEnqueue)
 			{
-				if (bestWR.GetFID() == _lastFeature)
+				if (bestWeakRanker.GetFID() == _lastFeature)
 				{
 					_featureQueue.Add(_lastFeature);
 					_rankers.RemoveAt(_rankers.Count - 1);
 					_rweight.RemoveAt(_rweight.Count - 1);
 					Array.Copy(_backupSampleWeight, _sweight, _sweight.Length);
-					_bestScoreOnValidationData = 0.0;
+					BestScoreOnValidationData = 0.0;
 					_lastTrainedScore = _backupTrainScore;
-					PrintLogLn(new[] { 8, 9, 9, 9 }, new[] { bestWR.GetFID().ToString(), "", "", "ROLLBACK" });
+					PrintLogLn([8, 9, 9, 9], [bestWeakRanker.GetFID().ToString(), "", "", "ROLLBACK"]);
 					continue;
 				}
 				else
 				{
-					_lastFeature = bestWR.GetFID();
+					_lastFeature = bestWeakRanker.GetFID();
 					Array.Copy(_sweight, _backupSampleWeight, _sweight.Length);
 					_backupTrainScore = _lastTrainedScore;
 				}
@@ -110,28 +111,28 @@ public class AdaRank : Ranker
 
 			var num = 0.0;
 			var denom = 0.0;
-			for (var i = 0; i < _samples.Count; i++)
+			for (var i = 0; i < Samples.Count; i++)
 			{
-				var tmp = _scorer.Score(bestWR.Rank(_samples[i]));
+				var tmp = Scorer.Score(bestWeakRanker.Rank(Samples[i]));
 				num += _sweight[i] * (1.0 + tmp);
 				denom += _sweight[i] * (1.0 - tmp);
 			}
 
-			_rankers.Add(bestWR);
-			var alpha_t = 0.5 * SimpleMath.Ln(num / denom);
-			_rweight.Add(alpha_t);
+			_rankers.Add(bestWeakRanker);
+			var alphaT = 0.5 * SimpleMath.Ln(num / denom);
+			_rweight.Add(alphaT);
 
 			var trainedScore = 0.0;
 			var total = 0.0;
 
-			foreach (var sample in _samples)
+			foreach (var sample in Samples)
 			{
-				var tmp = _scorer.Score(Rank(sample));
-				total += Math.Exp(-alpha_t * tmp);
+				var tmp = Scorer.Score(Rank(sample));
+				total += Math.Exp(-alphaT * tmp);
 				trainedScore += tmp;
 			}
 
-			trainedScore /= _samples.Count;
+			trainedScore /= Samples.Count;
 			var delta = trainedScore + Tolerance - _lastTrainedScore;
 			var status = delta > 0 ? "OK" : "DAMN";
 
@@ -146,7 +147,7 @@ public class AdaRank : Ranker
 				else
 				{
 					_performanceChanged = false;
-					if (_lastFeature == bestWR.GetFID())
+					if (_lastFeature == bestWeakRanker.GetFID())
 					{
 						_lastFeatureConsecutiveCount++;
 						if (_lastFeatureConsecutiveCount == MaxSelCount)
@@ -163,16 +164,16 @@ public class AdaRank : Ranker
 					}
 				}
 
-				_lastFeature = bestWR.GetFID();
+				_lastFeature = bestWeakRanker.GetFID();
 			}
 
-			PrintLog(new[] { 8, 9 }, new[] { bestWR.GetFID().ToString(), SimpleMath.Round(trainedScore, 4).ToString() });
-			if (t % 1 == 0 && _validationSamples != null)
+			PrintLog(new[] { 8, 9 }, new[] { bestWeakRanker.GetFID().ToString(), SimpleMath.Round(trainedScore, 4).ToString() });
+			if (t % 1 == 0 && ValidationSamples != null)
 			{
-				var scoreOnValidation = _scorer.Score(Rank(_validationSamples));
-				if (scoreOnValidation > _bestScoreOnValidationData)
+				var scoreOnValidation = Scorer.Score(Rank(ValidationSamples));
+				if (scoreOnValidation > BestScoreOnValidationData)
 				{
-					_bestScoreOnValidationData = scoreOnValidation;
+					BestScoreOnValidationData = scoreOnValidation;
 					UpdateBestModelOnValidation();
 				}
 
@@ -196,7 +197,7 @@ public class AdaRank : Ranker
 
 			for (var i = 0; i < _sweight.Length; i++)
 			{
-				_sweight[i] *= Math.Exp(-alpha_t * _scorer.Score(Rank(_samples[i]))) / total;
+				_sweight[i] *= Math.Exp(-alphaT * Scorer.Score(Rank(Samples[i]))) / total;
 			}
 		}
 
@@ -208,10 +209,10 @@ public class AdaRank : Ranker
 		_logger.LogInformation("Initializing...");
 		_usedFeatures.Clear();
 
-		_sweight = new double[_samples.Count];
+		_sweight = new double[Samples.Count];
 		for (var i = 0; i < _sweight.Length; i++)
 		{
-			_sweight[i] = 1.0f / _samples.Count;
+			_sweight[i] = 1.0f / Samples.Count;
 		}
 
 		_backupSampleWeight = new double[_sweight.Length];
@@ -223,7 +224,7 @@ public class AdaRank : Ranker
 
 		_featureQueue = new List<int>();
 
-		_bestScoreOnValidationData = 0.0;
+		BestScoreOnValidationData = 0.0;
 		_bestModelRankers = new List<WeakRanker>();
 		_bestModelWeights = new List<double>();
 	}
@@ -231,7 +232,7 @@ public class AdaRank : Ranker
 	public override void Learn()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 8, 9, 9, 9 }, new[] { "#iter", "Sel. F.", _scorer.Name() + "-T", _scorer.Name() + "-V", "Status" });
+		PrintLogLn(new[] { 7, 8, 9, 9, 9 }, new[] { "#iter", "Sel. F.", Scorer.Name() + "-T", Scorer.Name() + "-V", "Status" });
 
 		if (TrainWithEnqueue)
 		{
@@ -247,7 +248,7 @@ public class AdaRank : Ranker
 			Learn(1, false);
 		}
 
-		if (_validationSamples != null && _bestModelRankers.Count > 0)
+		if (ValidationSamples != null && _bestModelRankers.Count > 0)
 		{
 			_rankers.Clear();
 			_rweight.Clear();
@@ -255,14 +256,14 @@ public class AdaRank : Ranker
 			_rweight.AddRange(_bestModelWeights);
 		}
 
-		_scoreOnTrainingData = SimpleMath.Round(_scorer.Score(Rank(_samples)), 4);
+		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation($"Finished successfully.");
-		_logger.LogInformation($"{_scorer.Name()} on training data: {_scoreOnTrainingData}");
+		_logger.LogInformation($"{Scorer.Name()} on training data: {ScoreOnTrainingData}");
 
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
-			_bestScoreOnValidationData = _scorer.Score(Rank(_validationSamples));
-			_logger.LogInformation($"{_scorer.Name()} on validation data: {SimpleMath.Round(_bestScoreOnValidationData, 4)}");
+			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation($"{Scorer.Name()} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 	}
 
@@ -292,7 +293,7 @@ public class AdaRank : Ranker
 	public override string Model()
 	{
 		var output = new StringBuilder();
-		output.Append("## " + Name() + "\n");
+		output.Append("## " + Name + "\n");
 		output.Append("## Iteration = " + NIteration + "\n");
 		output.Append("## Train with enqueue: " + (TrainWithEnqueue ? "Yes" : "No") + "\n");
 		output.Append("## Tolerance = " + Tolerance + "\n");
@@ -330,12 +331,12 @@ public class AdaRank : Ranker
 				var values = kvp.Values();
 				_rweight = new List<double>();
 				_rankers = new List<WeakRanker>();
-				_features = new int[keys.Count];
+				Features = new int[keys.Count];
 
 				for (var i = 0; i < keys.Count; i++)
 				{
-					_features[i] = int.Parse(keys[i]);
-					_rankers.Add(new WeakRanker(_features[i]));
+					Features[i] = int.Parse(keys[i]);
+					_rankers.Add(new WeakRanker(Features[i]));
 					_rweight.Add(double.Parse(values[i]));
 				}
 			}
@@ -354,5 +355,5 @@ public class AdaRank : Ranker
 		_logger.LogInformation($"Max Sel. Count: {MaxSelCount}");
 	}
 
-	public override string Name() => "AdaRank";
+	public override string Name => "AdaRank";
 }

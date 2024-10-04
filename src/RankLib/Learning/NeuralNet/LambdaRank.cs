@@ -1,4 +1,4 @@
-using RankLib.Metric;
+﻿using RankLib.Metric;
 
 namespace RankLib.Learning.NeuralNet;
 
@@ -6,7 +6,8 @@ public class LambdaRank : RankNet
 {
 	protected float[][]? targetValue = null;
 
-	public LambdaRank() { }
+	public LambdaRank() : base()
+	{ }
 
 	public LambdaRank(List<RankList> samples, int[] features, MetricScorer scorer)
 		: base(samples, features, scorer)
@@ -75,7 +76,7 @@ public class LambdaRank : RankNet
 
 	protected override float[][] ComputePairWeight(int[][] pairMap, RankList rl)
 	{
-		var changes = _scorer.SwapChange(rl);
+		var changes = Scorer.SwapChange(rl);
 		var weight = new float[pairMap.Length][];
 
 		for (var i = 0; i < weight.Length; i++)
@@ -96,9 +97,9 @@ public class LambdaRank : RankNet
 	{
 		_misorderedPairs = 0;
 
-		for (var j = 0; j < _samples.Count; j++)
+		for (var j = 0; j < Samples.Count; j++)
 		{
-			var rl = _samples[j];
+			var rl = Samples[j];
 
 			for (var k = 0; k < rl.Count - 1; k++)
 			{
@@ -117,7 +118,7 @@ public class LambdaRank : RankNet
 			}
 		}
 
-		_error = 1.0 - _scoreOnTrainingData;
+		_error = 1.0 - ScoreOnTrainingData;
 
 		if (_error > _lastError)
 		{
@@ -133,5 +134,5 @@ public class LambdaRank : RankNet
 
 	public override Ranker CreateNew() => new LambdaRank();
 
-	public override string Name() => "LambdaRank";
+	public override string Name => "LambdaRank";
 }

@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
@@ -54,7 +54,7 @@ public class RFRanker : Ranker
 	{
 		var rf = new RankerFactory();
 		logger.LogInformation("Training starts...");
-		PrintLogLn(new int[] { 9, 9, 11 }, new string[] { "bag", _scorer.Name() + "-B", _scorer.Name() + "-OOB" });
+		PrintLogLn(new int[] { 9, 9, 11 }, new string[] { "bag", Scorer.Name() + "-B", Scorer.Name() + "-OOB" });
 
 		double[] impacts = null;
 
@@ -63,8 +63,8 @@ public class RFRanker : Ranker
 		{
 			var sp = new Sampler();
 			// Create a "bag" of samples by random sampling from the training set
-			var bag = sp.DoSampling(_samples, subSamplingRate, true);
-			var r = (LambdaMART)rf.CreateRanker(rType, bag, _features, _scorer);
+			var bag = sp.DoSampling(Samples, subSamplingRate, true);
+			var r = (LambdaMART)rf.CreateRanker(rType, bag, Features, Scorer);
 
 			r.Init();
 			r.Learn();
@@ -86,14 +86,14 @@ public class RFRanker : Ranker
 		}
 
 		// Finishing up
-		_scoreOnTrainingData = _scorer.Score(Rank(_samples));
+		ScoreOnTrainingData = Scorer.Score(Rank(Samples));
 		logger.LogInformation("Finished successfully.");
-		logger.LogInformation(_scorer.Name() + " on training data: " + SimpleMath.Round(_scoreOnTrainingData, 4));
+		logger.LogInformation(Scorer.Name() + " on training data: " + SimpleMath.Round(ScoreOnTrainingData, 4));
 
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
-			_bestScoreOnValidationData = _scorer.Score(Rank(_validationSamples));
-			logger.LogInformation(_scorer.Name() + " on validation data: " + SimpleMath.Round(_bestScoreOnValidationData, 4));
+			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
+			logger.LogInformation(Scorer.Name() + " on validation data: " + SimpleMath.Round(BestScoreOnValidationData, 4));
 		}
 
 		// Print feature impacts
@@ -103,7 +103,7 @@ public class RFRanker : Ranker
 			var ftrsSorted = MergeSorter.Sort(impacts, false);
 			foreach (var ftr in ftrsSorted)
 			{
-				logger.LogInformation(" Feature " + _features[ftr] + " reduced error " + impacts[ftr]);
+				logger.LogInformation(" Feature " + Features[ftr] + " reduced error " + impacts[ftr]);
 			}
 		}
 	}
@@ -133,7 +133,7 @@ public class RFRanker : Ranker
 	public override string Model()
 	{
 		var output = new StringBuilder();
-		output.Append("## " + Name() + "\n");
+		output.Append("## " + Name + "\n");
 		output.Append("## No. of bags = " + nBag + "\n");
 		output.Append("## Sub-sampling = " + subSamplingRate + "\n");
 		output.Append("## Feature-sampling = " + featureSamplingRate + "\n");
@@ -173,7 +173,7 @@ public class RFRanker : Ranker
 			}
 		}
 
-		_features = uniqueFeatures.ToArray();
+		Features = uniqueFeatures.ToArray();
 	}
 
 	public override void PrintParameters()
@@ -187,7 +187,7 @@ public class RFRanker : Ranker
 		logger.LogInformation("Learning rate: " + learningRate);
 	}
 
-	public override string Name() => "Random Forests";
+	public override string Name => "Random Forests";
 
 	public Ensemble[] GetEnsembles() => ensembles;
 }

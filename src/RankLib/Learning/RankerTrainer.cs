@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
@@ -8,10 +8,18 @@ namespace RankLib.Learning;
 
 public class RankerTrainer
 {
-	private static readonly ILogger<RankerTrainer> logger = NullLogger<RankerTrainer>.Instance;
+	private readonly ILoggerFactory _loggerFactory;
+	private readonly ILogger<RankerTrainer> _logger;
 
-	protected RankerFactory rf = new();
+	protected RankerFactory rf;
 	protected double trainingTime = 0;
+
+	public RankerTrainer(ILoggerFactory? loggerFactory = null)
+	{
+		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+		_logger = _loggerFactory.CreateLogger<RankerTrainer>();
+		rf = new RankerFactory(_loggerFactory);
+	}
 
 	public Ranker Train(RankerType type, List<RankList> train, int[] features, MetricScorer scorer)
 	{
@@ -38,5 +46,5 @@ public class RankerTrainer
 
 	public double GetTrainingTime() => trainingTime;
 
-	public void PrintTrainingTime() => logger.LogInformation($"Training time: {SimpleMath.Round((trainingTime) / 1e9, 2)} seconds");
+	public void PrintTrainingTime() => _logger.LogInformation($"Training time: {SimpleMath.Round((trainingTime) / 1e9, 2)} seconds");
 }

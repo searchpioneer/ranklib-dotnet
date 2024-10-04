@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
@@ -29,7 +29,7 @@ public class LinearRegRank : Ranker
 
 		// closed form solution: beta = ((xTx - lambda*I)^(-1)) * (xTy)
 		var nVar = 0;
-		foreach (var rl in _samples)
+		foreach (var rl in Samples)
 		{
 			var c = rl.GetFeatureCount();
 			if (c > nVar)
@@ -46,9 +46,9 @@ public class LinearRegRank : Ranker
 		var xTy = new double[nVar];
 		Array.Fill(xTy, 0.0);
 
-		for (var s = 0; s < _samples.Count; s++)
+		for (var s = 0; s < Samples.Count; s++)
 		{
-			var rl = _samples[s];
+			var rl = Samples[s];
 			for (var i = 0; i < rl.Count; i++)
 			{
 				var point = rl[i];
@@ -78,22 +78,22 @@ public class LinearRegRank : Ranker
 
 		weight = Solve(xTx, xTy);
 
-		_scoreOnTrainingData = SimpleMath.Round(_scorer.Score(Rank(_samples)), 4);
+		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		logger.LogInformation("Finished successfully.");
-		logger.LogInformation($"{_scorer.Name()} on training data: {_scoreOnTrainingData}");
+		logger.LogInformation($"{Scorer.Name()} on training data: {ScoreOnTrainingData}");
 
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
-			_bestScoreOnValidationData = _scorer.Score(Rank(_validationSamples));
-			logger.LogInformation($"{_scorer.Name()} on validation data: {SimpleMath.Round(_bestScoreOnValidationData, 4)}");
+			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
+			logger.LogInformation($"{Scorer.Name()} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 	}
 
 	public override double Eval(DataPoint p)
 	{
 		var score = weight[weight.Length - 1];
-		for (var i = 0; i < _features.Length; i++)
-			score += weight[i] * p.GetFeatureValue(_features[i]);
+		for (var i = 0; i < Features.Length; i++)
+			score += weight[i] * p.GetFeatureValue(Features[i]);
 		return score;
 	}
 
@@ -103,9 +103,9 @@ public class LinearRegRank : Ranker
 	{
 		var output = new StringBuilder();
 		output.Append("0:" + weight[0] + " ");
-		for (var i = 0; i < _features.Length; i++)
+		for (var i = 0; i < Features.Length; i++)
 		{
-			output.Append(_features[i] + ":" + weight[i]);
+			output.Append(Features[i] + ":" + weight[i]);
 			if (i != weight.Length - 1)
 				output.Append(" ");
 		}
@@ -115,7 +115,7 @@ public class LinearRegRank : Ranker
 	public override string Model()
 	{
 		var output = new StringBuilder();
-		output.Append("## " + Name() + "\n");
+		output.Append("## " + Name + "\n");
 		output.Append("## Lambda = " + lambda + "\n");
 		output.Append(ToString());
 		return output.ToString();
@@ -146,7 +146,7 @@ public class LinearRegRank : Ranker
 				var values = kvp.Values();
 
 				weight = new double[keys.Count];
-				_features = new int[keys.Count - 1];
+				Features = new int[keys.Count - 1];
 
 				var idx = 0;
 				for (var i = 0; i < keys.Count; i++)
@@ -154,7 +154,7 @@ public class LinearRegRank : Ranker
 					var fid = int.Parse(keys[i]);
 					if (fid > 0)
 					{
-						_features[idx] = fid;
+						Features[idx] = fid;
 						weight[idx] = double.Parse(values[i]);
 						idx++;
 					}
@@ -173,7 +173,7 @@ public class LinearRegRank : Ranker
 
 	public override void PrintParameters() => logger.LogInformation("L2-norm regularization: lambda = " + lambda);
 
-	public override string Name() => "Linear Regression";
+	public override string Name => "Linear Regression";
 
 	protected double[] Solve(double[][] A, double[] B)
 	{

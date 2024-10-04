@@ -7,16 +7,21 @@ namespace RankLib.Metric;
 
 public class APScorer : MetricScorer
 {
-	private static readonly ILogger<APScorer> logger = NullLogger<APScorer>.Instance;
+	private readonly ILogger<APScorer> _logger;
 
 	// This class computes MAP from the *WHOLE* ranked list. "K" will be completely ignored.
 	// The reason is, if you want MAP@10, you really should be using NDCG@10 or ERR@10 instead.
+	protected Dictionary<string, int>? relDocCount;
 
-	protected Dictionary<string, int>? relDocCount = null;
+	public APScorer(ILogger<APScorer>? logger)
+	{
+		_logger = logger;
 
-	public APScorer() => _k = 0; // consider the whole list
+		// consider the whole list
+		_k = 0;
+	}
 
-	public override MetricScorer Copy() => new APScorer();
+	public override MetricScorer Copy() => new APScorer(_logger);
 
 	public override void LoadExternalRelevanceJudgment(string qrelFile)
 	{
@@ -43,7 +48,7 @@ public class APScorer : MetricScorer
 				}
 			}
 
-			logger.LogInformation($"Relevance judgment file loaded. [#q={relDocCount.Count}]");
+			_logger.LogInformation("Relevance judgment file loaded. [#q={RelDocCount}]", relDocCount.Count);
 		}
 		catch (IOException ex)
 		{

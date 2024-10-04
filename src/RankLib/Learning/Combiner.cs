@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using RankLib.Learning.Tree;
 using RankLib.Utilities;
 
@@ -20,7 +20,7 @@ public class Combiner
 		try
 		{
 			using var writer = new StreamWriter(outputFile, false, Encoding.ASCII);
-			writer.WriteLine("## " + new RFRanker().Name());
+			writer.WriteLine("## " + new RFRanker().Name);
 
 			foreach (var file in files)
 			{

@@ -1,23 +1,32 @@
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+
 namespace RankLib.Metric;
 
 public class MetricScorerFactory
 {
-	private static readonly MetricScorer[] mFactory =
-	[
-		new APScorer(),
-		new NDCGScorer(),
-		new DCGScorer(),
-		new PrecisionScorer(),
-		new ReciprocalRankScorer(),
-		new BestAtKScorer(),
-		new ERRScorer()
-	];
+	private readonly ILoggerFactory? _loggerFactory;
+
+	private readonly MetricScorer[] mFactory;
 
 	private static readonly Dictionary<string, MetricScorer> map = new();
 
-	public MetricScorerFactory()
+	public MetricScorerFactory(ILoggerFactory? loggerFactory = null)
 	{
-		map["MAP"] = new APScorer();
+		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+
+		mFactory =
+		[
+			new APScorer(_loggerFactory.CreateLogger<APScorer>()),
+			new NDCGScorer(),
+			new DCGScorer(),
+			new PrecisionScorer(),
+			new ReciprocalRankScorer(),
+			new BestAtKScorer(),
+			new ERRScorer()
+		];
+
+		map["MAP"] = new APScorer(_loggerFactory.CreateLogger<APScorer>());
 		map["NDCG"] = new NDCGScorer();
 		map["DCG"] = new DCGScorer();
 		map["P"] = new PrecisionScorer();

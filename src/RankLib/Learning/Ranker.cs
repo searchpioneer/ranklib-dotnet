@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
@@ -8,41 +8,36 @@ namespace RankLib.Learning;
 
 public abstract class Ranker
 {
-	// TODO: logging
-	private static readonly ILogger<Ranker> _logger = NullLogger<Ranker>.Instance;
+	private readonly ILogger<Ranker> _logger;
 
-	protected List<RankList> _samples = new List<RankList>(); // training samples
-	protected int[] _features = null;
-	protected MetricScorer _scorer = null;
-	protected double _scoreOnTrainingData = 0.0;
-	protected double _bestScoreOnValidationData = 0.0;
+	protected List<RankList> Samples = new(); // training samples
+	public int[]? Features { get; set; }
+	public MetricScorer? Scorer { get; set; }
 
-	protected List<RankList> _validationSamples = null;
-	protected StringBuilder _logBuf = new StringBuilder(1000);
+	protected double ScoreOnTrainingData = 0.0;
+	protected double BestScoreOnValidationData = 0.0;
 
-	protected Ranker() { }
+	protected List<RankList> ValidationSamples = null;
+	protected StringBuilder LogBuf = new(1000);
 
-	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer)
+	protected Ranker(ILogger<Ranker>? logger = null) => _logger = logger ?? NullLogger<Ranker>.Instance;
+
+	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<Ranker>? logger = null)
 	{
-		_samples = samples;
-		_features = features;
-		_scorer = scorer;
+		Samples = samples;
+		Features = features;
+		Scorer = scorer;
+		_logger = logger ?? NullLogger<Ranker>.Instance;
 	}
 
 	// Utility functions
-	public void SetTrainingSet(List<RankList> samples) => _samples = samples;
+	public void SetTrainingSet(List<RankList> samples) => Samples = samples;
 
-	public void SetFeatures(int[] features) => _features = features;
+	public void SetValidationSet(List<RankList> samples) => ValidationSamples = samples;
 
-	public void SetValidationSet(List<RankList> samples) => _validationSamples = samples;
+	public double GetScoreOnTrainingData() => ScoreOnTrainingData;
 
-	public void SetMetricScorer(MetricScorer scorer) => _scorer = scorer;
-
-	public double GetScoreOnTrainingData() => _scoreOnTrainingData;
-
-	public double GetScoreOnValidationData() => _bestScoreOnValidationData;
-
-	public int[] GetFeatures() => _features;
+	public double GetScoreOnValidationData() => BestScoreOnValidationData;
 
 	public virtual RankList Rank(RankList rl)
 	{
@@ -96,17 +91,17 @@ public abstract class Ranker
 				var msg = msgs[i];
 				if (msg.Length > len[i])
 				{
-					_logBuf.Append(msg.Substring(0, len[i]));
+					LogBuf.Append(msg.Substring(0, len[i]));
 				}
 				else
 				{
-					_logBuf.Append(msg);
+					LogBuf.Append(msg);
 					for (var j = len[i] - msg.Length; j > 0; j--)
 					{
-						_logBuf.Append(' ');
+						LogBuf.Append(' ');
 					}
 				}
-				_logBuf.Append(" | ");
+				LogBuf.Append(" | ");
 			}
 		}
 	}
@@ -124,10 +119,10 @@ public abstract class Ranker
 	{
 		if (_logger.IsEnabled(LogLevel.Information))
 		{
-			if (_logBuf.Length > 0)
+			if (LogBuf.Length > 0)
 			{
-				_logger.LogInformation(_logBuf.ToString());
-				_logBuf.Clear();
+				_logger.LogInformation(LogBuf.ToString());
+				LogBuf.Clear();
 			}
 		}
 	}
@@ -148,6 +143,6 @@ public abstract class Ranker
 	public abstract override string ToString();
 	public abstract string Model();
 	public abstract void LoadFromString(string fullText);
-	public abstract string Name();
+	public abstract string Name { get; }
 	public abstract void PrintParameters();
 }

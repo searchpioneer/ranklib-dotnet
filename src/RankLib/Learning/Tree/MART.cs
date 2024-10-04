@@ -1,21 +1,27 @@
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 
 namespace RankLib.Learning.Tree;
 
 public class MART : LambdaMART
 {
-	public MART()
+	private readonly ILogger<MART> _logger;
+
+	public MART(ILogger<MART>? logger = null) : base(logger)
 	{
+		_logger = logger ?? NullLogger<MART>.Instance;
 	}
 
-	public MART(List<RankList> samples, int[] features, MetricScorer scorer)
-		: base(samples, features, scorer)
+	public MART(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<MART>? logger = null)
+		: base(samples, features, scorer, logger)
 	{
+		_logger = logger ?? NullLogger<MART>.Instance;
 	}
 
-	public override Ranker CreateNew() => new MART();
+	public override Ranker CreateNew() => new MART(_logger);
 
-	public override string Name() => "MART";
+	public override string Name => "MART";
 
 	protected override void ComputePseudoResponses()
 	{

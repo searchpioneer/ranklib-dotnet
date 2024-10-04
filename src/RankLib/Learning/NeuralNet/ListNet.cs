@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 using RankLib.Utilities;
@@ -14,7 +14,8 @@ public class ListNet : RankNet
 	public static double learningRate = 0.00001;
 	public static int nHiddenLayer = 0; // FIXED, it doesn't work with hidden layer
 
-	public ListNet() { }
+	public ListNet() : base()
+	{ }
 
 	public ListNet(List<RankList> samples, int[] features, MetricScorer scorer)
 		: base(samples, features, scorer)
@@ -47,9 +48,9 @@ public class ListNet : RankNet
 		_error = 0.0;
 		double sumLabelExp = 0;
 		double sumScoreExp = 0;
-		for (var i = 0; i < _samples.Count; i++)
+		for (var i = 0; i < Samples.Count; i++)
 		{
-			var rl = _samples[i];
+			var rl = Samples[i];
 			var scores = new double[rl.Count];
 			double err = 0;
 			for (var j = 0; j < rl.Count; j++)
@@ -74,10 +75,10 @@ public class ListNet : RankNet
 		logger.LogInformation("Initializing...");
 
 		// Set up the network
-		SetInputOutput(_features.Length, 1, 1);
+		SetInputOutput(Features.Length, 1, 1);
 		Wire();
 
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
 			for (var i = 0; i < _layers.Count; i++)
 			{
@@ -91,13 +92,13 @@ public class ListNet : RankNet
 	public override void Learn()
 	{
 		logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 14, 9, 9 }, new[] { "#epoch", "C.E. Loss", _scorer.Name() + "-T", _scorer.Name() + "-V" });
+		PrintLogLn(new[] { 7, 14, 9, 9 }, new[] { "#epoch", "C.E. Loss", Scorer.Name() + "-T", Scorer.Name() + "-V" });
 
 		for (var i = 1; i <= nIteration; i++)
 		{
-			for (var j = 0; j < _samples.Count; j++)
+			for (var j = 0; j < Samples.Count; j++)
 			{
-				var labels = FeedForward(_samples[j]);
+				var labels = FeedForward(Samples[j]);
 				BackPropagate(labels);
 				ClearNeuronOutputs();
 			}
@@ -106,15 +107,15 @@ public class ListNet : RankNet
 
 			if (i % 1 == 0)
 			{
-				_scoreOnTrainingData = _scorer.Score(Rank(_samples));
-				PrintLog(new[] { 9 }, new[] { SimpleMath.Round(_scoreOnTrainingData, 4).ToString() });
+				ScoreOnTrainingData = Scorer.Score(Rank(Samples));
+				PrintLog(new[] { 9 }, new[] { SimpleMath.Round(ScoreOnTrainingData, 4).ToString() });
 
-				if (_validationSamples != null)
+				if (ValidationSamples != null)
 				{
-					var score = _scorer.Score(Rank(_validationSamples));
-					if (score > _bestScoreOnValidationData)
+					var score = Scorer.Score(Rank(ValidationSamples));
+					if (score > BestScoreOnValidationData)
 					{
-						_bestScoreOnValidationData = score;
+						BestScoreOnValidationData = score;
 						SaveBestModelOnValidation();
 					}
 					PrintLog(new[] { 9 }, new[] { SimpleMath.Round(score, 4).ToString() });
@@ -124,19 +125,19 @@ public class ListNet : RankNet
 		}
 
 		// Restore the best model if validation data is used
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
 			RestoreBestModelOnValidation();
 		}
 
-		_scoreOnTrainingData = SimpleMath.Round(_scorer.Score(Rank(_samples)), 4);
+		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		logger.LogInformation("Finished successfully.");
-		logger.LogInformation($"{_scorer.Name} on training data: {_scoreOnTrainingData}");
+		logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
 
-		if (_validationSamples != null)
+		if (ValidationSamples != null)
 		{
-			_bestScoreOnValidationData = _scorer.Score(Rank(_validationSamples));
-			logger.LogInformation($"{_scorer.Name} on validation data: {SimpleMath.Round(_bestScoreOnValidationData, 4)}");
+			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
+			logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 	}
 
@@ -149,14 +150,14 @@ public class ListNet : RankNet
 	public override string Model()
 	{
 		var output = new System.Text.StringBuilder();
-		output.Append($"## {Name()}\n");
+		output.Append($"## {Name}\n");
 		output.Append($"## Epochs = {nIteration}\n");
-		output.Append($"## No. of features = {_features.Length}\n");
+		output.Append($"## No. of features = {Features.Length}\n");
 
 		// Print used features
-		for (var i = 0; i < _features.Length; i++)
+		for (var i = 0; i < Features.Length; i++)
 		{
-			output.Append(_features[i] + (i == _features.Length - 1 ? "" : " "));
+			output.Append(Features[i] + (i == Features.Length - 1 ? "" : " "));
 		}
 		output.Append("\n");
 
@@ -186,10 +187,10 @@ public class ListNet : RankNet
 				// Load the network
 				// The first line contains feature information
 				var tmp = l[0].Split(' ');
-				_features = new int[tmp.Length];
+				Features = new int[tmp.Length];
 				for (var i = 0; i < tmp.Length; i++)
 				{
-					_features[i] = int.Parse(tmp[i]);
+					Features[i] = int.Parse(tmp[i]);
 				}
 
 				// The 2nd line is a scalar indicating the number of hidden layers
@@ -204,7 +205,7 @@ public class ListNet : RankNet
 				}
 
 				// Create the network
-				SetInputOutput(_features.Length, 1);
+				SetInputOutput(Features.Length, 1);
 				for (var j = 0; j < nHiddenLayer; j++)
 				{
 					AddHiddenLayer(nn[j]);
@@ -237,5 +238,5 @@ public class ListNet : RankNet
 		logger.LogInformation($"Learning rate: {learningRate}");
 	}
 
-	public override string Name() => "ListNet";
+	public override string Name => "ListNet";
 }

@@ -8,7 +8,7 @@ namespace RankLib.Features;
 public class FeatureManager
 {
 	// Fields
-	private static readonly ILogger<FeatureManager> Logger = NullLogger<FeatureManager>.Instance;
+	internal static ILogger<FeatureManager> Logger = NullLogger<FeatureManager>.Instance;
 
 	// Static main method
 	public static void Main(string[] args)
@@ -175,12 +175,11 @@ public class FeatureManager
 		{
 			using (var inStream = FileUtils.SmartReader(inputFile))
 			{
-				string content = null;
 				var lastID = "";
 				var hasRel = false;
 				var rl = new List<DataPoint>(10000);
 
-				while ((content = inStream.ReadLine()) != null)
+				while (inStream.ReadLine() is { } content)
 				{
 					content = content.Trim();
 					if (content.Length == 0 || content[0] == '#')

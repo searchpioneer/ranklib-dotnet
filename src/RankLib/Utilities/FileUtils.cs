@@ -1,4 +1,4 @@
-using System.IO.Compression;
+﻿using System.IO.Compression;
 using System.Text;
 
 namespace RankLib.Utilities;
@@ -21,25 +21,15 @@ public static class FileUtils
 
 	public static string Read(string filename, string encoding)
 	{
-		var content = new StringBuilder(1000);
-
 		try
 		{
 			using var reader = SmartReader(filename, encoding);
-			var buffer = new char[BufSize];
-			int numRead;
-
-			while ((numRead = reader.Read(buffer, 0, buffer.Length)) != -1)
-			{
-				content.Append(buffer, 0, numRead);
-			}
+			return reader.ReadToEnd();
 		}
 		catch (Exception e)
 		{
 			throw new InvalidOperationException("Error reading file", e);
 		}
-
-		return content.ToString();
 	}
 
 	public static List<string> ReadLine(string filename, string encoding)
