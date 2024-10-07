@@ -10,13 +10,13 @@ public class DCGScorer : MetricScorer
 
 	public DCGScorer()
 	{
-		_k = 10;
+		K = 10;
 		InitCache();
 	}
 
 	public DCGScorer(int k)
 	{
-		_k = k;
+		K = k;
 		InitCache();
 	}
 
@@ -49,8 +49,8 @@ public class DCGScorer : MetricScorer
 			return 0;
 		}
 
-		var size = _k;
-		if (_k > rl.Count || _k <= 0)
+		var size = K;
+		if (K > rl.Count || K <= 0)
 		{
 			size = rl.Count;
 		}
@@ -62,7 +62,7 @@ public class DCGScorer : MetricScorer
 	public override double[][] SwapChange(RankList rl)
 	{
 		var rel = GetRelevanceLabels(rl);
-		var size = (rl.Count > _k) ? _k : rl.Count;
+		var size = (rl.Count > K) ? K : rl.Count;
 		var changes = new double[rl.Count][];
 		for (var i = 0; i < rl.Count; i++)
 		{
@@ -80,7 +80,7 @@ public class DCGScorer : MetricScorer
 		return changes;
 	}
 
-	public override string Name() => "DCG@" + _k;
+	public override string Name => "DCG@" + K;
 
 	protected double GetDCG(int[] rel, int topK)
 	{

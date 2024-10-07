@@ -9,7 +9,8 @@ namespace RankLib.Learning.Tree;
 
 public class RFRanker : Ranker
 {
-	private static readonly ILogger<RFRanker> logger = NullLogger<RFRanker>.Instance;
+	private readonly ILoggerFactory _loggerFactory;
+	private readonly ILogger<RFRanker> _logger;
 
 	// Parameters
 	// [a] general bagging parameters
@@ -28,14 +29,23 @@ public class RFRanker : Ranker
 	// Variables
 	protected Ensemble[] ensembles = null; // bag of ensembles
 
-	public RFRanker() : base() { }
+	public RFRanker(ILoggerFactory? loggerFactory = null) : base((loggerFactory ?? NullLoggerFactory.Instance)
+		.CreateLogger<RFRanker>())
+	{
+		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+		_logger = _loggerFactory.CreateLogger<RFRanker>();
+	}
 
-	public RFRanker(List<RankList> samples, int[] features, MetricScorer scorer)
-		: base(samples, features, scorer) { }
+	public RFRanker(List<RankList> samples, int[] features, MetricScorer scorer, ILoggerFactory? loggerFactory = null)
+		: base(samples, features, scorer, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<RFRanker>())
+	{
+		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+		_logger = _loggerFactory.CreateLogger<RFRanker>();
+	}
 
 	public override void Init()
 	{
-		logger.LogInformation("Initializing...");
+		_logger.LogInformation("Initializing...");
 		ensembles = new Ensemble[nBag];
 
 		// Initialize parameters for the tree(s) built in each bag
@@ -52,9 +62,9 @@ public class RFRanker : Ranker
 
 	public override void Learn()
 	{
-		var rf = new RankerFactory();
-		logger.LogInformation("Training starts...");
-		PrintLogLn(new int[] { 9, 9, 11 }, new string[] { "bag", Scorer.Name() + "-B", Scorer.Name() + "-OOB" });
+		var rf = new RankerFactory(_loggerFactory);
+		_logger.LogInformation("Training starts...");
+		PrintLogLn(new int[] { 9, 9, 11 }, new string[] { "bag", Scorer.Name + "-B", Scorer.Name + "-OOB" });
 
 		double[] impacts = null;
 
@@ -87,23 +97,23 @@ public class RFRanker : Ranker
 
 		// Finishing up
 		ScoreOnTrainingData = Scorer.Score(Rank(Samples));
-		logger.LogInformation("Finished successfully.");
-		logger.LogInformation(Scorer.Name() + " on training data: " + SimpleMath.Round(ScoreOnTrainingData, 4));
+		_logger.LogInformation("Finished successfully.");
+		_logger.LogInformation(Scorer.Name + " on training data: " + SimpleMath.Round(ScoreOnTrainingData, 4));
 
 		if (ValidationSamples != null)
 		{
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			logger.LogInformation(Scorer.Name() + " on validation data: " + SimpleMath.Round(BestScoreOnValidationData, 4));
+			_logger.LogInformation(Scorer.Name + " on validation data: " + SimpleMath.Round(BestScoreOnValidationData, 4));
 		}
 
 		// Print feature impacts
-		logger.LogInformation("-- FEATURE IMPACTS");
-		if (logger.IsEnabled(LogLevel.Information))
+		_logger.LogInformation("-- FEATURE IMPACTS");
+		if (_logger.IsEnabled(LogLevel.Information))
 		{
 			var ftrsSorted = MergeSorter.Sort(impacts, false);
 			foreach (var ftr in ftrsSorted)
 			{
-				logger.LogInformation(" Feature " + Features[ftr] + " reduced error " + impacts[ftr]);
+				_logger.LogInformation(" Feature " + Features[ftr] + " reduced error " + impacts[ftr]);
 			}
 		}
 	}
@@ -118,7 +128,7 @@ public class RFRanker : Ranker
 		return s / ensembles.Length;
 	}
 
-	public override Ranker CreateNew() => new RFRanker();
+	public override Ranker CreateNew() => new RFRanker(_loggerFactory);
 
 	public override string ToString()
 	{
@@ -178,13 +188,13 @@ public class RFRanker : Ranker
 
 	public override void PrintParameters()
 	{
-		logger.LogInformation("No. of bags: " + nBag);
-		logger.LogInformation("Sub-sampling: " + subSamplingRate);
-		logger.LogInformation("Feature-sampling: " + featureSamplingRate);
-		logger.LogInformation("No. of trees: " + nTrees);
-		logger.LogInformation("No. of leaves: " + nTreeLeaves);
-		logger.LogInformation("No. of threshold candidates: " + nThreshold);
-		logger.LogInformation("Learning rate: " + learningRate);
+		_logger.LogInformation("No. of bags: " + nBag);
+		_logger.LogInformation("Sub-sampling: " + subSamplingRate);
+		_logger.LogInformation("Feature-sampling: " + featureSamplingRate);
+		_logger.LogInformation("No. of trees: " + nTrees);
+		_logger.LogInformation("No. of leaves: " + nTreeLeaves);
+		_logger.LogInformation("No. of threshold candidates: " + nThreshold);
+		_logger.LogInformation("Learning rate: " + learningRate);
 	}
 
 	public override string Name => "Random Forests";

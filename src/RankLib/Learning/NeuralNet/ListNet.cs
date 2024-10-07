@@ -7,19 +7,19 @@ namespace RankLib.Learning.NeuralNet;
 
 public class ListNet : RankNet
 {
-	private static readonly ILogger logger = NullLogger.Instance;
+	private readonly ILogger<ListNet> _logger;
 
 	// Parameters
 	public static int nIteration = 1500;
 	public static double learningRate = 0.00001;
 	public static int nHiddenLayer = 0; // FIXED, it doesn't work with hidden layer
 
-	public ListNet() : base()
-	{ }
+	public ListNet(ILogger<ListNet>? logger = null) : base(logger) =>
+		_logger = logger ?? NullLogger<ListNet>.Instance;
 
-	public ListNet(List<RankList> samples, int[] features, MetricScorer scorer)
-		: base(samples, features, scorer)
-	{ }
+	public ListNet(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<ListNet>? logger = null)
+		: base(samples, features, scorer) =>
+		_logger = logger ?? NullLogger<ListNet>.Instance;
 
 	protected float[] FeedForward(RankList rl)
 	{
@@ -72,7 +72,7 @@ public class ListNet : RankNet
 
 	public override void Init()
 	{
-		logger.LogInformation("Initializing...");
+		_logger.LogInformation("Initializing...");
 
 		// Set up the network
 		SetInputOutput(Features.Length, 1, 1);
@@ -91,8 +91,8 @@ public class ListNet : RankNet
 
 	public override void Learn()
 	{
-		logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 14, 9, 9 }, new[] { "#epoch", "C.E. Loss", Scorer.Name() + "-T", Scorer.Name() + "-V" });
+		_logger.LogInformation("Training starts...");
+		PrintLogLn(new[] { 7, 14, 9, 9 }, new[] { "#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V" });
 
 		for (var i = 1; i <= nIteration; i++)
 		{
@@ -131,19 +131,19 @@ public class ListNet : RankNet
 		}
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
-		logger.LogInformation("Finished successfully.");
-		logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
+		_logger.LogInformation("Finished successfully.");
+		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
 
 		if (ValidationSamples != null)
 		{
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
+			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 	}
 
 	public override double Eval(DataPoint p) => base.Eval(p);
 
-	public override Ranker CreateNew() => new ListNet();
+	public override Ranker CreateNew() => new ListNet(_logger);
 
 	public override string ToString() => base.ToString();
 
@@ -172,57 +172,54 @@ public class ListNet : RankNet
 	{
 		try
 		{
-			using (var inStream = new StringReader(fullText))
+			using var inStream = new StringReader(fullText);
+			var l = new List<string>();
+			while (inStream.ReadLine() is { } content)
 			{
-				string content;
-				var l = new List<string>();
-				while ((content = inStream.ReadLine()) != null)
-				{
-					content = content.Trim();
-					if (string.IsNullOrEmpty(content) || content.StartsWith("##"))
-						continue;
-					l.Add(content);
-				}
+				content = content.Trim();
+				if (string.IsNullOrEmpty(content) || content.StartsWith("##"))
+					continue;
+				l.Add(content);
+			}
 
-				// Load the network
-				// The first line contains feature information
-				var tmp = l[0].Split(' ');
-				Features = new int[tmp.Length];
-				for (var i = 0; i < tmp.Length; i++)
-				{
-					Features[i] = int.Parse(tmp[i]);
-				}
+			// Load the network
+			// The first line contains feature information
+			var tmp = l[0].Split(' ');
+			Features = new int[tmp.Length];
+			for (var i = 0; i < tmp.Length; i++)
+			{
+				Features[i] = int.Parse(tmp[i]);
+			}
 
-				// The 2nd line is a scalar indicating the number of hidden layers
-				var nHiddenLayer = int.Parse(l[1]);
-				var nn = new int[nHiddenLayer];
+			// The 2nd line is a scalar indicating the number of hidden layers
+			var nHiddenLayer = int.Parse(l[1]);
+			var nn = new int[nHiddenLayer];
 
-				// The next @nHiddenLayer lines contain the number of neurons in each layer
-				var index = 2;
-				for (; index < 2 + nHiddenLayer; index++)
-				{
-					nn[index - 2] = int.Parse(l[index]);
-				}
+			// The next @nHiddenLayer lines contain the number of neurons in each layer
+			var index = 2;
+			for (; index < 2 + nHiddenLayer; index++)
+			{
+				nn[index - 2] = int.Parse(l[index]);
+			}
 
-				// Create the network
-				SetInputOutput(Features.Length, 1);
-				for (var j = 0; j < nHiddenLayer; j++)
-				{
-					AddHiddenLayer(nn[j]);
-				}
-				Wire();
+			// Create the network
+			SetInputOutput(Features.Length, 1);
+			for (var j = 0; j < nHiddenLayer; j++)
+			{
+				AddHiddenLayer(nn[j]);
+			}
+			Wire();
 
-				// Fill in weights
-				for (; index < l.Count; index++) // Loop through all layers
+			// Fill in weights
+			for (; index < l.Count; index++) // Loop through all layers
+			{
+				var s = l[index].Split(' ');
+				var iLayer = int.Parse(s[0]); // Which layer?
+				var iNeuron = int.Parse(s[1]); // Which neuron?
+				var n = _layers[iLayer].Get(iNeuron);
+				for (var k = 0; k < n.GetOutLinks().Count; k++)
 				{
-					var s = l[index].Split(' ');
-					var iLayer = int.Parse(s[0]); // Which layer?
-					var iNeuron = int.Parse(s[1]); // Which neuron?
-					var n = _layers[iLayer].Get(iNeuron);
-					for (var k = 0; k < n.GetOutLinks().Count; k++)
-					{
-						n.GetOutLinks()[k].Weight = double.Parse(s[k + 2]);
-					}
+					n.GetOutLinks()[k].Weight = double.Parse(s[k + 2]);
 				}
 			}
 		}
@@ -234,8 +231,8 @@ public class ListNet : RankNet
 
 	public override void PrintParameters()
 	{
-		logger.LogInformation($"No. of epochs: {nIteration}");
-		logger.LogInformation($"Learning rate: {learningRate}");
+		_logger.LogInformation($"No. of epochs: {nIteration}");
+		_logger.LogInformation($"Learning rate: {learningRate}");
 	}
 
 	public override string Name => "ListNet";

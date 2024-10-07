@@ -4,13 +4,13 @@ namespace RankLib.Metric;
 
 public class BestAtKScorer : MetricScorer
 {
-	public BestAtKScorer() => _k = 10;
+	public BestAtKScorer() => K = 10;
 
-	public BestAtKScorer(int k) => _k = k;
+	public BestAtKScorer(int k) => K = k;
 
 	public override double Score(RankList rl)
 	{
-		var k = MaxToK(rl, _k - 1);
+		var k = MaxToK(rl, K - 1);
 		return rl[k].Label;
 	}
 
@@ -45,7 +45,7 @@ public class BestAtKScorer : MetricScorer
 		return max_i;
 	}
 
-	public override string Name() => "Best@" + _k;
+	public override string Name => "Best@" + K;
 
 	public override double[][] SwapChange(RankList rl)
 	{
@@ -64,7 +64,7 @@ public class BestAtKScorer : MetricScorer
 
 			if (maxVal < v)
 			{
-				if (i < _k)
+				if (i < K)
 				{
 					secondMaxVal = maxVal;
 					maxCount = 0;
@@ -72,7 +72,7 @@ public class BestAtKScorer : MetricScorer
 				maxVal = v;
 				max = i;
 			}
-			else if (maxVal == v && i < _k)
+			else if (maxVal == v && i < K)
 			{
 				maxCount++;
 			}
@@ -97,19 +97,19 @@ public class BestAtKScorer : MetricScorer
 			for (var j = i + 1; j < rl.Count; j++)
 			{
 				double change = 0;
-				if (j < _k || i >= _k)
+				if (j < K || i >= K)
 				{
 					change = 0;
 				}
-				else if (labels[i] == labels[j] || labels[j] == labels[best[_k - 1]])
+				else if (labels[i] == labels[j] || labels[j] == labels[best[K - 1]])
 				{
 					change = 0;
 				}
-				else if (labels[j] > labels[best[_k - 1]])
+				else if (labels[j] > labels[best[K - 1]])
 				{
 					change = labels[j] - labels[best[i]];
 				}
-				else if (labels[i] < labels[best[_k - 1]] || maxCount > 1)
+				else if (labels[i] < labels[best[K - 1]] || maxCount > 1)
 				{
 					change = 0;
 				}

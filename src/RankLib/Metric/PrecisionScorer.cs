@@ -4,16 +4,16 @@ namespace RankLib.Metric;
 
 public class PrecisionScorer : MetricScorer
 {
-	public PrecisionScorer() : base() => _k = 10;
+	public PrecisionScorer() => K = 10;
 
-	public PrecisionScorer(int k) => _k = k;
+	public PrecisionScorer(int k) => K = k;
 
 	public override double Score(RankList rl)
 	{
 		var count = 0;
-		var size = _k;
+		var size = K;
 
-		if (_k > rl.Count || _k <= 0)
+		if (K > rl.Count || K <= 0)
 		{
 			size = rl.Count;
 		}
@@ -29,13 +29,13 @@ public class PrecisionScorer : MetricScorer
 		return (double)count / size;
 	}
 
-	public override MetricScorer Copy() => new PrecisionScorer(_k);
+	public override MetricScorer Copy() => new PrecisionScorer(K);
 
-	public override string Name() => $"P@{_k}";
+	public override string Name => $"P@{K}";
 
 	public override double[][] SwapChange(RankList rl)
 	{
-		var size = (rl.Count > _k) ? _k : rl.Count;
+		var size = (rl.Count > K) ? K : rl.Count;
 
 		var changes = new double[rl.Count][];
 		for (var i = 0; i < rl.Count; i++)

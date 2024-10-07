@@ -9,7 +9,7 @@ namespace RankLib.Learning;
 
 public class CoorAscent : Ranker
 {
-	private static readonly ILogger<CoorAscent> logger = NullLogger<CoorAscent>.Instance;
+	private readonly ILogger<CoorAscent> _logger;
 
 	// Parameters
 	public static int nRestart = 5;
@@ -26,14 +26,15 @@ public class CoorAscent : Ranker
 	protected int currentFeature = -1; // Used only during learning
 	protected double weightChange = -1.0; // Used only during learning
 
-	public CoorAscent() { }
+	public CoorAscent(ILogger<CoorAscent>? logger = null) => _logger = logger ?? NullLogger<CoorAscent>.Instance;
 
-	public CoorAscent(List<RankList> samples, int[] features, MetricScorer scorer)
-		: base(samples, features, scorer) { }
+	public CoorAscent(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<CoorAscent>? logger = null)
+		: base(samples, features, scorer, logger) =>
+		_logger = logger ?? NullLogger<CoorAscent>.Instance;
 
 	public override void Init()
 	{
-		logger.LogInformation("Initializing...");
+		_logger.LogInformation("Initializing...");
 		weight = new double[Features.Length];
 		for (var i = 0; i < weight.Length; i++)
 		{
@@ -50,11 +51,11 @@ public class CoorAscent : Ranker
 		var bestModelScore = 0.0;
 		var sign = new int[] { 1, -1, 0 };
 
-		logger.LogInformation("Training starts...");
+		_logger.LogInformation("Training starts...");
 
 		for (var r = 0; r < nRestart; r++)
 		{
-			logger.LogInformation($"[+] Random restart #{r + 1}/{nRestart}...");
+			_logger.LogInformation($"[+] Random restart #{r + 1}/{nRestart}...");
 			var consecutiveFails = 0;
 
 			for (var i = 0; i < weight.Length; i++)
@@ -71,9 +72,9 @@ public class CoorAscent : Ranker
 
 			while ((weight.Length > 1 && consecutiveFails < weight.Length - 1) || (weight.Length == 1 && consecutiveFails == 0))
 			{
-				logger.LogInformation("Shuffling features' order...");
-				logger.LogInformation("Optimizing weight vector... ");
-				PrintLogLn(new[] { 7, 8, 7 }, new[] { "Feature", "weight", Scorer.Name() });
+				_logger.LogInformation("Shuffling features' order...");
+				_logger.LogInformation("Optimizing weight vector... ");
+				PrintLogLn(new[] { 7, 8, 7 }, new[] { "Feature", "weight", Scorer.Name });
 
 				var shuffledFeatures = GetShuffledFeatures();
 
@@ -177,13 +178,13 @@ public class CoorAscent : Ranker
 		Array.Copy(bestModel, weight, bestModel.Length);
 		currentFeature = -1;
 		ScoreOnTrainingData = Math.Round(Scorer.Score(Rank(Samples)), 4);
-		logger.LogInformation("Finished successfully.");
-		logger.LogInformation($"{Scorer.Name()} on training data: {ScoreOnTrainingData}");
+		_logger.LogInformation("Finished successfully.");
+		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
 
 		if (ValidationSamples != null)
 		{
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			logger.LogInformation($"{Scorer.Name()} on validation data: {Math.Round(BestScoreOnValidationData, 4)}");
+			_logger.LogInformation($"{Scorer.Name} on validation data: {Math.Round(BestScoreOnValidationData, 4)}");
 		}
 	}
 
@@ -224,7 +225,7 @@ public class CoorAscent : Ranker
 		return score;
 	}
 
-	public override Ranker CreateNew() => new CoorAscent();
+	public override Ranker CreateNew() => new CoorAscent(_logger);
 
 	public override string ToString()
 	{
@@ -274,16 +275,16 @@ public class CoorAscent : Ranker
 
 	public override void PrintParameters()
 	{
-		logger.LogInformation($"No. of random restarts: {nRestart}");
-		logger.LogInformation($"No. of iterations to search in each direction: {nMaxIteration}");
-		logger.LogInformation($"Tolerance: {tolerance}");
+		_logger.LogInformation($"No. of random restarts: {nRestart}");
+		_logger.LogInformation($"No. of iterations to search in each direction: {nMaxIteration}");
+		_logger.LogInformation($"Tolerance: {tolerance}");
 		if (regularized)
 		{
-			logger.LogInformation($"Reg. param: {slack}");
+			_logger.LogInformation($"Reg. param: {slack}");
 		}
 		else
 		{
-			logger.LogInformation("Regularization: No");
+			_logger.LogInformation("Regularization: No");
 		}
 	}
 
@@ -364,7 +365,7 @@ public class CoorAscent : Ranker
 			throw RankLibError.Create("These two models use different feature set!!");
 		}
 		Copy(ranker.weight, weight);
-		logger.LogInformation("Model loaded.");
+		_logger.LogInformation("Model loaded.");
 	}
 
 	public double Distance(CoorAscent ca) => GetDistance(weight, ca.weight);

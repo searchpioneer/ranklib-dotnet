@@ -4,11 +4,11 @@ namespace RankLib.Metric;
 
 public class ReciprocalRankScorer : MetricScorer
 {
-	public ReciprocalRankScorer() => _k = 0; // consider the whole list
+	public ReciprocalRankScorer() => K = 0; // consider the whole list
 
 	public override double Score(RankList rl)
 	{
-		var size = (rl.Count > _k) ? _k : rl.Count;
+		var size = (rl.Count > K) ? K : rl.Count;
 		var firstRank = -1;
 
 		for (var i = 0; i < size && firstRank == -1; i++)
@@ -24,13 +24,13 @@ public class ReciprocalRankScorer : MetricScorer
 
 	public override MetricScorer Copy() => new ReciprocalRankScorer();
 
-	public override string Name() => $"RR@{_k}";
+	public override string Name => $"RR@{K}";
 
 	public override double[][] SwapChange(RankList rl)
 	{
 		var firstRank = -1;
 		var secondRank = -1;
-		var size = (rl.Count > _k) ? _k : rl.Count;
+		var size = (rl.Count > K) ? K : rl.Count;
 
 		for (var i = 0; i < size; i++)
 		{

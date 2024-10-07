@@ -10,33 +10,32 @@ namespace RankLib.Learning;
 
 public class RankerFactory
 {
+	private readonly ILoggerFactory _loggerFactory;
+	private readonly ILogger<RankerFactory> _logger;
+
 	// Factory for creating Ranker instances
 	protected Ranker[] Rankers;
 
 	// Map for custom registered rankers
 	protected Dictionary<string, string> map = new();
 
-
-	protected readonly ILoggerFactory LoggerFactory;
-	private readonly ILogger<RankerFactory> _logger;
-
 	public RankerFactory(ILoggerFactory? loggerFactory = null)
 	{
-		LoggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = LoggerFactory.CreateLogger<RankerFactory>();
+		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+		_logger = _loggerFactory.CreateLogger<RankerFactory>();
 
 		Rankers =
 		[
-			new MART(LoggerFactory.CreateLogger<MART>()),
-			new RankBoost(LoggerFactory.CreateLogger<RankBoost>()),
-			new RankNet(LoggerFactory.CreateLogger<RankNet>()),
-			new AdaRank(LoggerFactory.CreateLogger<AdaRank>()),
-			new CoorAscent(),
-			new LambdaRank(),
-			new LambdaMART(LoggerFactory.CreateLogger<LambdaMART>()),
-			new ListNet(),
-			new RFRanker(),
-			new LinearRegRank()
+			new MART(_loggerFactory.CreateLogger<MART>()),
+			new RankBoost(_loggerFactory.CreateLogger<RankBoost>()),
+			new RankNet(_loggerFactory.CreateLogger<RankNet>()),
+			new AdaRank(_loggerFactory.CreateLogger<AdaRank>()),
+			new CoorAscent(_loggerFactory.CreateLogger<CoorAscent>()),
+			new LambdaRank(_loggerFactory.CreateLogger<LambdaRank>()),
+			new LambdaMART(_loggerFactory.CreateLogger<LambdaMART>()),
+			new ListNet(_loggerFactory.CreateLogger<ListNet>()),
+			new RFRanker(_loggerFactory),
+			new LinearRegRank(_loggerFactory.CreateLogger<LinearRegRank>()),
 		];
 
 		// Register all predefined rankers
@@ -81,7 +80,7 @@ public class RankerFactory
 				throw RankLibError.Create($"Type '{typeName}' does not exist.");
 			}
 
-			ranker = (Ranker)Activator.CreateInstance(type, LoggerFactory.CreateLogger(type))!;
+			ranker = (Ranker)Activator.CreateInstance(type, _loggerFactory.CreateLogger(type))!;
 		}
 		catch (TypeLoadException e)
 		{

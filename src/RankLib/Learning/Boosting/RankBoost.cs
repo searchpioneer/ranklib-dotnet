@@ -295,7 +295,7 @@ public class RankBoost : Ranker
 	public override void Learn()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 8, 9, 9, 9, 9 }, new[] { "#iter", "Sel. F.", "Threshold", "Error", Scorer.Name() + "-T", Scorer.Name() + "-V" });
+		PrintLogLn(new[] { 7, 8, 9, 9, 9, 9 }, new[] { "#iter", "Sel. F.", "Threshold", "Error", Scorer.Name + "-T", Scorer.Name + "-V" });
 
 		for (var t = 1; t <= NIteration; t++)
 		{
@@ -343,12 +343,12 @@ public class RankBoost : Ranker
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation("{ScorerName} on training data: {Score}", Scorer.Name(), ScoreOnTrainingData);
+		_logger.LogInformation("{ScorerName} on training data: {Score}", Scorer.Name, ScoreOnTrainingData);
 
 		if (ValidationSamples != null)
 		{
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation("{ScorerName} on validation data: {Score}", Scorer.Name(), SimpleMath.Round(BestScoreOnValidationData, 4));
+			_logger.LogInformation("{ScorerName} on validation data: {Score}", Scorer.Name, SimpleMath.Round(BestScoreOnValidationData, 4));
 		}
 	}
 

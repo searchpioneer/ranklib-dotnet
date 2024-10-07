@@ -232,7 +232,7 @@ public class AdaRank : Ranker
 	public override void Learn()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 8, 9, 9, 9 }, new[] { "#iter", "Sel. F.", Scorer.Name() + "-T", Scorer.Name() + "-V", "Status" });
+		PrintLogLn(new[] { 7, 8, 9, 9, 9 }, new[] { "#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status" });
 
 		if (TrainWithEnqueue)
 		{
@@ -258,12 +258,12 @@ public class AdaRank : Ranker
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation($"Finished successfully.");
-		_logger.LogInformation($"{Scorer.Name()} on training data: {ScoreOnTrainingData}");
+		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
 
 		if (ValidationSamples != null)
 		{
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation($"{Scorer.Name()} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
+			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 	}
 

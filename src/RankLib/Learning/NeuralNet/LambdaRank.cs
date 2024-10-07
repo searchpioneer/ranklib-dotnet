@@ -1,17 +1,20 @@
-﻿using RankLib.Metric;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using RankLib.Metric;
 
 namespace RankLib.Learning.NeuralNet;
 
 public class LambdaRank : RankNet
 {
+	private readonly ILogger<LambdaRank>? _logger;
 	protected float[][]? targetValue = null;
 
-	public LambdaRank() : base()
-	{ }
+	public LambdaRank(ILogger<LambdaRank>? logger = null) : base(logger) =>
+		_logger = logger ?? NullLogger<LambdaRank>.Instance;
 
-	public LambdaRank(List<RankList> samples, int[] features, MetricScorer scorer)
-		: base(samples, features, scorer)
-	{ }
+	public LambdaRank(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaRank>? logger = null)
+		: base(samples, features, scorer, logger) =>
+		_logger = logger ?? NullLogger<LambdaRank>.Instance;
 
 	protected override int[][] BatchFeedForward(RankList rl)
 	{
@@ -132,7 +135,7 @@ public class LambdaRank : RankNet
 		_lastError = _error;
 	}
 
-	public override Ranker CreateNew() => new LambdaRank();
+	public override Ranker CreateNew() => new LambdaRank(_logger);
 
 	public override string Name => "LambdaRank";
 }

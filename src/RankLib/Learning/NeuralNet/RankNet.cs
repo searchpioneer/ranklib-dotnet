@@ -276,7 +276,7 @@ public class RankNet : Ranker
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn(new[] { 7, 14, 9, 9 },
-			new[] { "#epoch", "% mis-ordered", Scorer.Name() + "-T", Scorer.Name() + "-V" });
+			new[] { "#epoch", "% mis-ordered", Scorer.Name + "-T", Scorer.Name + "-V" });
 		PrintLogLn(new[] { 7, 14, 9, 9 }, new[] { " ", "  pairs", " ", " " });
 
 		for (var i = 1; i <= NIteration; i++)
@@ -324,12 +324,12 @@ public class RankNet : Ranker
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation($"{Scorer.Name()} on training data: {ScoreOnTrainingData}");
+		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
 
 		if (ValidationSamples != null)
 		{
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation($"{Scorer.Name()} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
+			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 	}
 

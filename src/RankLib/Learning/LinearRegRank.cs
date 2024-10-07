@@ -9,23 +9,26 @@ namespace RankLib.Learning;
 
 public class LinearRegRank : Ranker
 {
-	private static readonly ILogger<LinearRegRank> logger = NullLogger<LinearRegRank>.Instance;
+	private readonly ILogger<LinearRegRank> _logger;
 	public static double lambda = 1E-10; // L2-norm regularization parameter
 
 	// Local variables
 	protected double[] weight = null;
 
-	public LinearRegRank() { }
+	public LinearRegRank(ILogger<LinearRegRank>? logger = null) : base(logger) =>
+		_logger = logger ?? NullLogger<LinearRegRank>.Instance;
 
-	public LinearRegRank(List<RankList> samples, int[] features, MetricScorer scorer)
-		: base(samples, features, scorer) { }
+	public LinearRegRank(List<RankList> samples, int[] features, MetricScorer scorer,
+		ILogger<LinearRegRank>? logger = null)
+		: base(samples, features, scorer, logger) =>
+		_logger = logger ?? NullLogger<LinearRegRank>.Instance;
 
-	public override void Init() => logger.LogInformation("Initializing...");
+	public override void Init() => _logger.LogInformation("Initializing...");
 
 	public override void Learn()
 	{
-		logger.LogInformation("Training starts...");
-		logger.LogInformation("Learning the least square model...");
+		_logger.LogInformation("Training starts...");
+		_logger.LogInformation("Learning the least square model...");
 
 		// closed form solution: beta = ((xTx - lambda*I)^(-1)) * (xTy)
 		var nVar = 0;
@@ -79,13 +82,13 @@ public class LinearRegRank : Ranker
 		weight = Solve(xTx, xTy);
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
-		logger.LogInformation("Finished successfully.");
-		logger.LogInformation($"{Scorer.Name()} on training data: {ScoreOnTrainingData}");
+		_logger.LogInformation("Finished successfully.");
+		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
 
 		if (ValidationSamples != null)
 		{
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			logger.LogInformation($"{Scorer.Name()} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
+			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 	}
 
@@ -171,51 +174,51 @@ public class LinearRegRank : Ranker
 		}
 	}
 
-	public override void PrintParameters() => logger.LogInformation("L2-norm regularization: lambda = " + lambda);
+	public override void PrintParameters() => _logger.LogInformation("L2-norm regularization: lambda = " + lambda);
 
 	public override string Name => "Linear Regression";
 
-	protected double[] Solve(double[][] A, double[] B)
+	protected double[] Solve(double[][] a, double[] b)
 	{
-		if (A.Length == 0 || B.Length == 0)
+		if (a.Length == 0 || b.Length == 0)
 			throw RankLibError.Create("Error: some of the input arrays is empty.");
-		if (A[0].Length == 0)
+		if (a[0].Length == 0)
 			throw RankLibError.Create("Error: some of the input arrays is empty.");
-		if (A.Length != B.Length)
+		if (a.Length != b.Length)
 			throw RankLibError.Create("Error: Solving Ax=B: A and B have different dimensions.");
 
-		var a = new double[A.Length][];
-		var b = new double[B.Length];
-		Array.Copy(B, b, B.Length);
-		for (var i = 0; i < a.Length; i++)
+		var aCopy = new double[a.Length][];
+		var bCopy = new double[b.Length];
+		Array.Copy(b, bCopy, b.Length);
+		for (var i = 0; i < aCopy.Length; i++)
 		{
-			a[i] = new double[A[i].Length];
-			if (i > 0 && a[i].Length != a[i - 1].Length)
+			aCopy[i] = new double[a[i].Length];
+			if (i > 0 && aCopy[i].Length != aCopy[i - 1].Length)
 				throw RankLibError.Create("Error: Solving Ax=B: A is NOT a square matrix.");
-			Array.Copy(A[i], a[i], A[i].Length);
+			Array.Copy(a[i], aCopy[i], a[i].Length);
 		}
 
-		for (var j = 0; j < b.Length - 1; j++)
+		for (var j = 0; j < bCopy.Length - 1; j++)
 		{
-			var pivot = a[j][j];
-			for (var i = j + 1; i < b.Length; i++)
+			var pivot = aCopy[j][j];
+			for (var i = j + 1; i < bCopy.Length; i++)
 			{
-				var multiplier = a[i][j] / pivot;
-				for (var k = j + 1; k < b.Length; k++)
-					a[i][k] -= a[j][k] * multiplier;
-				b[i] -= b[j] * multiplier;
+				var multiplier = aCopy[i][j] / pivot;
+				for (var k = j + 1; k < bCopy.Length; k++)
+					aCopy[i][k] -= aCopy[j][k] * multiplier;
+				bCopy[i] -= bCopy[j] * multiplier;
 			}
 		}
 
-		var x = new double[b.Length];
-		var n = b.Length;
-		x[n - 1] = b[n - 1] / a[n - 1][n - 1];
+		var x = new double[bCopy.Length];
+		var n = bCopy.Length;
+		x[n - 1] = bCopy[n - 1] / aCopy[n - 1][n - 1];
 		for (var i = n - 2; i >= 0; i--)
 		{
-			var val = b[i];
+			var val = bCopy[i];
 			for (var j = i + 1; j < n; j++)
-				val -= a[i][j] * x[j];
-			x[i] = val / a[i][i];
+				val -= aCopy[i][j] * x[j];
+			x[i] = val / aCopy[i][i];
 		}
 
 		return x;

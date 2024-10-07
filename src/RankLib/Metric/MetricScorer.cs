@@ -5,21 +5,9 @@ namespace RankLib.Metric;
 public abstract class MetricScorer
 {
 	// The depth parameter, or how deep of a ranked list to use to score the measure.
-	protected int _k = 10;
+	public int K { get; set; } = 10;
 
 	public MetricScorer() { }
-
-	/// <summary>
-	/// Sets the depth parameter, or how deep of a ranked list to use to score the measure.
-	/// </summary>
-	/// <param name="k">The new depth for this measure.</param>
-	public void SetK(int k) => _k = k;
-
-	/// <summary>
-	/// Gets the depth parameter, or how deep of a ranked list to use to score the measure.
-	/// </summary>
-	/// <returns>The depth parameter k.</returns>
-	public int GetK() => _k;
 
 	/// <summary>
 	/// Loads external relevance judgments from a qrel file.
@@ -76,8 +64,8 @@ public abstract class MetricScorer
 	/// <summary>
 	/// Gets the name of this MetricScorer.
 	/// </summary>
-	/// <returns>The name of this MetricScorer.</returns>
-	public abstract string Name();
+	/// <value>The name of this MetricScorer.</value>
+	public abstract string Name { get; }
 
 	/// <summary>
 	/// Calculates the changes in score caused by swapping elements in the RankList.

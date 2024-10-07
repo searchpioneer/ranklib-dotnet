@@ -191,7 +191,6 @@ public class EvaluatorTest
 	private void TestRanker(TmpFile dataFile, TmpFile modelFile, TmpFile rankFile, int rnum, string measure)
 	{
 		_testOutputHelper.WriteLine($"Test Ranker: {rnum}");
-
 		Evaluator.LoggerFactory = new LoggerFactory([new XUnitLoggerProvider(_testOutputHelper)]);
 
 		lock (DataPointLock)

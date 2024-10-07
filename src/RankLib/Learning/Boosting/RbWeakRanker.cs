@@ -1,4 +1,4 @@
-using RankLib.Learning;
+namespace RankLib.Learning.Boosting;
 
 public class RBWeakRanker
 {

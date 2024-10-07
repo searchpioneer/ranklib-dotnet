@@ -18,7 +18,7 @@ public class APScorer : MetricScorer
 		_logger = logger;
 
 		// consider the whole list
-		_k = 0;
+		K = 0;
 	}
 
 	public override MetricScorer Copy() => new APScorer(_logger);
@@ -91,7 +91,7 @@ public class APScorer : MetricScorer
 		return ap / rdCount;
 	}
 
-	public override string Name() => "MAP";
+	public override string Name => "MAP";
 
 	public override double[][] SwapChange(RankList rl)
 	{

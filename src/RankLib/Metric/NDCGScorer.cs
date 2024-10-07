@@ -7,60 +7,42 @@ namespace RankLib.Metric;
 
 public class NDCGScorer : DCGScorer
 {
-	private static readonly ILogger<NDCGScorer> logger = NullLogger<NDCGScorer>.Instance;
+	private readonly ILogger<NDCGScorer> _logger;
 	protected Dictionary<string, double> idealGains = new();
 
-	public NDCGScorer()
-	{
-	}
+	public NDCGScorer(ILogger<NDCGScorer>? logger = null) =>
+		_logger = logger ?? NullLogger<NDCGScorer>.Instance;
 
-	public NDCGScorer(int k) : base(k)
-	{
-	}
+	public NDCGScorer(int k, ILogger<NDCGScorer>? logger = null) : base(k) =>
+		_logger = logger ?? NullLogger<NDCGScorer>.Instance;
 
-	public override MetricScorer Copy() => new NDCGScorer();
+	public override MetricScorer Copy() => new NDCGScorer(_logger);
 
 	public override void LoadExternalRelevanceJudgment(string qrelFile)
 	{
 		// Queries with external relevance judgment will have their cached ideal gain value overridden
 		try
 		{
-			using (var reader = new StreamReader(qrelFile))
+			using var reader = new StreamReader(qrelFile);
+			var lastQID = string.Empty;
+			var rel = new List<int>();
+			var nQueries = 0;
+
+			while (reader.ReadLine() is { } content)
 			{
-				string content;
-				var lastQID = string.Empty;
-				var rel = new List<int>();
-				var nQueries = 0;
-
-				while ((content = reader.ReadLine()) != null)
+				content = content.Trim();
+				if (string.IsNullOrEmpty(content))
 				{
-					content = content.Trim();
-					if (string.IsNullOrEmpty(content))
-					{
-						continue;
-					}
-
-					var parts = content.Split(' ');
-					var qid = parts[0].Trim();
-					var label = (int)Math.Round(double.Parse(parts[3].Trim()));
-
-					if (!string.IsNullOrEmpty(lastQID) && !lastQID.Equals(qid, StringComparison.Ordinal))
-					{
-						var size = (rel.Count > _k) ? _k : rel.Count;
-						var r = rel.ToArray();
-						var ideal = GetIdealDCG(r, size);
-						idealGains[lastQID] = ideal;
-						rel.Clear();
-						nQueries++;
-					}
-
-					lastQID = qid;
-					rel.Add(label);
+					continue;
 				}
 
-				if (rel.Count > 0)
+				var parts = content.Split(' ');
+				var qid = parts[0].Trim();
+				var label = (int)Math.Round(double.Parse(parts[3].Trim()));
+
+				if (!string.IsNullOrEmpty(lastQID) && !lastQID.Equals(qid, StringComparison.Ordinal))
 				{
-					var size = (rel.Count > _k) ? _k : rel.Count;
+					var size = (rel.Count > K) ? K : rel.Count;
 					var r = rel.ToArray();
 					var ideal = GetIdealDCG(r, size);
 					idealGains[lastQID] = ideal;
@@ -68,8 +50,21 @@ public class NDCGScorer : DCGScorer
 					nQueries++;
 				}
 
-				logger.LogInformation($"Relevance judgment file loaded. [#q={nQueries}]");
+				lastQID = qid;
+				rel.Add(label);
 			}
+
+			if (rel.Count > 0)
+			{
+				var size = (rel.Count > K) ? K : rel.Count;
+				var r = rel.ToArray();
+				var ideal = GetIdealDCG(r, size);
+				idealGains[lastQID] = ideal;
+				rel.Clear();
+				nQueries++;
+			}
+
+			_logger.LogInformation("Relevance judgment file loaded. [#q={NumberOfQueries}]", nQueries);
 		}
 		catch (IOException ex)
 		{
@@ -87,8 +82,8 @@ public class NDCGScorer : DCGScorer
 			return 0;
 		}
 
-		var size = _k;
-		if (_k > rl.Count || _k <= 0)
+		var size = K;
+		if (K > rl.Count || K <= 0)
 		{
 			size = rl.Count;
 		}
@@ -116,7 +111,7 @@ public class NDCGScorer : DCGScorer
 
 	public override double[][] SwapChange(RankList rl)
 	{
-		var size = (rl.Count > _k) ? _k : rl.Count;
+		var size = (rl.Count > K) ? K : rl.Count;
 		var rel = GetRelevanceLabels(rl);
 
 		double ideal = 0;
@@ -150,7 +145,7 @@ public class NDCGScorer : DCGScorer
 		return changes;
 	}
 
-	public override string Name() => "NDCG@" + _k;
+	public override string Name => "NDCG@" + K;
 
 	private double GetIdealDCG(int[] rel, int topK)
 	{

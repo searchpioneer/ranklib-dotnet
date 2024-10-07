@@ -6,9 +6,9 @@ public class ERRScorer : MetricScorer
 {
 	public static double MAX = 16; // By default, we assume the relevance scale of {0, 1, 2, 3, 4} => g_max = 4 => 2^g_max = 16
 
-	public ERRScorer() => _k = 10;
+	public ERRScorer() => K = 10;
 
-	public ERRScorer(int k) => _k = k;
+	public ERRScorer(int k) => K = k;
 
 	public override MetricScorer Copy() => new ERRScorer();
 
@@ -17,8 +17,8 @@ public class ERRScorer : MetricScorer
 	/// </summary>
 	public override double Score(RankList rl)
 	{
-		var size = _k;
-		if (_k > rl.Count || _k <= 0)
+		var size = K;
+		if (K > rl.Count || K <= 0)
 		{
 			size = rl.Count;
 		}
@@ -40,13 +40,13 @@ public class ERRScorer : MetricScorer
 		return s;
 	}
 
-	public override string Name() => "ERR@" + _k;
+	public override string Name => "ERR@" + K;
 
 	private double R(int rel) => ((1 << rel) - 1) / MAX; // (2^rel - 1)/MAX
 
 	public override double[][] SwapChange(RankList rl)
 	{
-		var size = (rl.Count > _k) ? _k : rl.Count;
+		var size = (rl.Count > K) ? K : rl.Count;
 		var labels = new int[rl.Count];
 		var r = new double[rl.Count];
 		var np = new double[rl.Count]; // p[i] = (1 - p[0])(1 - p[1])...(1 - p[i - 1])

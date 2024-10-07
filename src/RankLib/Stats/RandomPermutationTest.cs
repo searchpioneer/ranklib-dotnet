@@ -48,7 +48,7 @@ public class RandomPermutationTest : SignificanceTest
 	/// </summary>
 	private string RandomBitVector(int size)
 	{
-		var random = new Random();
+		var random = Random.Shared;
 		var output = "";
 		for (var i = 0; i < (size / 10) + 1; i++)
 		{

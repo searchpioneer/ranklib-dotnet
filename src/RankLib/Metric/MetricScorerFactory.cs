@@ -18,7 +18,7 @@ public class MetricScorerFactory
 		mFactory =
 		[
 			new APScorer(_loggerFactory.CreateLogger<APScorer>()),
-			new NDCGScorer(),
+			new NDCGScorer(_loggerFactory.CreateLogger<NDCGScorer>()),
 			new DCGScorer(),
 			new PrecisionScorer(),
 			new ReciprocalRankScorer(),
@@ -27,7 +27,7 @@ public class MetricScorerFactory
 		];
 
 		map["MAP"] = new APScorer(_loggerFactory.CreateLogger<APScorer>());
-		map["NDCG"] = new NDCGScorer();
+		map["NDCG"] = new NDCGScorer(_loggerFactory.CreateLogger<NDCGScorer>());
 		map["DCG"] = new DCGScorer();
 		map["P"] = new PrecisionScorer();
 		map["RR"] = new ReciprocalRankScorer();
@@ -40,7 +40,7 @@ public class MetricScorerFactory
 	public MetricScorer CreateScorer(Metric metric, int k)
 	{
 		var scorer = mFactory[metric - Metric.MAP].Copy();
-		scorer.SetK(k);
+		scorer.K = k;
 		return scorer;
 	}
 
@@ -53,7 +53,7 @@ public class MetricScorerFactory
 			var m = metric.Substring(0, metric.IndexOf('@'));
 			var k = int.Parse(metric.Substring(metric.IndexOf('@') + 1));
 			scorer = map[m.ToUpper()].Copy();
-			scorer.SetK(k);
+			scorer.K = k;
 		}
 		else
 		{

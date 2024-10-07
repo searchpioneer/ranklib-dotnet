@@ -145,11 +145,11 @@ public class LambdaMART : Ranker
 
 		if (ValidationSamples != null)
 		{
-			PrintLogLn(new int[] { 7, 9, 9 }, new string[] { "#iter", Scorer.Name() + "-T", Scorer.Name() + "-V" });
+			PrintLogLn(new int[] { 7, 9, 9 }, new string[] { "#iter", Scorer.Name + "-T", Scorer.Name + "-V" });
 		}
 		else
 		{
-			PrintLogLn(new int[] { 7, 9 }, new string[] { "#iter", Scorer.Name() + "-T" });
+			PrintLogLn(new int[] { 7, 9 }, new string[] { "#iter", Scorer.Name + "-T" });
 		}
 
 		for (var m = 0; m < nTrees; m++)
@@ -209,12 +209,12 @@ public class LambdaMART : Ranker
 		}
 
 		ScoreOnTrainingData = Scorer.Score(Rank(Samples));
-		_logger.LogInformation($"Finished successfully. {Scorer.Name()} on training data: {SimpleMath.Round(ScoreOnTrainingData, 4)}");
+		_logger.LogInformation($"Finished successfully. {Scorer.Name} on training data: {SimpleMath.Round(ScoreOnTrainingData, 4)}");
 
 		if (ValidationSamples != null)
 		{
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation($"{Scorer.Name()} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
+			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
 
 		_logger.LogInformation("-- FEATURE IMPACTS");
@@ -301,7 +301,7 @@ public class LambdaMART : Ranker
 
 	protected void ComputePseudoResponses(int start, int end, int current)
 	{
-		var cutoff = Scorer.GetK();
+		var cutoff = Scorer.K;
 		for (var i = start; i <= end; i++)
 		{
 			var orig = Samples[i];

@@ -12,7 +12,7 @@ public class RankerTrainer
 	private readonly ILogger<RankerTrainer> _logger;
 
 	protected RankerFactory rf;
-	protected double trainingTime = 0;
+	public double TrainingTime { get; protected set; }
 
 	public RankerTrainer(ILoggerFactory? loggerFactory = null)
 	{
@@ -28,7 +28,7 @@ public class RankerTrainer
 		ranker.Init();
 		ranker.Learn();
 		stopwatch.Stop();
-		trainingTime = stopwatch.Elapsed.TotalMilliseconds * 1e6; // Convert to nanoseconds
+		TrainingTime = stopwatch.Elapsed.TotalMilliseconds * 1e6; // Convert to nanoseconds
 		return ranker;
 	}
 
@@ -40,11 +40,9 @@ public class RankerTrainer
 		ranker.Init();
 		ranker.Learn();
 		stopwatch.Stop();
-		trainingTime = stopwatch.Elapsed.TotalMilliseconds * 1e6; // Convert to nanoseconds
+		TrainingTime = stopwatch.Elapsed.TotalMilliseconds * 1e6; // Convert to nanoseconds
 		return ranker;
 	}
 
-	public double GetTrainingTime() => trainingTime;
-
-	public void PrintTrainingTime() => _logger.LogInformation($"Training time: {SimpleMath.Round((trainingTime) / 1e9, 2)} seconds");
+	public void PrintTrainingTime() => _logger.LogInformation($"Training time: {SimpleMath.Round((TrainingTime) / 1e9, 2)} seconds");
 }

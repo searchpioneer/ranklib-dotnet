@@ -713,7 +713,7 @@ public class Evaluator
 		if (test != null)
 		{
 			var rankScore = Evaluate(ranker, test);
-			Logger.LogInformation($"{TestScorer.Name()} on test data: {Math.Round(rankScore, 4)}");
+			Logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 		}
 
 		if (!string.IsNullOrEmpty(ModelFile))
@@ -739,7 +739,7 @@ public class Evaluator
 		var ranker = trainer.Train(RankerType, trainingData, validation, features, TestScorer);
 
 		var rankScore = Evaluate(ranker, testData);
-		Logger.LogInformation($"{TestScorer.Name()} on test data: {Math.Round(rankScore, 4)}");
+		Logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(ModelFile))
 		{
@@ -766,7 +766,7 @@ public class Evaluator
 		if (test != null)
 		{
 			var rankScore = Evaluate(ranker, test);
-			Logger.LogInformation($"{TestScorer.Name()} on test data: {Math.Round(rankScore, 4)}");
+			Logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 		}
 
 		if (!string.IsNullOrEmpty(ModelFile))
@@ -830,7 +830,7 @@ public class Evaluator
 		}
 
 		Logger.LogInformation("Summary:");
-		Logger.LogInformation($"{TestScorer.Name()}\t|   Train\t| Test");
+		Logger.LogInformation($"{TestScorer.Name}\t|   Train\t| Test");
 
 		for (var i = 0; i < nFold; i++)
 		{
@@ -845,7 +845,7 @@ public class Evaluator
 	{
 		var test = ReadInput(testFile);
 		var rankScore = Evaluate(null, test);
-		Logger.LogInformation($"{TestScorer.Name()} on test data: {Math.Round(rankScore, 4)}");
+		Logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 	}
 
 	public void Test(string testFile, string prpFile)
@@ -867,7 +867,7 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		Logger.LogInformation($"{TestScorer.Name()} on test data: {Math.Round(rankScore, 4)}");
+		Logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -904,7 +904,7 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		Logger.LogInformation($"{TestScorer.Name()} on test data: {SimpleMath.Round(rankScore, 4)}");
+		Logger.LogInformation($"{TestScorer.Name} on test data: {SimpleMath.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -953,7 +953,7 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		Logger.LogInformation($"{TestScorer.Name()} on test data: {Math.Round(rankScore, 4)}");
+		Logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -994,7 +994,7 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		Logger.LogInformation($"{TestScorer.Name()} on test data: {Math.Round(rankScore, 4)}");
+		Logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -1036,7 +1036,7 @@ public class Evaluator
 				}
 
 				var rankScore = Evaluate(null, test);
-				Logger.LogInformation($"{TestScorer.Name()} on test data: {Math.Round(rankScore, 4)}");
+				Logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 			}
 		}
 		catch (IOException e)
@@ -1326,7 +1326,7 @@ public class Evaluator
 		{
 			for (var i = 0; i < ids.Count; i++)
 			{
-				writer.WriteLine($"{TestScorer.Name()}   {ids[i]}   {scores[i]}");
+				writer.WriteLine($"{TestScorer.Name}   {ids[i]}   {scores[i]}");
 			}
 		}
 	}

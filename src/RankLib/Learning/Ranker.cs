@@ -17,7 +17,7 @@ public abstract class Ranker
 	protected double ScoreOnTrainingData = 0.0;
 	protected double BestScoreOnValidationData = 0.0;
 
-	protected List<RankList> ValidationSamples = null;
+	protected List<RankList>? ValidationSamples = null;
 	protected StringBuilder LogBuf = new(1000);
 
 	protected Ranker(ILogger<Ranker>? logger = null) => _logger = logger ?? NullLogger<Ranker>.Instance;
