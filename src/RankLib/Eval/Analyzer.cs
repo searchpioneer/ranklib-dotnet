@@ -7,46 +7,13 @@ namespace RankLib.Eval;
 
 public class Analyzer
 {
-	private static readonly ILogger<Analyzer> logger = NullLogger<Analyzer>.Instance;
+	private readonly ILogger<Analyzer> _logger;
 
 	private static readonly RandomPermutationTest RandomizedTest = new();
-	private static readonly double[] ImprovementRatioThreshold = { -1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1000 };
+	private static readonly double[] ImprovementRatioThreshold = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1000];
 	private const int IndexOfZero = 4;
 
-	public static void Main(string[] args)
-	{
-		var directory = "";
-		var baseline = "";
-
-		if (args.Length < 2)
-		{
-			logger.LogInformation("Usage: Analyzer <Params>");
-			logger.LogInformation("Params:");
-			logger.LogInformation("\t-all <directory>\tDirectory of performance files (one per system)");
-			logger.LogInformation("\t-base <file>\t\tPerformance file for the baseline (MUST be in the same directory)");
-			logger.LogInformation($"\t[ -np ] \t\tNumber of permutation (Fisher randomization test) [default={RandomPermutationTest.NPermutation}]");
-			return;
-		}
-
-		for (var i = 0; i < args.Length; i++)
-		{
-			if (args[i] == "-all")
-			{
-				directory = args[++i];
-			}
-			else if (args[i] == "-base")
-			{
-				baseline = args[++i];
-			}
-			else if (args[i] == "-np")
-			{
-				RandomPermutationTest.NPermutation = int.Parse(args[++i]);
-			}
-		}
-
-		var analyzer = new Analyzer();
-		analyzer.Compare(directory, baseline);
-	}
+	public Analyzer(ILogger<Analyzer>? logger = null) => _logger = logger ?? NullLogger<Analyzer>.Instance;
 
 	public class Result
 	{
@@ -93,7 +60,7 @@ public class Analyzer
 				performance[parts[1]] = double.Parse(parts[2]);
 			}
 		}
-		logger.LogInformation($"Reading {filename}... {performance.Count} ranked lists");
+		_logger.LogInformation($"Reading {filename}... {performance.Count} ranked lists");
 		return performance;
 	}
 
@@ -115,10 +82,10 @@ public class Analyzer
 
 		var results = Compare(basePerformance, targetPerformances);
 
-		logger.LogInformation("Overall comparison");
-		logger.LogInformation("System\tPerformance\tImprovement\tWin\tLoss\tp-value");
+		_logger.LogInformation("Overall comparison");
+		_logger.LogInformation("System\tPerformance\tImprovement\tWin\tLoss\tp-value");
 
-		logger.LogInformation($"{Path.GetFileName(baseFile)} [baseline]\t{basePerformance["all"]:F4}");
+		_logger.LogInformation($"{Path.GetFileName(baseFile)} [baseline]\t{basePerformance["all"]:F4}");
 
 		for (var i = 0; i < results.Length; i++)
 		{
@@ -126,17 +93,17 @@ public class Analyzer
 			{
 				var delta = targetPerformances[i]["all"] - basePerformance["all"];
 				var dp = delta * 100 / basePerformance["all"];
-				logger.LogInformation($"{Path.GetFileName(targetFiles[i])}\t{targetPerformances[i]["all"]:F4}\t" +
+				_logger.LogInformation($"{Path.GetFileName(targetFiles[i])}\t{targetPerformances[i]["all"]:F4}\t" +
 									  $"{(delta > 0 ? "+" : "")}{delta:F4} ({(delta > 0 ? "+" : "")}{dp:F2}%)" +
 									  $"\t{results[i].Win}\t{results[i].Loss}\t{RandomizedTest.Test(targetPerformances[i], basePerformance)}");
 			}
 			else
 			{
-				logger.LogInformation($"WARNING: [{targetFiles[i]}] skipped: NOT comparable to the baseline due to different ranked list IDs.");
+				_logger.LogInformation($"WARNING: [{targetFiles[i]}] skipped: NOT comparable to the baseline due to different ranked list IDs.");
 			}
 		}
 
-		logger.LogInformation("Detailed break down");
+		_logger.LogInformation("Detailed break down");
 		var header = "";
 		var tmp = new string[ImprovementRatioThreshold.Length];
 		for (var i = 0; i < ImprovementRatioThreshold.Length; i++)
@@ -151,7 +118,7 @@ public class Analyzer
 			header += i >= IndexOfZero ? $"( {tmp[i]} , {tmp[i + 1]} ]\t" : $"[ {tmp[i]} , {tmp[i + 1]} )\t";
 		}
 		header += $"( > {tmp[ImprovementRatioThreshold.Length - 2]} ]";
-		logger.LogInformation("\t" + header);
+		_logger.LogInformation("\t" + header);
 
 		for (var i = 0; i < targetFiles.Count; i++)
 		{
@@ -160,7 +127,7 @@ public class Analyzer
 			{
 				resultDetails += "\t" + count;
 			}
-			logger.LogInformation(resultDetails);
+			_logger.LogInformation(resultDetails);
 		}
 	}
 

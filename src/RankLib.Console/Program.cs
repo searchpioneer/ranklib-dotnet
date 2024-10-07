@@ -13,7 +13,8 @@ public class Program
 	{
 		var rootCommand = new RootCommand
 		{
-			new EvaluateCommand()
+			new EvaluateCommand(),
+			new AnalyzeCommand()
 		};
 
 		var builder = new CommandLineBuilder(rootCommand)
