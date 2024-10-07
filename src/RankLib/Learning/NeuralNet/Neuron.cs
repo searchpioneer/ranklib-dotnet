@@ -8,22 +8,18 @@ public class Neuron
 	protected ITransferFunction _tfunc = new LogiFunction();
 
 	protected double _output;
-	protected List<double> _outputs = new List<double>();
+	protected List<double> _outputs = new();
 	protected double _delta_i = 0.0;
 	protected double[] _deltas_j = null;
 
-	protected List<Synapse> _inLinks = new List<Synapse>();
-	protected List<Synapse> _outLinks = new List<Synapse>();
+	public List<Synapse> InLinks { get; } = new();
+	public List<Synapse> OutLinks { get; } = new();
 
 	public Neuron() => _output = 0.0;
 
 	public double GetOutput() => _output;
 
 	public double GetOutput(int k) => _outputs[k];
-
-	public List<Synapse> GetInLinks() => _inLinks;
-
-	public List<Synapse> GetOutLinks() => _outLinks;
 
 	public void SetOutput(double output) => _output = output;
 
@@ -32,7 +28,7 @@ public class Neuron
 	public void ComputeOutput()
 	{
 		var wsum = 0.0;
-		foreach (var synapse in _inLinks)
+		foreach (var synapse in InLinks)
 		{
 			wsum += synapse.Source.GetOutput() * synapse.Weight;
 		}
@@ -42,7 +38,7 @@ public class Neuron
 	public void ComputeOutput(int i)
 	{
 		var wsum = 0.0;
-		foreach (var synapse in _inLinks)
+		foreach (var synapse in InLinks)
 		{
 			wsum += synapse.Source.GetOutput(i) * synapse.Weight;
 		}
@@ -99,7 +95,7 @@ public class Neuron
 			var weight = pairWeight != null ? pairWeight[current][k] : 1.0f;
 			var errorSum = 0.0;
 
-			foreach (var synapse in _outLinks)
+			foreach (var synapse in OutLinks)
 			{
 				errorSum += synapse.Target._deltas_j[k] * synapse.Weight;
 				if (k == 0)
@@ -119,7 +115,7 @@ public class Neuron
 
 	public virtual void UpdateWeight(PropParameter param)
 	{
-		foreach (var synapse in _inLinks)
+		foreach (var synapse in InLinks)
 		{
 			var sum_j = 0.0;
 			for (var l = 0; l < _deltas_j.Length; l++)
@@ -128,7 +124,7 @@ public class Neuron
 			}
 
 			var dw = LearningRate * (_delta_i * synapse.Source.GetOutput(param.Current) - sum_j);
-			synapse.SetWeightAdjustment(dw);
+			synapse.WeightAdjustment = dw;
 			synapse.UpdateWeight();
 		}
 	}

@@ -55,9 +55,9 @@ public class RankNet : Ranker
 
 	protected void Wire()
 	{
-		for (var i = 0; i < _inputLayer.Size() - 1; i++)
+		for (var i = 0; i < _inputLayer.Count - 1; i++)
 		{
-			for (var j = 0; j < _layers[1].Size(); j++)
+			for (var j = 0; j < _layers[1].Count; j++)
 			{
 				Connect(0, i, 1, j);
 			}
@@ -65,9 +65,9 @@ public class RankNet : Ranker
 
 		for (var i = 1; i < _layers.Count - 1; i++)
 		{
-			for (var j = 0; j < _layers[i].Size(); j++)
+			for (var j = 0; j < _layers[i].Count; j++)
 			{
-				for (var k = 0; k < _layers[i + 1].Size(); k++)
+				for (var k = 0; k < _layers[i + 1].Count; k++)
 				{
 					Connect(i, j, i + 1, k);
 				}
@@ -76,23 +76,28 @@ public class RankNet : Ranker
 
 		for (var i = 1; i < _layers.Count; i++)
 		{
-			for (var j = 0; j < _layers[i].Size(); j++)
+			for (var j = 0; j < _layers[i].Count; j++)
 			{
-				Connect(0, _inputLayer.Size() - 1, i, j);
+				Connect(0, _inputLayer.Count - 1, i, j);
 			}
 		}
 	}
 
-	protected void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron) =>
-		new Synapse(_layers[sourceLayer].Get(sourceNeuron), _layers[targetLayer].Get(targetNeuron));
+	protected void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron)
+	{
+		var tempQualifier = _layers[sourceLayer];
+		new Synapse(tempQualifier[sourceNeuron], _layers[targetLayer][targetNeuron]);
+	}
 
 	protected void AddInput(DataPoint p)
 	{
-		for (var k = 0; k < _inputLayer.Size() - 1; k++)
+		for (var k = 0; k < _inputLayer.Count - 1; k++)
 		{
-			_inputLayer.Get(k).AddOutput(p.GetFeatureValue(Features[k]));
+			_inputLayer[k].AddOutput(p.GetFeatureValue(Features[k]));
 		}
-		_inputLayer.Get(_inputLayer.Size() - 1).AddOutput(1.0);
+
+		var k1 = _inputLayer.Count - 1;
+		_inputLayer[k1].AddOutput(1.0);
 	}
 
 	protected void Propagate(int i)
@@ -175,12 +180,13 @@ public class RankNet : Ranker
 		{
 			var l = _bestModelOnValidation[i];
 			l.Clear();
-			for (var j = 0; j < _layers[i].Size(); j++)//loop through all neurons on in the current layer
+			for (var j = 0; j < _layers[i].Count; j++)//loop through all neurons on in the current layer
 			{
-				var n = _layers[i].Get(j);
-				for (var k = 0; k < n.GetOutLinks().Count; k++)
+				var tempQualifier = _layers[i];
+				var n = tempQualifier[j];
+				for (var k = 0; k < n.OutLinks.Count; k++)
 				{
-					l.Add(n.GetOutLinks()[k].Weight);
+					l.Add(n.OutLinks[k].Weight);
 				}
 			}
 		}
@@ -194,12 +200,13 @@ public class RankNet : Ranker
 			{
 				var l = _bestModelOnValidation[i];
 				var c = 0;
-				for (var j = 0; j < _layers[i].Size(); j++)//loop through all neurons on in the current layer
+				for (var j = 0; j < _layers[i].Count; j++)//loop through all neurons on in the current layer
 				{
-					var n = _layers[i].Get(j);
-					for (var k = 0; k < n.GetOutLinks().Count; k++)
+					var tempQualifier = _layers[i];
+					var n = tempQualifier[j];
+					for (var k = 0; k < n.OutLinks.Count; k++)
 					{
-						n.GetOutLinks()[k].Weight = l[c++];
+						n.OutLinks[k].Weight = l[c++];
 					}
 				}
 			}
@@ -336,18 +343,20 @@ public class RankNet : Ranker
 
 	public override double Eval(DataPoint p)
 	{
-		for (var k = 0; k < _inputLayer.Size() - 1; k++)
+		for (var k = 0; k < _inputLayer.Count - 1; k++)
 		{
-			_inputLayer.Get(k).SetOutput(p.GetFeatureValue(Features[k]));
+			_inputLayer[k].SetOutput(p.GetFeatureValue(Features[k]));
 		}
-		_inputLayer.Get(_inputLayer.Size() - 1).SetOutput(1.0);
+
+		var k1 = _inputLayer.Count - 1;
+		_inputLayer[k1].SetOutput(1.0);
 
 		for (var k = 1; k < _layers.Count; k++)
 		{
 			_layers[k].ComputeOutput();
 		}
 
-		return _outputLayer.Get(0).GetOutput();
+		return _outputLayer[0].GetOutput();
 	}
 
 	public override Ranker CreateNew() => new RankNet();
@@ -357,10 +366,11 @@ public class RankNet : Ranker
 		var output = new System.Text.StringBuilder();
 		for (var i = 0; i < _layers.Count - 1; i++)
 		{
-			for (var j = 0; j < _layers[i].Size(); j++)
+			for (var j = 0; j < _layers[i].Count; j++)
 			{
-				var neuron = _layers[i].Get(j);
-				output.AppendLine($"{i} {j} {string.Join(" ", neuron.GetOutLinks().Select(link => link.Weight))}");
+				var tempQualifier = _layers[i];
+				var neuron = tempQualifier[j];
+				output.AppendLine($"{i} {j} {string.Join(" ", neuron.OutLinks.Select(link => link.Weight))}");
 			}
 		}
 		return output.ToString();
@@ -375,7 +385,7 @@ public class RankNet : Ranker
 		output.AppendLine($"## No. of hidden layers = {_layers.Count - 2}");
 		for (var i = 1; i < _layers.Count - 1; i++)
 		{
-			output.AppendLine($"## Layer {i}: {_layers[i].Size()} neurons");
+			output.AppendLine($"## Layer {i}: {_layers[i].Count} neurons");
 		}
 
 		for (var i = 0; i < Features.Length; i++)
@@ -386,7 +396,7 @@ public class RankNet : Ranker
 		output.AppendLine($"{_layers.Count - 2}");
 		for (var i = 1; i < _layers.Count - 1; i++)
 		{
-			output.AppendLine($"{_layers[i].Size()}");
+			output.AppendLine($"{_layers[i].Count}");
 		}
 		output.AppendLine(ToString());
 
@@ -424,10 +434,11 @@ public class RankNet : Ranker
 			var s = lines[lineIndex].Split(' ');
 			var iLayer = int.Parse(s[0]);
 			var iNeuron = int.Parse(s[1]);
-			var neuron = _layers[iLayer].Get(iNeuron);
-			for (var k = 0; k < neuron.GetOutLinks().Count; k++)
+			var tempQualifier = _layers[iLayer];
+			var neuron = tempQualifier[iNeuron];
+			for (var k = 0; k < neuron.OutLinks.Count; k++)
 			{
-				neuron.GetOutLinks()[k].Weight = double.Parse(s[k + 2]);
+				neuron.OutLinks[k].Weight = double.Parse(s[k + 2]);
 			}
 		}
 	}

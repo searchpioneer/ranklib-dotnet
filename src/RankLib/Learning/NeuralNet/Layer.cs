@@ -29,9 +29,9 @@ public class Layer
 		}
 	}
 
-	public Neuron Get(int k) => _neurons[k];
+	public Neuron this[int i] => _neurons[i];
 
-	public int Size() => _neurons.Count;
+	public int Count => _neurons.Count;
 
 	public void ComputeOutput(int i)
 	{

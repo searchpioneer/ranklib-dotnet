@@ -2,8 +2,8 @@ namespace RankLib.Learning.NeuralNet;
 
 public class ListNeuron : Neuron
 {
-	private double[] d1;
-	private double[] d2;
+	private double[] _d1;
+	private double[] _d2;
 
 	public override void ComputeDelta(PropParameter param)
 	{
@@ -17,33 +17,33 @@ public class ListNeuron : Neuron
 			sumScoreExp += Math.Exp(_outputs[i]);
 		}
 
-		d1 = new double[_outputs.Count];
-		d2 = new double[_outputs.Count];
+		_d1 = new double[_outputs.Count];
+		_d2 = new double[_outputs.Count];
 
 		// Calculate d1 and d2 based on the above sums
 		for (var i = 0; i < _outputs.Count; i++)
 		{
-			d1[i] = Math.Exp(param.Labels[i]) / sumLabelExp;
-			d2[i] = Math.Exp(_outputs[i]) / sumScoreExp;
+			_d1[i] = Math.Exp(param.Labels[i]) / sumLabelExp;
+			_d2[i] = Math.Exp(_outputs[i]) / sumScoreExp;
 		}
 	}
 
 	public override void UpdateWeight(PropParameter param)
 	{
 		Synapse s;
-		for (var k = 0; k < _inLinks.Count; k++)
+		for (var k = 0; k < InLinks.Count; k++)
 		{
-			s = _inLinks[k];
+			s = InLinks[k];
 			double dw = 0;
 
 			// Update weights based on the difference between d1 and d2
-			for (var l = 0; l < d1.Length; l++)
+			for (var l = 0; l < _d1.Length; l++)
 			{
-				dw += (d1[l] - d2[l]) * s.Source.GetOutput(l);
+				dw += (_d1[l] - _d2[l]) * s.Source.GetOutput(l);
 			}
 
 			dw *= LearningRate;
-			s.SetWeightAdjustment(dw);
+			s.WeightAdjustment = dw;
 			s.UpdateWeight();
 		}
 	}

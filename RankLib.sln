@@ -2,7 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib", "src\RankLib\RankLib.csproj", "{08B4F192-ED07-445F-BCF4-DBFCC919E6FD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Console", "src\RankLib.Console\RankLib.Console.csproj", "{069925C7-8B79-4FDF-8C40-D2869445E7EA}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Tests", "tests\RankLib.Tests\RankLib.Tests.csproj", "{518F3172-A3C4-4A3A-9714-026DEBCEB21C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Console.Tests", "tests\RankLib.Console.Tests\RankLib.Console.Tests.csproj", "{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +22,13 @@ Global
 		{518F3172-A3C4-4A3A-9714-026DEBCEB21C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{518F3172-A3C4-4A3A-9714-026DEBCEB21C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{518F3172-A3C4-4A3A-9714-026DEBCEB21C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{069925C7-8B79-4FDF-8C40-D2869445E7EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{069925C7-8B79-4FDF-8C40-D2869445E7EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{069925C7-8B79-4FDF-8C40-D2869445E7EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{069925C7-8B79-4FDF-8C40-D2869445E7EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

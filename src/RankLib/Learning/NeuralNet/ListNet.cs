@@ -216,10 +216,11 @@ public class ListNet : RankNet
 				var s = l[index].Split(' ');
 				var iLayer = int.Parse(s[0]); // Which layer?
 				var iNeuron = int.Parse(s[1]); // Which neuron?
-				var n = _layers[iLayer].Get(iNeuron);
-				for (var k = 0; k < n.GetOutLinks().Count; k++)
+				var tempQualifier = _layers[iLayer];
+				var n = tempQualifier[iNeuron];
+				for (var k = 0; k < n.OutLinks.Count; k++)
 				{
-					n.GetOutLinks()[k].Weight = double.Parse(s[k + 2]);
+					n.OutLinks[k].Weight = double.Parse(s[k + 2]);
 				}
 			}
 		}

@@ -690,7 +690,7 @@ public class Evaluator
 		return TestScorer.Score(rankedList);
 	}
 
-	public void Evaluate(string trainFile, string validationFile, string testFile, string featureDefFile)
+	public void Evaluate(string trainFile, string? validationFile, string? testFile, string? featureDefFile)
 	{
 		var train = ReadInput(trainFile);
 		var validation = !string.IsNullOrEmpty(validationFile) ? ReadInput(validationFile) : null;
