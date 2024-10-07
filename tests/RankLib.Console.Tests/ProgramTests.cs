@@ -76,7 +76,7 @@ public class ProgramTests
 	private void WriteRandomDataCount(TmpFile dataFile, int numQ, int numD)
 	{
 		using var outWriter = new StreamWriter(dataFile.Path);
-		var rand = new Random();
+		var rand = Random.Shared;
 		for (var q = 0; q < numQ; q++)
 		{
 			var qid = q.ToString();

@@ -30,11 +30,11 @@ public class EvaluateCommandOptions : ICommandOptions
 	public float Tts { get; set; }
 	public float Tvs { get; set; }
 	public int Kcv { get; set; }
-	public string? Kcvmd { get; set; }
+	public DirectoryInfo? Kcvmd { get; set; }
 	public string? Kcvmn { get; set; }
 	public FileInfo? Validate { get; set; }
 	public IEnumerable<FileInfo>? Test { get; set; }
-	public string? Norm { get; set; }
+	public NormalizerType? Norm { get; set; }
 	public FileInfo? Save { get; set; }
 	public IEnumerable<FileInfo>? Load { get; set; }
 	public int Thread { get; set; }
@@ -89,26 +89,30 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<RankerType>("--ranker", () => RankerType.COOR_ASCENT, "Ranking algorithm to use"));
 		AddOption(new Option<string>("--feature", "Feature description file: list features to be considered by the learner, each on a separate line. If not specified, all features will be used."));
 		AddOption(new Option<string>("--metric2t", () => "ERR@10", "Metric to optimize on the training data"));
-		AddOption(new Option<string>("--metric2T", "Metric to evaluate on the test data"));
 		AddOption(new Option<double?>("--gmax", "Highest judged relevance label"));
 		AddOption(new Option<FileInfo>("--qrel", "TREC-style relevance judgment file"));
-		AddOption(new Option<float>("--tts", "Train-test split"));
-		AddOption(new Option<float>("--tvs", "Train-validation split"));
-		AddOption(new Option<int>("--kcv", () => -1, "Number of folds for cross-validation"));
+		AddOption(new Option<bool>("--missingZero", "Substitute zero for missing feature values rather than throwing an exception."));
+		AddOption(new Option<FileInfo>("--validate", "Specify if you want to tune your system on the validation data (default=unspecified)"));
+		AddOption(new Option<float>("--tvs", "If you don't have separate validation data, use this to set train-validation split to be (x)(1.0-x)"));
+		AddOption(new Option<FileInfo>("--save", "Save the model learned (default=not-save)"));
+
+
+		AddOption(new Option<IEnumerable<FileInfo>>("--test", "Specify if you want to evaluate the trained model on this data (default=unspecified)"));
+		AddOption(new Option<float>("--tts", "Set train-test split to be (x)(1.0-x). -tts will override -tvs"));
+		AddOption(new Option<string>("--metric2T", "Metric to evaluate on the test data (default to the same as specified for -metric2t)"));
+		AddOption(new Option<NormalizerType>("--norm", "Normalize all feature vectors (default=no-normalization)"));
+
+		AddOption(new Option<int>("--kcv", () => -1, "Specify if you want to perform k-fold cross validation using the specified training data (default=NoCV)"));
+		AddOption(new Option<DirectoryInfo>("--kcvmd", "Directory for models trained via cross-validation (default=not-save)"));
 		AddOption(new Option<string>("--kcvmn", "Name for model learned in each fold. It will be prefix-ed with the fold-number (default=empty)"));
-		AddOption(new Option<string>("--kcvmd", "Directory for models trained via cross-validation (default=not-save)"));
-		AddOption(new Option<FileInfo>("--validate", "Validation data file"));
-		AddOption(new Option<IEnumerable<FileInfo>>("--test", "Test data files"));
-		AddOption(new Option<string>("--norm", "Normalization method"));
-		AddOption(new Option<FileInfo>("--save", "Model file to save"));
+
 		AddOption(new Option<IEnumerable<FileInfo>>("--load", "Load saved model file"));
 		AddOption(new Option<int>("--thread", () => -1, "Number of threads to use"));
 		AddOption(new Option<bool>("--keep", "Whether to keep original features"));
 		AddOption(new Option<FileInfo>("--rank", "Rank the samples in the specified file (specify either this or -test but not both)"));
 		AddOption(new Option<FileInfo>("--indri", "Indri ranking file"));
 		AddOption(new Option<bool>("--sparse", "Use sparse representation"));
-		AddOption(new Option<bool>("--missingZero", "Missing Zero"));
-		AddOption(new Option<FileInfo>("--idv", "TODO"));
+		AddOption(new Option<FileInfo>("--idv", "Per-ranked list model performance (in test metric). Has to be used with -test"));
 		AddOption(new Option<FileInfo>("--score", "TODO"));
 		AddOption(new Option<int?>("--epoch", "TODO"));
 		AddOption(new Option<int?>("--layer", "TODO: layer count"));
@@ -128,16 +132,16 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<int?>("--tree", "TODO: Number of trees"));
 		AddOption(new Option<int?>("--leaf", "TODO: Number of leaves"));
 		AddOption(new Option<float?>("--shrinkage", "TODO: Learning Rate"));
-		AddOption(new Option<int?>("--mls", "TODO: MinLeaf Support"));
-		AddOption(new Option<int?>("--estop", "TODO: Early stop"));
-		AddOption(new Option<int?>("--bag", "TODO: Bag"));
-		AddOption(new Option<float?>("--srate", "TODO: sub sampling rate"));
-		AddOption(new Option<float?>("--frate", "TODO: feature samping rate"));
-		AddOption(new Option<RankerType?>("--rtype", "TODO: RfRanker ranker type. Random Forests only support MART/LambdaMART"));
+		AddOption(new Option<int?>("--mls", "Min leaf support. minimum #samples each leaf has to contain (default=1)"));
+		AddOption(new Option<int?>("--estop", "Stop early when no improvement is observed on validaton data in N consecutive rounds (default=100)"));
+		AddOption(new Option<int?>("--bag", "Number of bags (default=300)"));
+		AddOption(new Option<float?>("--srate", "Sub-sampling rate (default=1.0)"));
+		AddOption(new Option<float?>("--frate", "Feature sampling rate (default=0.3)"));
+		AddOption(new Option<RankerType?>("--rtype", "RfRanker ranker type to bag. Random Forests only support MART/LambdaMART"));
 		AddOption(new Option<double?>("--L2", "TODO: Lambda"));
 		AddOption(new Option<string?>("--nf", "TODO: New Feature File"));
 		AddOption(new Option<int?>("--t", "TODO: Top New"));
-		AddOption(new Option<bool?>("--hr", "TODO: Mut Have Relevance Doc"));
+		AddOption(new Option<bool?>("--hr", "TODO: Must Have Relevance Doc"));
 	}
 }
 
@@ -178,14 +182,14 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		var scoreFile = options.Score;
 
-		if (!string.IsNullOrEmpty(options.Norm))
+		if (options.Norm != null)
 		{
 			Evaluator.normalize = true;
-			Evaluator.Nml = options.Norm.ToLowerInvariant() switch
+			Evaluator.Normalizer = options.Norm switch
 			{
-				"sum" => new SumNormalizer(),
-				"zscore" => new ZScoreNormalizer(),
-				"linear" => new LinearNormalizer(),
+				NormalizerType.Sum => new SumNormalizer(),
+				NormalizerType.ZScore => new ZScoreNormalizer(),
+				NormalizerType.Linear => new LinearNormalizer(),
 				_ => throw RankLibError.Create("Unknown normalizer: " + options.Norm)
 			};
 		}
@@ -428,9 +432,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			{
 				logger.LogInformation($"TREC-format relevance judgment (only affects MAP and NDCG scores): {Evaluator.QrelFile}");
 			}
-			logger.LogInformation($"Feature normalization: {(Evaluator.normalize ? Evaluator.Nml.Name : "No")}");
+			logger.LogInformation($"Feature normalization: {(Evaluator.normalize ? Evaluator.Normalizer.Name : "No")}");
 
-			if (!string.IsNullOrEmpty(kcvModelDir))
+			if (kcvModelDir != null)
 			{
 				logger.LogInformation($"Models directory: {kcvModelDir}");
 			}
@@ -456,18 +460,18 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				//- Behavioral changes: Write kcv models if kcvmd OR kcvmn defined.  Use
 				//  default names for missing arguments: "kcvmodels" default directory
 				//  and "kcv" default model name.
-				if (!string.IsNullOrEmpty(kcvModelDir) && string.IsNullOrEmpty(kcvModelFile))
+				if (kcvModelDir != null && string.IsNullOrEmpty(kcvModelFile))
 				{
 					kcvModelFile = "kcv";
 				}
-				else if (string.IsNullOrEmpty(kcvModelDir) && !string.IsNullOrEmpty(kcvModelFile))
+				else if (kcvModelDir == null && !string.IsNullOrEmpty(kcvModelFile))
 				{
-					kcvModelDir = "kcvmodels";
+					kcvModelDir = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "kcvmodels"));
 				}
 
 				//- models won't be saved if kcvModelDir=""   [OBSOLETE]
 				//- Models saved if EITHER kcvmd OR kcvmn defined.  Use default names for missing values.
-				evaluator.Evaluate(trainFile!.FullName, featureDescriptionFile?.FullName, foldCV, tvSplit, kcvModelDir!, kcvModelFile!);
+				evaluator.Evaluate(trainFile!.FullName, featureDescriptionFile?.FullName, foldCV, tvSplit, kcvModelDir!.FullName, kcvModelFile!);
 			}
 			else
 			{
@@ -488,7 +492,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		else
 		{
 			logger.LogInformation($"Model file: {savedModelFile}");
-			logger.LogInformation($"Feature normalization: {(Evaluator.normalize ? Evaluator.Nml.Name : "No")}");
+			logger.LogInformation($"Feature normalization: {(Evaluator.normalize ? Evaluator.Normalizer.Name : "No")}");
 
 			if (rankFile != null)
 			{
