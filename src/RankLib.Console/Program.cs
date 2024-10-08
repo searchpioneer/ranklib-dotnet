@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RankLib.Console;
 
-public class Program
+internal class Program
 {
 	internal static Action<ILoggingBuilder>? ConfigureLogging { get; set; }
 
@@ -14,7 +14,8 @@ public class Program
 		var rootCommand = new RootCommand
 		{
 			new EvaluateCommand(),
-			new AnalyzeCommand()
+			new AnalyzeCommand(),
+			new CombineCommand()
 		};
 
 		var builder = new CommandLineBuilder(rootCommand)

@@ -199,5 +199,5 @@ public class RFRanker : Ranker
 
 	public override string Name => "Random Forests";
 
-	public Ensemble[] GetEnsembles() => ensembles;
+	public Ensemble[] Ensembles => ensembles;
 }

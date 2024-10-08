@@ -6,19 +6,15 @@ namespace RankLib.Learning;
 
 public class Combiner
 {
-	public static void Main(string[] args)
-	{
-		var combiner = new Combiner();
-		combiner.Combine(args[0], args[1]);
-	}
+	private readonly RankerFactory _rankerFactory;
+
+	public Combiner(RankerFactory rankerFactory) => _rankerFactory = rankerFactory;
 
 	public void Combine(string directory, string outputFile)
 	{
-		var rankerFactory = new RankerFactory();
-		var files = Directory.GetFiles(directory);
-
 		try
 		{
+			var files = Directory.GetFiles(directory);
 			using var writer = new StreamWriter(outputFile, false, Encoding.ASCII);
 			writer.WriteLine("## " + new RFRanker().Name);
 
@@ -29,8 +25,8 @@ public class Combiner
 					continue;
 				}
 
-				var ranker = (RFRanker)rankerFactory.LoadRankerFromFile(file);
-				var ensemble = ranker.GetEnsembles()[0];
+				var ranker = (RFRanker)_rankerFactory.LoadRankerFromFile(file);
+				var ensemble = ranker.Ensembles[0];
 				writer.Write(ensemble.ToString());
 			}
 		}
