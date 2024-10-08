@@ -38,7 +38,7 @@ public class AnalyzeCommandOptionsHandler : ICommandOptionsHandler<AnalyzeComman
 			RandomPermutationTest.NPermutation = options.Np.Value;
 		}
 
-		var analyzer = new Analyzer();
+		var analyzer = new Analyzer(_loggerFactory.CreateLogger<Analyzer>());
 		analyzer.Compare(options.All.FullName, options.Base.FullName);
 		return Task.FromResult(0);
 	}

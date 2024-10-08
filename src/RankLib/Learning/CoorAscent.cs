@@ -199,15 +199,15 @@ public class CoorAscent : Ranker
 				{
 					score[i] += weight[j] * rl[i].GetFeatureValue(Features[j]);
 				}
-				rl[i].SetCached(score[i]);
+				rl[i].Cached = score[i];
 			}
 		}
 		else
 		{
 			for (var i = 0; i < rl.Count; i++)
 			{
-				score[i] = rl[i].GetCached() + weightChange * rl[i].GetFeatureValue(Features[currentFeature]);
-				rl[i].SetCached(score[i]);
+				score[i] = rl[i].Cached + weightChange * rl[i].GetFeatureValue(Features[currentFeature]);
+				rl[i].Cached = score[i];
 			}
 		}
 
@@ -298,8 +298,8 @@ public class CoorAscent : Ranker
 			var rl = Samples[j];
 			for (var i = 0; i < rl.Count; i++)
 			{
-				var score = rl[i].GetCached() + weightChange * rl[i].GetFeatureValue(Features[currentFeature]);
-				rl[i].SetCached(score);
+				var score = rl[i].Cached + weightChange * rl[i].GetFeatureValue(Features[currentFeature]);
+				rl[i].Cached = score;
 			}
 		}
 	}
@@ -311,7 +311,7 @@ public class CoorAscent : Ranker
 			var rl = Samples[j];
 			for (var i = 0; i < rl.Count; i++)
 			{
-				rl[i].SetCached(rl[i].GetCached() / sum);
+				rl[i].Cached = rl[i].Cached / sum;
 			}
 		}
 	}

@@ -30,10 +30,10 @@ public class SparseDataPoint : DataPoint
 
 	public SparseDataPoint(SparseDataPoint dp)
 	{
-		_label = dp._label;
-		_id = dp._id;
-		_description = dp._description;
-		_cached = dp._cached;
+		Label = dp.Label;
+		Id = dp.Id;
+		Description = dp.Description;
+		Cached = dp.Cached;
 		fIds = new int[dp.fIds.Length];
 		_fVals = new float[dp._fVals.Length];
 		Array.Copy(dp.fIds, 0, fIds, 0, dp.fIds.Length);
@@ -78,7 +78,7 @@ public class SparseDataPoint : DataPoint
 
 	public override float GetFeatureValue(int fid)
 	{
-		if (fid <= 0 || fid > GetFeatureCount())
+		if (fid <= 0 || fid > FeatureCount)
 		{
 			if (MissingZero)
 			{
@@ -98,7 +98,7 @@ public class SparseDataPoint : DataPoint
 
 	public override void SetFeatureValue(int fid, float fval)
 	{
-		if (fid <= 0 || fid > GetFeatureCount())
+		if (fid <= 0 || fid > FeatureCount)
 		{
 			throw RankLibError.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + fid + ") out of range.");
 		}

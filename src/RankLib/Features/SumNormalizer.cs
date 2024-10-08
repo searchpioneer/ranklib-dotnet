@@ -11,7 +11,7 @@ public class SumNormalizer : Normalizer
 			throw new InvalidOperationException("Error in SumNormalizer::Normalize(): The input ranked list is empty");
 		}
 
-		var nFeature = rl.GetFeatureCount();
+		var nFeature = rl.FeatureCount;
 		var norm = new double[nFeature];
 		Array.Fill(norm, 0);
 

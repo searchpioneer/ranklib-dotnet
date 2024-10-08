@@ -34,7 +34,7 @@ public class LinearRegRank : Ranker
 		var nVar = 0;
 		foreach (var rl in Samples)
 		{
-			var c = rl.GetFeatureCount();
+			var c = rl.FeatureCount;
 			if (c > nVar)
 				nVar = c;
 		}

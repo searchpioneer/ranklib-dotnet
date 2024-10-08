@@ -11,7 +11,7 @@ public class ZScoreNormalizer : Normalizer
 			throw new InvalidOperationException("Error in ZScoreNormalizer::Normalize(): The input ranked list is empty");
 		}
 
-		var nFeature = rl.GetFeatureCount();
+		var nFeature = rl.FeatureCount;
 		var means = new double[nFeature];
 		Array.Fill(means, 0);
 

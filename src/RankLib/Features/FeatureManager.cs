@@ -173,58 +173,62 @@ public class FeatureManager
 
 		try
 		{
-			using (var inStream = FileUtils.SmartReader(inputFile))
+			using var reader = FileUtils.SmartReader(inputFile);
+			var lastId = "";
+			var hasRel = false;
+			var rl = new List<DataPoint>(10000);
+
+			while (reader.ReadLine() is { } content)
 			{
-				var lastID = "";
-				var hasRel = false;
-				var rl = new List<DataPoint>(10000);
-
-				while (inStream.ReadLine() is { } content)
+				content = content.Trim();
+				if (content.Length == 0 || content[0] == '#')
 				{
-					content = content.Trim();
-					if (content.Length == 0 || content[0] == '#')
-					{
-						continue;
-					}
-
-					if (countEntries % 10000 == 0)
-					{
-						Logger.LogInformation($"Reading feature file [{inputFile}]: {countEntries}...");
-					}
-
-					DataPoint qp = useSparseRepresentation ? new SparseDataPoint(content) : new DenseDataPoint(content);
-
-					if (!string.IsNullOrEmpty(lastID) && !lastID.Equals(qp.Id, StringComparison.OrdinalIgnoreCase))
-					{
-						if (!mustHaveRelDoc || hasRel)
-						{
-							samples.Add(new RankList(rl));
-						}
-						rl = new List<DataPoint>();
-						hasRel = false;
-					}
-
-					if (qp.Label > 0)
-					{
-						hasRel = true;
-					}
-
-					lastID = qp.Id;
-					rl.Add(qp);
-					countEntries++;
+					continue;
 				}
 
-				if (rl.Any() && (!mustHaveRelDoc || hasRel))
+				if (countEntries % 10000 == 0)
 				{
-					samples.Add(new RankList(rl));
+					Logger.LogInformation("Reading feature file [{InputFile}]: {CountEntries}...", inputFile, countEntries);
 				}
 
-				Logger.LogInformation($"Reading feature file [{inputFile}] completed. (Read {samples.Count} ranked lists, {countEntries} entries)");
+				DataPoint qp = useSparseRepresentation
+					? new SparseDataPoint(content)
+					: new DenseDataPoint(content);
+
+				if (!string.IsNullOrEmpty(lastId) && !lastId.Equals(qp.Id, StringComparison.OrdinalIgnoreCase))
+				{
+					if (!mustHaveRelDoc || hasRel)
+					{
+						samples.Add(new RankList(rl));
+					}
+					rl = new List<DataPoint>();
+					hasRel = false;
+				}
+
+				if (qp.Label > 0)
+				{
+					hasRel = true;
+				}
+
+				lastId = qp.Id;
+				rl.Add(qp);
+				countEntries++;
 			}
+
+			if (rl.Any() && (!mustHaveRelDoc || hasRel))
+			{
+				samples.Add(new RankList(rl));
+			}
+
+			Logger.LogInformation(
+				"Reading feature file [{InputFile}] completed. (Read {SamplesCount} ranked lists, {CountEntries} entries)",
+				inputFile,
+				samples.Count,
+				countEntries);
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create("Error in FeatureManager::readInput(): ", ex);
+			throw RankLibError.Create("Error reading samples from file", ex);
 		}
 
 		return samples;
@@ -243,15 +247,14 @@ public class FeatureManager
 
 	public static int[] ReadFeature(string featureDefFile)
 	{
-		int[] features = null;
+		int[] features;
 		var fids = new List<string>();
 
 		try
 		{
 			using (var inStream = FileUtils.SmartReader(featureDefFile))
 			{
-				string content = null;
-				while ((content = inStream.ReadLine()) != null)
+				while (inStream.ReadLine() is { } content)
 				{
 					content = content.Trim();
 					if (content.Length == 0 || content[0] == '#')
@@ -262,7 +265,7 @@ public class FeatureManager
 				}
 			}
 
-			features = fids.Select(fid => int.Parse(fid)).ToArray();
+			features = fids.Select(int.Parse).ToArray();
 		}
 		catch (IOException ex)
 		{
@@ -279,7 +282,7 @@ public class FeatureManager
 			throw RankLibError.Create("Error in FeatureManager::getFeatureFromSampleVector(): There are no training samples.");
 		}
 
-		var maxFeatureCount = samples.Max(rl => rl.GetFeatureCount());
+		var maxFeatureCount = samples.Max(rl => rl.FeatureCount);
 		var features = Enumerable.Range(1, maxFeatureCount).ToArray();
 
 		return features;

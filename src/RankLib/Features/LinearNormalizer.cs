@@ -11,7 +11,7 @@ public class LinearNormalizer : Normalizer
 			throw new InvalidOperationException("Error in LinearNormalizer::Normalize(): The input ranked list is empty");
 		}
 
-		var nFeature = rl.GetFeatureCount();
+		var nFeature = rl.FeatureCount;
 		var fids = new int[nFeature];
 		for (var i = 1; i <= nFeature; i++)
 		{

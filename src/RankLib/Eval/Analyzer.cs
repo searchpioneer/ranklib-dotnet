@@ -5,13 +5,16 @@ using RankLib.Stats;
 
 namespace RankLib.Eval;
 
-public class Analyzer
+public partial class Analyzer
 {
-	private readonly ILogger<Analyzer> _logger;
+	[GeneratedRegex(@"\s+")]
+	private static partial Regex WhitespaceRegex();
 
 	private static readonly RandomPermutationTest RandomizedTest = new();
 	private static readonly double[] ImprovementRatioThreshold = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1000];
 	private const int IndexOfZero = 4;
+
+	private readonly ILogger<Analyzer> _logger;
 
 	public Analyzer(ILogger<Analyzer>? logger = null) => _logger = logger ?? NullLogger<Analyzer>.Instance;
 
@@ -55,7 +58,7 @@ public class Analyzer
 		{
 			while (reader.ReadLine() is { } line)
 			{
-				line = Regex.Replace(line.Trim(), @"\s+", "\t");
+				line = WhitespaceRegex().Replace(line.Trim(), "\t");
 				var parts = line.Split('\t');
 				performance[parts[1]] = double.Parse(parts[2]);
 			}
@@ -118,7 +121,7 @@ public class Analyzer
 			header += i >= IndexOfZero ? $"( {tmp[i]} , {tmp[i + 1]} ]\t" : $"[ {tmp[i]} , {tmp[i + 1]} )\t";
 		}
 		header += $"( > {tmp[ImprovementRatioThreshold.Length - 2]} ]";
-		_logger.LogInformation("\t" + header);
+		_logger.LogInformation("\t{Header}", header);
 
 		for (var i = 0; i < targetFiles.Count; i++)
 		{
@@ -127,7 +130,7 @@ public class Analyzer
 			{
 				resultDetails += "\t" + count;
 			}
-			_logger.LogInformation(resultDetails);
+			_logger.LogInformation("{Result}", resultDetails);
 		}
 	}
 

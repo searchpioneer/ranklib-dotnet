@@ -631,7 +631,7 @@ public class Evaluator
 				for (var j = 0; j < idx.Length; j++)
 				{
 					var k = idx[j];
-					var str = $"{l.Id} Q0 {l[k].GetDescription().Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(scores[k], 5)} indri";
+					var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(scores[k], 5)} indri";
 					outWriter.WriteLine(str);
 				}
 			}
@@ -654,7 +654,7 @@ public class Evaluator
 				{
 					for (var j = 0; j < l.Count; j++)
 					{
-						var str = $"{l.Id} Q0 {l[j].GetDescription().Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(1.0 - 0.0001 * j, 5)} indri";
+						var str = $"{l.Id} Q0 {l[j].Description.Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(1.0 - 0.0001 * j, 5)} indri";
 						outWriter.WriteLine(str);
 					}
 				}
@@ -703,7 +703,7 @@ public class Evaluator
 						for (var j = 0; j < idx.Length; j++)
 						{
 							var k = idx[j];
-							var str = $"{l.Id} Q0 {l[k].GetDescription().Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(scores[k], 5)} indri";
+							var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(scores[k], 5)} indri";
 							outWriter.WriteLine(str);
 						}
 					}
@@ -747,7 +747,7 @@ public class Evaluator
 						for (var j = 0; j < idx.Length; j++)
 						{
 							var k = idx[j];
-							var str = $"{l.Id} Q0 {l[k].GetDescription().Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(scores[k], 5)} indri";
+							var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(scores[k], 5)} indri";
 							outWriter.WriteLine(str);
 						}
 					}

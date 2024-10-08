@@ -4,21 +4,17 @@ public abstract class DataPoint
 {
 	public static bool MissingZero = false;
 	protected static readonly int FeatureIncrease = 10;
-	protected int _featureCount = 0;
 
 	protected static readonly float Unknown = float.NaN;
 
 	// attributes
-	protected float _label = 0.0f; // [ground truth] the real label of the data point (e.g., degree of relevance)
-	protected string _id = ""; // id of this data point (e.g., query-id)
-	protected string _description = "";
 	protected float[] _fVals = null; // _fVals[0] is unused. Feature id MUST start from 1
 
 	// helper attributes
 	protected int _knownFeatures; // number of known feature values
 
 	// internal to learning procedures
-	protected double _cached = -1.0; // the latest evaluation score of the learned model on this data point
+	public double Cached { get; set; } = -1.0;
 
 	protected static bool IsUnknown(float fVal) => float.IsNaN(fVal);
 
@@ -43,19 +39,19 @@ public abstract class DataPoint
 			var idx = text.IndexOf('#');
 			if (idx != -1)
 			{
-				_description = text.Substring(idx);
+				Description = text.Substring(idx);
 				text = text.Substring(0, idx).Trim(); // remove the comment part at the end of the line
 			}
 
 			var fs = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-			_label = float.Parse(fs[0]);
+			Label = float.Parse(fs[0]);
 
-			if (_label < 0)
+			if (Label < 0)
 			{
 				throw new InvalidOperationException("Relevance label cannot be negative. System will now exit.");
 			}
 
-			_id = GetValue(fs[1]);
+			Id = GetValue(fs[1]);
 
 			for (var i = 2; i < fs.Length; i++)
 			{
@@ -84,9 +80,9 @@ public abstract class DataPoint
 
 				fval[f] = float.Parse(val);
 
-				if (f > _featureCount)
+				if (f > FeatureCount)
 				{
-					_featureCount = f;
+					FeatureCount = f;
 				}
 
 				if (f > lastFeature)
@@ -120,36 +116,23 @@ public abstract class DataPoint
 	// Constructor to initialize DataPoint from text
 	protected DataPoint(string text) => SetFeatureVector(Parse(text));
 
-	public string Id
-	{
-		get => _id;
-		set => _id = value;
-	}
+	public string Id { get; set; } = string.Empty;
 
-	public float Label
-	{
-		get => _label;
-		set => _label = value;
-	}
+	public string Description { get; set; } = string.Empty;
 
-	public string GetDescription() => _description;
+	public float Label { get; set; }
 
-	public void SetDescription(string description) => _description = description;
+	public int FeatureCount { get; protected set; }
 
-	public void SetCached(double c) => _cached = c;
+	public void ResetCached() => Cached = -100000000.0f;
 
-	public double GetCached() => _cached;
-
-	public void ResetCached() => _cached = -100000000.0f;
-
-	public int GetFeatureCount() => _featureCount;
 
 	// Override ToString method
 	public override string ToString()
 	{
 		var fval = GetFeatureVector();
 		var output = new System.Text.StringBuilder();
-		output.Append(((int)_label) + " qid:" + _id + " ");
+		output.Append(((int)Label) + " qid:" + Id + " ");
 
 		for (var i = 1; i < fval.Length; i++)
 		{
@@ -159,7 +142,7 @@ public abstract class DataPoint
 			}
 		}
 
-		output.Append(" " + _description);
+		output.Append(" " + Description);
 		return output.ToString();
 	}
 }
