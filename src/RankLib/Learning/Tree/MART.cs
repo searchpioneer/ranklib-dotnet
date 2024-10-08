@@ -33,7 +33,7 @@ public class MART : LambdaMART
 
 	protected override void UpdateTreeOutput(RegressionTree rt)
 	{
-		var leaves = rt.Leaves();
+		var leaves = rt.Leaves;
 		foreach (var s in leaves)
 		{
 			var s1 = 0.0F;

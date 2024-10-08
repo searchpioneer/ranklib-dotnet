@@ -9,16 +9,19 @@ namespace RankLib.Learning;
 public abstract class Ranker
 {
 	private readonly ILogger<Ranker> _logger;
+	private readonly StringBuilder _logBuffer = new();
 
 	protected List<RankList> Samples = new(); // training samples
 	public int[]? Features { get; set; }
+
+	/// <summary>
+	/// Gets or sets the scorer
+	/// </summary>
 	public MetricScorer? Scorer { get; set; }
 
 	protected double ScoreOnTrainingData = 0.0;
 	protected double BestScoreOnValidationData = 0.0;
-
-	protected List<RankList>? ValidationSamples = null;
-	protected StringBuilder LogBuf = new(1000);
+	protected List<RankList>? ValidationSamples;
 
 	protected Ranker(ILogger<Ranker>? logger = null) => _logger = logger ?? NullLogger<Ranker>.Instance;
 
@@ -33,7 +36,7 @@ public abstract class Ranker
 	// Utility functions
 	public void SetTrainingSet(List<RankList> samples) => Samples = samples;
 
-	public void SetValidationSet(List<RankList> samples) => ValidationSamples = samples;
+	public void SetValidationSet(List<RankList> validationSamples) => ValidationSamples = validationSamples;
 
 	public double GetScoreOnTrainingData() => ScoreOnTrainingData;
 
@@ -51,32 +54,27 @@ public abstract class Ranker
 		return new RankList(rl, idx);
 	}
 
-	public List<RankList> Rank(List<RankList> l)
+	public List<RankList> Rank(List<RankList> rankLists)
 	{
-		var ll = new List<RankList>(l.Count);
-		for (var i = 0; i < l.Count; i++)
+		var rankedRankLists = new List<RankList>(rankLists.Count);
+		for (var i = 0; i < rankLists.Count; i++)
 		{
-			ll.Add(Rank(l[i]));
+			rankedRankLists.Add(Rank(rankLists[i]));
 		}
-		return ll;
+		return rankedRankLists;
 	}
 
 	// Create the model file directory to write models into if not already there
 	public void Save(string modelFile)
 	{
-		// Determine if the directory to write to exists. If not, create it.
-		var parentPath = Path.GetDirectoryName(Path.GetFullPath(modelFile));
-
-		if (!Directory.Exists(parentPath))
+		try
 		{
-			try
-			{
-				Directory.CreateDirectory(parentPath);
-			}
-			catch (Exception e)
-			{
-				throw new InvalidOperationException($"Error creating kcv model file directory {modelFile}", e);
-			}
+			var directory = Path.GetDirectoryName(Path.GetFullPath(modelFile));
+			Directory.CreateDirectory(directory!);
+		}
+		catch (Exception e)
+		{
+			throw RankLibException.Create($"Error creating kcv model file '{modelFile}'", e);
 		}
 
 		FileUtils.Write(modelFile, Encoding.ASCII, Model);
@@ -91,17 +89,17 @@ public abstract class Ranker
 				var msg = msgs[i];
 				if (msg.Length > len[i])
 				{
-					LogBuf.Append(msg.Substring(0, len[i]));
+					_logBuffer.Append(msg.AsSpan(0, len[i]));
 				}
 				else
 				{
-					LogBuf.Append(msg);
+					_logBuffer.Append(msg);
 					for (var j = len[i] - msg.Length; j > 0; j--)
 					{
-						LogBuf.Append(' ');
+						_logBuffer.Append(' ');
 					}
 				}
-				LogBuf.Append(" | ");
+				_logBuffer.Append(" | ");
 			}
 		}
 	}
@@ -119,23 +117,14 @@ public abstract class Ranker
 	{
 		if (_logger.IsEnabled(LogLevel.Information))
 		{
-			if (LogBuf.Length > 0)
+			if (_logBuffer.Length > 0)
 			{
-				_logger.LogInformation(LogBuf.ToString());
-				LogBuf.Clear();
+				_logger.LogInformation("{Message}", _logBuffer.ToString());
+				_logBuffer.Clear();
 			}
 		}
 	}
 
-	protected void Copy(double[] source, double[] target)
-	{
-		for (var j = 0; j < source.Length; j++)
-		{
-			target[j] = source[j];
-		}
-	}
-
-	// Abstract methods that need to be implemented by derived classes
 	public abstract void Init();
 	public abstract void Learn();
 	public abstract double Eval(DataPoint p);
@@ -143,6 +132,10 @@ public abstract class Ranker
 	public abstract override string ToString();
 	public abstract string Model { get; }
 	public abstract void LoadFromString(string fullText);
+
+	/// <summary>
+	/// Gets the name of this ranker
+	/// </summary>
 	public abstract string Name { get; }
 	public abstract void PrintParameters();
 }

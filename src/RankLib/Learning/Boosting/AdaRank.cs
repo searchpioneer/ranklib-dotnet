@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 using RankLib.Utilities;
-using KeyValuePair = RankLib.Utilities.KeyValuePair;
 
 namespace RankLib.Learning.Boosting;
 
@@ -310,7 +309,7 @@ public class AdaRank : Ranker
 		try
 		{
 			using var reader = new StringReader(fullText);
-			KeyValuePair? kvp = null;
+			KeyValuePairs? kvp = null;
 			while (reader.ReadLine() is { } content)
 			{
 				content = content.Trim();
@@ -318,7 +317,7 @@ public class AdaRank : Ranker
 				{
 					continue;
 				}
-				kvp = new KeyValuePair(content);
+				kvp = new KeyValuePairs(content);
 				break;
 			}
 
@@ -327,8 +326,8 @@ public class AdaRank : Ranker
 				throw new InvalidOperationException("Error in AdaRank::LoadFromString: Unable to load model");
 			}
 
-			var keys = kvp.Keys();
-			var values = kvp.Values();
+			var keys = kvp.Keys;
+			var values = kvp.Values;
 			_rweight = new List<double>();
 			_rankers = new List<WeakRanker>();
 			Features = new int[keys.Count];

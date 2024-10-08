@@ -22,8 +22,6 @@ public class NDCGScorer : DCGScorer
 	public NDCGScorer(int k, ILogger<NDCGScorer>? logger = null) : base(k) =>
 		_logger = logger ?? NullLogger<NDCGScorer>.Instance;
 
-	public override MetricScorer Copy() => new NDCGScorer(_logger);
-
 	public override void LoadExternalRelevanceJudgment(string queryRelevanceFile)
 	{
 		// Queries with external relevance judgment will have their cached ideal gain value overridden

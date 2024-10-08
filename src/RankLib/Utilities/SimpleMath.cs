@@ -12,21 +12,7 @@ public static class SimpleMath
 
 	public static double Ln(double value) => Math.Log(value) / Loge;
 
-	public static int Min(int a, int b) => a > b ? b : a;
-
 	public static double P(long count, long total) => (count + 0.5) / (total + 1);
-
-	public static double Round(double val)
-	{
-		var precision = 10000; // Keep 4 digits
-		return Math.Floor(val * precision + 0.5) / precision;
-	}
-
-	public static double Round(float val)
-	{
-		var precision = 10000; // Keep 4 digits
-		return Math.Floor(val * precision + 0.5) / precision;
-	}
 
 	public static double Round(double val, int n)
 	{
@@ -36,15 +22,5 @@ public static class SimpleMath
 			precision *= 10;
 		}
 		return Math.Floor(val * precision + 0.5) / precision;
-	}
-
-	public static float Round(float val, int n)
-	{
-		var precision = 1;
-		for (var i = 0; i < n; i++)
-		{
-			precision *= 10;
-		}
-		return (float)(Math.Floor(val * precision + 0.5) / precision);
 	}
 }

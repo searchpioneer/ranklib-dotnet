@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 using RankLib.Utilities;
-using KeyValuePair = RankLib.Utilities.KeyValuePair;
 
 namespace RankLib.Learning;
 
@@ -262,9 +261,9 @@ public class CoorAscent : Ranker
 		{
 			if (line.StartsWith("##"))
 				continue;
-			var kvp = new KeyValuePair(line);
-			var keys = kvp.Keys();
-			var values = kvp.Values();
+			var kvp = new KeyValuePairs(line);
+			var keys = kvp.Keys;
+			var values = kvp.Values;
 			weight = new double[keys.Count];
 			Features = new int[keys.Count];
 			for (var i = 0; i < keys.Count; i++)
@@ -367,7 +366,7 @@ public class CoorAscent : Ranker
 		{
 			throw RankLibException.Create("These two models use different feature set!!");
 		}
-		Copy(ranker.weight, weight);
+		Array.Copy(ranker.weight, weight, ranker.weight.Length);
 		_logger.LogInformation("Model loaded.");
 	}
 

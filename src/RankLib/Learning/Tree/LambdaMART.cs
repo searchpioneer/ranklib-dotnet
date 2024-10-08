@@ -162,7 +162,7 @@ public class LambdaMART : Ranker
 			ensemble.Add(rt, learningRate);
 			UpdateTreeOutput(rt);
 
-			var leaves = rt.Leaves();
+			var leaves = rt.Leaves;
 			for (var i = 0; i < leaves.Count; i++)
 			{
 				var s = leaves[i];
@@ -192,7 +192,7 @@ public class LambdaMART : Ranker
 				if (score > BestScoreOnValidationData)
 				{
 					BestScoreOnValidationData = score;
-					bestModelOnValidation = ensemble.TreeCount() - 1;
+					bestModelOnValidation = ensemble.TreeCount - 1;
 				}
 			}
 			FlushLog();
@@ -203,9 +203,9 @@ public class LambdaMART : Ranker
 			}
 		}
 
-		while (ensemble.TreeCount() > bestModelOnValidation + 1)
+		while (ensemble.TreeCount > bestModelOnValidation + 1)
 		{
-			ensemble.Remove(ensemble.TreeCount() - 1);
+			ensemble.Remove(ensemble.TreeCount - 1);
 		}
 
 		ScoreOnTrainingData = Scorer.Score(Rank(Samples));
@@ -252,8 +252,8 @@ public class LambdaMART : Ranker
 	{
 		var lineByLine = new ModelLineProducer();
 		lineByLine.Parse(fullText, (model, endEns) => { });
-		ensemble = new Ensemble(lineByLine.GetModel().ToString());
-		Features = ensemble.GetFeatures();
+		ensemble = new Ensemble(lineByLine.Model.ToString());
+		Features = ensemble.Features;
 	}
 
 	public override void PrintParameters()
@@ -345,7 +345,7 @@ public class LambdaMART : Ranker
 
 	protected virtual void UpdateTreeOutput(RegressionTree rt)
 	{
-		var leaves = rt.Leaves();
+		var leaves = rt.Leaves;
 		foreach (var s in leaves)
 		{
 			var s1 = 0F;

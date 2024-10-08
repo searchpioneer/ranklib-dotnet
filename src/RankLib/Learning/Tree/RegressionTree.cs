@@ -91,7 +91,7 @@ public class RegressionTree
      * Retrieve all leaf nodes in the tree
      * @return
      */
-	public List<Split> Leaves() => leaves;
+	public List<Split> Leaves => leaves;
 
 	/**
      * Clear samples associated with each leaf (when they are no longer necessary) in order to save memory

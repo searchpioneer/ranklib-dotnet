@@ -21,9 +21,7 @@ public class Combiner
 			foreach (var file in files)
 			{
 				if (file.Contains(".progress"))
-				{
 					continue;
-				}
 
 				var ranker = (RFRanker)_rankerFactory.LoadRankerFromFile(file);
 				var ensemble = ranker.Ensembles[0];
@@ -32,7 +30,7 @@ public class Combiner
 		}
 		catch (Exception ex)
 		{
-			throw RankLibException.Create($"Error in Combiner::Combine(): {ex.Message}", ex);
+			throw RankLibException.Create("Error combining files", ex);
 		}
 	}
 }

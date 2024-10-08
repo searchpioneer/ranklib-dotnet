@@ -22,38 +22,36 @@ public class Ensemble
 		weights.AddRange(e.weights);
 	}
 
-	public Ensemble(string xmlRep)
+	public Ensemble(string xml)
 	{
 		try
 		{
-			using (var inStream = new MemoryStream(Encoding.UTF8.GetBytes(xmlRep)))
+			using var inStream = new MemoryStream(Encoding.UTF8.GetBytes(xml));
+			var doc = new XmlDocument();
+			doc.Load(inStream);
+			var treeNodes = doc.GetElementsByTagName("tree");
+			var fids = new Dictionary<int, int>();
+			foreach (XmlNode n in treeNodes)
 			{
-				var doc = new XmlDocument();
-				doc.Load(inStream);
-				var treeNodes = doc.GetElementsByTagName("tree");
-				var fids = new Dictionary<int, int>();
-				foreach (XmlNode n in treeNodes)
-				{
-					// Create a regression tree from this node
-					var root = Create(n.FirstChild, fids);
-					// Get the weight for this tree
-					var weight = float.Parse(n.Attributes["weight"].Value);
-					// Add it to the ensemble
-					trees.Add(new RegressionTree(root));
-					weights.Add(weight);
-				}
+				// Create a regression tree from this node
+				var root = Create(n.FirstChild, fids);
+				// Get the weight for this tree
+				var weight = float.Parse(n.Attributes["weight"].Value);
+				// Add it to the ensemble
+				trees.Add(new RegressionTree(root));
+				weights.Add(weight);
+			}
 
-				features = new int[fids.Keys.Count];
-				var i = 0;
-				foreach (var fid in fids.Keys)
-				{
-					features[i++] = fid;
-				}
+			features = new int[fids.Keys.Count];
+			var i = 0;
+			foreach (var fid in fids.Keys)
+			{
+				features[i++] = fid;
 			}
 		}
 		catch (Exception ex)
 		{
-			throw RankLibException.Create("Error in Ensemble(xmlRepresentation): ", ex);
+			throw RankLibException.Create("Error reading ensemble from xml", ex);
 		}
 	}
 
@@ -83,16 +81,20 @@ public class Ensemble
 		weights.RemoveAt(k);
 	}
 
-	public int TreeCount() => trees.Count;
+	public int TreeCount => trees.Count;
 
-	public int LeafCount()
+	public int[] Features => features;
+
+	public int LeafCount
 	{
-		var count = 0;
-		foreach (var tree in trees)
+		get
 		{
-			count += tree.Leaves().Count;
+			var count = 0;
+			foreach (var tree in trees)
+				count += tree.Leaves.Count;
+
+			return count;
 		}
-		return count;
 	}
 
 	public float Eval(DataPoint dp)
@@ -118,8 +120,6 @@ public class Ensemble
 		buf.Append("</ensemble>\n");
 		return buf.ToString();
 	}
-
-	public int[] GetFeatures() => features;
 
 	/**
      * Each input node @n corresponds to a <split> tag in the model file.

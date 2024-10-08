@@ -29,8 +29,6 @@ public class PrecisionScorer : MetricScorer
 		return (double)count / size;
 	}
 
-	public override MetricScorer Copy() => new PrecisionScorer(K);
-
 	public override string Name => $"P@{K}";
 
 	public override double[][] SwapChange(RankList rankList)

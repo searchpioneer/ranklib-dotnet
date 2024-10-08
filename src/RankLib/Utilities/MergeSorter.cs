@@ -1,37 +1,7 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
 namespace RankLib.Utilities;
 
-public class MergeSorter
+public static class MergeSorter
 {
-	// TODO: logging
-	private static readonly ILogger<MergeSorter> _logger = NullLogger<MergeSorter>.Instance;
-
-	public static void Main(string[] args)
-	{
-		var f = new float[1000][];
-		var rd = new Random();
-
-		for (var r = 0; r < f.Length; r++)
-		{
-			f[r] = new float[500];
-			for (var i = 0; i < f[r].Length; i++)
-			{
-				float x = rd.Next(10);
-				f[r][i] = x;
-			}
-		}
-
-		double start = DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond;
-		foreach (var element in f)
-		{
-			Sort(element, false);
-		}
-		double end = DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond;
-		_logger.LogInformation($"# {(end - start) / 1000.0} seconds");
-	}
-
 	public static int[] Sort(float[] list, bool asc) => Sort(list, 0, list.Length - 1, asc);
 
 	public static int[] Sort(float[] list, int begin, int end, bool asc)

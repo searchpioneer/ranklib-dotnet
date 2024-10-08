@@ -38,8 +38,6 @@ public class DCGScorer : MetricScorer
 
 	public DCGScorer(int k) => K = k;
 
-	public override MetricScorer Copy() => new DCGScorer();
-
 	/// <summary>
 	/// Compute DCG at k.
 	/// </summary>

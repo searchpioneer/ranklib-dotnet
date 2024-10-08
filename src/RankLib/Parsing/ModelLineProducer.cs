@@ -5,14 +5,14 @@ namespace RankLib.Parsing;
 
 public class ModelLineProducer
 {
-	private const int CarriageReturn = 13;
-	private const int LineFeed = 10;
+	private const int CarriageReturn = '\r';
+	private const int LineFeed = '\n';
 
-	private readonly StringBuilder _model = new(1000);
+	private readonly StringBuilder _model = new();
 
 	public delegate void LineConsumer(StringBuilder model, bool maybeEndEns);
 
-	public StringBuilder GetModel() => _model;
+	public StringBuilder Model => _model;
 
 	private bool ReadUntil(char[] fullTextChar, int beginOfLineCursor, int endOfLineCursor, StringBuilder model)
 	{

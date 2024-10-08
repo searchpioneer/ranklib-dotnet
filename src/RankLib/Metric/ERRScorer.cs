@@ -10,8 +10,6 @@ public class ERRScorer : MetricScorer
 
 	public ERRScorer(int k) => K = k;
 
-	public override MetricScorer Copy() => new ERRScorer();
-
 	/// <summary>
 	/// Compute ERR at k.
 	/// </summary>

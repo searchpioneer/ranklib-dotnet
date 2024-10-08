@@ -8,94 +8,6 @@ using RankLib.Utilities;
 
 namespace RankLib.Eval;
 
-public class EvaluatorFactory
-{
-	private readonly RankerFactory _rankerFactory;
-	private readonly MetricScorerFactory _metricScorerFactory;
-	private readonly FeatureManager _featureManager;
-	private readonly ILoggerFactory _loggerFactory;
-
-	public EvaluatorFactory(
-		RankerFactory rankerFactory,
-		MetricScorerFactory metricScorerFactory,
-		FeatureManager featureManager,
-		ILoggerFactory? loggerFactory = null)
-	{
-		_rankerFactory = rankerFactory;
-		_metricScorerFactory = metricScorerFactory;
-		_featureManager = featureManager;
-		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-	}
-
-	public Evaluator CreateEvaluator(RankerType rankerType, Metric.Metric trainMetric, Metric.Metric testMetric, string? queryRelevanceFile = null)
-	{
-		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric);
-		var testScorer = _metricScorerFactory.CreateScorer(testMetric);
-
-		if (queryRelevanceFile != null)
-		{
-			trainScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-		}
-
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _loggerFactory);
-	}
-
-	public Evaluator CreateEvaluator(RankerType rankerType, Metric.Metric trainMetric, int trainK, Metric.Metric testMetric, int testK, string? queryRelevanceFile = null)
-	{
-		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric, trainK);
-		var testScorer = _metricScorerFactory.CreateScorer(testMetric, testK);
-
-		if (queryRelevanceFile != null)
-		{
-			trainScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-		}
-
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _loggerFactory);
-	}
-
-	public Evaluator CreateEvaluator(RankerType rankerType, Metric.Metric trainMetric, Metric.Metric testMetric, int k, string? queryRelevanceFile = null)
-	{
-		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric, k);
-		var testScorer = _metricScorerFactory.CreateScorer(testMetric, k);
-
-		if (queryRelevanceFile != null)
-		{
-			trainScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-		}
-
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _loggerFactory);
-	}
-
-	public Evaluator CreateEvaluator(RankerType rankerType, Metric.Metric metric, int k, string? queryRelevanceFile = null)
-	{
-		var scorer = _metricScorerFactory.CreateScorer(metric, k);
-
-		if (queryRelevanceFile != null)
-		{
-			scorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-		}
-
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, scorer, _loggerFactory);
-	}
-
-	public Evaluator CreateEvaluator(RankerType rankerType, string trainMetric, string testMetric, string? queryRelevanceFile = null)
-	{
-		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric);
-		var testScorer = _metricScorerFactory.CreateScorer(testMetric);
-
-		if (queryRelevanceFile != null)
-		{
-			trainScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-		}
-
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _loggerFactory);
-	}
-}
-
 public class Evaluator
 {
 	private readonly ILoggerFactory _loggerFactory;
@@ -104,15 +16,15 @@ public class Evaluator
 	// main settings
 	public static bool MustHaveRelDoc = false;
 	public static bool UseSparseRepresentation = false;
-	public static bool normalize = false;
-	public static Normalizer Normalizer = new SumNormalizer();
 	public static string ModelFile = "";
 
 	private readonly RankerFactory _rankerFactory;
-	private readonly MetricScorer? _trainScorer;
-	private readonly MetricScorer? _testScorer;
+	private readonly MetricScorer _trainScorer;
+	private readonly MetricScorer _testScorer;
 	private readonly FeatureManager _featureManager;
 	private readonly RankerType _rankerType;
+	private readonly bool _normalize;
+	private readonly Normalizer _normalizer;
 
 	public Evaluator(
 		RankerFactory rankerFactory,
@@ -120,6 +32,7 @@ public class Evaluator
 		FeatureManager featureManager,
 		MetricScorer trainScorer,
 		MetricScorer testScorer,
+		Normalizer? normalizer = null,
 		ILoggerFactory? loggerFactory = null
 	)
 	{
@@ -130,6 +43,8 @@ public class Evaluator
 		_testScorer = testScorer;
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<Evaluator>();
+		_normalize = normalizer != null;
+		_normalizer = normalizer ?? SumNormalizer.Instance;
 	}
 
 	public Evaluator(
@@ -137,6 +52,7 @@ public class Evaluator
 		RankerType rankerType,
 		FeatureManager featureManager,
 		MetricScorer scorer,
+		Normalizer? normalizer = null,
 		ILoggerFactory? loggerFactory = null
 	)
 	{
@@ -147,6 +63,8 @@ public class Evaluator
 		_testScorer = scorer;
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<Evaluator>();
+		_normalize = normalizer != null;
+		_normalizer = normalizer ?? SumNormalizer.Instance;
 	}
 
 	public List<RankList> ReadInput(string inputFile) =>
@@ -156,7 +74,7 @@ public class Evaluator
 	{
 		foreach (var sample in samples)
 		{
-			Normalizer.Normalize(sample);
+			_normalizer.Normalize(sample);
 		}
 	}
 
@@ -164,7 +82,7 @@ public class Evaluator
 	{
 		foreach (var sample in samples)
 		{
-			Normalizer.Normalize(sample, fids);
+			_normalizer.Normalize(sample, fids);
 		}
 	}
 
@@ -199,7 +117,7 @@ public class Evaluator
 
 		var features = ReadFeature(featureDefFile) ?? _featureManager.GetFeatureFromSampleVector(train);
 
-		if (normalize)
+		if (_normalize)
 		{
 			Normalize(train, features);
 			if (validation != null)
@@ -228,10 +146,10 @@ public class Evaluator
 	{
 		var trainingData = new List<RankList>();
 		var testData = new List<RankList>();
-		var features = PrepareSplit(sampleFile, featureDefFile, percentTrain, normalize, trainingData, testData);
+		var features = PrepareSplit(sampleFile, featureDefFile, percentTrain, _normalize, trainingData, testData);
 		var validation = !string.IsNullOrEmpty(validationFile) ? ReadInput(validationFile) : null;
 
-		if (normalize && validation != null)
+		if (_normalize && validation != null)
 		{
 			Normalize(validation, features);
 		}
@@ -253,10 +171,10 @@ public class Evaluator
 	{
 		var train = new List<RankList>();
 		var validation = new List<RankList>();
-		var features = PrepareSplit(trainFile, featureDefFile, percentTrain, normalize, train, validation);
+		var features = PrepareSplit(trainFile, featureDefFile, percentTrain, _normalize, train, validation);
 		var test = !string.IsNullOrEmpty(testFile) ? ReadInput(testFile) : null;
 
-		if (normalize && test != null)
+		if (_normalize && test != null)
 		{
 			Normalize(test, features);
 		}
@@ -289,7 +207,7 @@ public class Evaluator
 
 		_featureManager.PrepareCV(samples, nFold, tvs, trainingData, validationData, testData);
 
-		if (normalize)
+		if (_normalize)
 		{
 			for (var i = 0; i < nFold; i++)
 			{
@@ -383,7 +301,7 @@ public class Evaluator
 		var features = ranker.Features;
 		var test = ReadInput(testFile);
 
-		if (normalize)
+		if (_normalize)
 		{
 			Normalize(test, features);
 		}
@@ -435,7 +353,7 @@ public class Evaluator
 			var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 			var features = ranker.Features;
 
-			if (normalize)
+			if (_normalize)
 			{
 				Normalize(test, features);
 			}
@@ -476,7 +394,7 @@ public class Evaluator
 			var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 			var features = ranker.Features;
 
-			if (normalize)
+			if (_normalize)
 			{
 				Normalize(test, features);
 			}
@@ -552,7 +470,7 @@ public class Evaluator
 		var features = ranker.Features;
 		var test = ReadInput(testFile);
 
-		if (normalize)
+		if (_normalize)
 		{
 			Normalize(test, features);
 		}
@@ -596,7 +514,7 @@ public class Evaluator
 					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 					var features = ranker.Features;
 
-					if (normalize)
+					if (_normalize)
 					{
 						Normalize(test, features);
 					}
@@ -631,7 +549,7 @@ public class Evaluator
 					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 					var features = ranker.Features;
 
-					if (normalize)
+					if (_normalize)
 					{
 						Normalize(test, features);
 					}
@@ -658,7 +576,7 @@ public class Evaluator
 		var features = ranker.Features;
 		var test = ReadInput(testFile);
 
-		if (normalize)
+		if (_normalize)
 		{
 			Normalize(test, features);
 		}
@@ -733,7 +651,7 @@ public class Evaluator
 					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 					var features = ranker.Features;
 
-					if (normalize)
+					if (_normalize)
 					{
 						Normalize(test, features);
 					}
@@ -777,7 +695,7 @@ public class Evaluator
 					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 					var features = ranker.Features;
 
-					if (normalize)
+					if (_normalize)
 					{
 						Normalize(test, features);
 					}

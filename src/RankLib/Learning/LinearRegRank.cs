@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 using RankLib.Utilities;
-using KeyValuePair = RankLib.Utilities.KeyValuePair;
 
 namespace RankLib.Learning;
 
@@ -83,20 +82,21 @@ public class LinearRegRank : Ranker
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
+		_logger.LogInformation("{ScorerName} on training data: {ScoreOnTrainingData}", Scorer.Name, ScoreOnTrainingData);
 
 		if (ValidationSamples != null)
 		{
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
+			_logger.LogInformation("{ScorerName} on validation data: {BestScoreOnValidationData}", Scorer.Name, SimpleMath.Round(BestScoreOnValidationData, 4));
 		}
 	}
 
 	public override double Eval(DataPoint p)
 	{
-		var score = weight[weight.Length - 1];
+		var score = weight[^1];
 		for (var i = 0; i < Features.Length; i++)
 			score += weight[i] * p.GetFeatureValue(Features[i]);
+
 		return score;
 	}
 
@@ -105,12 +105,12 @@ public class LinearRegRank : Ranker
 	public override string ToString()
 	{
 		var output = new StringBuilder();
-		output.Append("0:" + weight[0] + " ");
+		output.Append($"0:{weight[0]} ");
 		for (var i = 0; i < Features.Length; i++)
 		{
 			output.Append(Features[i] + ":" + weight[i]);
 			if (i != weight.Length - 1)
-				output.Append(" ");
+				output.Append(' ');
 		}
 		return output.ToString();
 	}
@@ -119,10 +119,10 @@ public class LinearRegRank : Ranker
 	{
 		get
 		{
-			var output = new StringBuilder();
-			output.Append("## " + Name + "\n");
-			output.Append("## Lambda = " + lambda + "\n");
-			output.Append(ToString());
+			var output = new StringBuilder()
+				.AppendLine($"## {Name}")
+				.AppendLine($"## Lambda = {lambda}")
+				.Append(ToString());
 			return output.ToString();
 		}
 	}
@@ -131,43 +131,40 @@ public class LinearRegRank : Ranker
 	{
 		try
 		{
-			using (var reader = new StringReader(fullText))
+			using var reader = new StringReader(fullText);
+			KeyValuePairs? kvp = null;
+			while (reader.ReadLine() is { } content)
 			{
-				string content;
-				KeyValuePair kvp = null;
-				while ((content = reader.ReadLine()) != null)
-				{
-					content = content.Trim();
-					if (content.Length == 0 || content.StartsWith("##"))
-						continue;
+				content = content.Trim();
+				if (content.Length == 0 || content.StartsWith("##"))
+					continue;
 
-					kvp = new KeyValuePair(content);
-					break;
+				kvp = new KeyValuePairs(content);
+				break;
+			}
+
+			if (kvp == null)
+				return;
+
+			var keys = kvp.Keys;
+			var values = kvp.Values;
+
+			weight = new double[keys.Count];
+			Features = new int[keys.Count - 1];
+
+			var idx = 0;
+			for (var i = 0; i < keys.Count; i++)
+			{
+				var fid = int.Parse(keys[i]);
+				if (fid > 0)
+				{
+					Features[idx] = fid;
+					weight[idx] = double.Parse(values[i]);
+					idx++;
 				}
-
-				if (kvp == null)
-					return;
-
-				var keys = kvp.Keys();
-				var values = kvp.Values();
-
-				weight = new double[keys.Count];
-				Features = new int[keys.Count - 1];
-
-				var idx = 0;
-				for (var i = 0; i < keys.Count; i++)
+				else
 				{
-					var fid = int.Parse(keys[i]);
-					if (fid > 0)
-					{
-						Features[idx] = fid;
-						weight[idx] = double.Parse(values[i]);
-						idx++;
-					}
-					else
-					{
-						weight[weight.Length - 1] = double.Parse(values[i]);
-					}
+					weight[^1] = double.Parse(values[i]);
 				}
 			}
 		}
@@ -177,7 +174,7 @@ public class LinearRegRank : Ranker
 		}
 	}
 
-	public override void PrintParameters() => _logger.LogInformation("L2-norm regularization: lambda = " + lambda);
+	public override void PrintParameters() => _logger.LogInformation("L2-norm regularization: lambda = {Lambda}", lambda);
 
 	public override string Name => "Linear Regression";
 

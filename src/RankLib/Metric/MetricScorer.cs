@@ -24,29 +24,29 @@ public abstract class MetricScorer
 	/// <summary>
 	/// Scores a list of RankLists by averaging the score of each individual RankList.
 	/// </summary>
-	/// <param name="rl">The list of RankLists to score.</param>
+	/// <param name="rankLists">The list of RankLists to score.</param>
 	/// <returns>The average score across the RankLists.</returns>
-	public double Score(List<RankList> rl)
+	public double Score(List<RankList> rankLists)
 	{
 		var score = 0.0;
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankLists.Count; i++)
 		{
-			score += Score(rl[i]);
+			score += Score(rankLists[i]);
 		}
-		return score / rl.Count;
+		return score / rankLists.Count;
 	}
 
 	/// <summary>
 	/// Extracts the relevance labels from the given RankList.
 	/// </summary>
-	/// <param name="rl">The RankList to extract relevance labels from.</param>
+	/// <param name="rankList">The RankList to extract relevance labels from.</param>
 	/// <returns>An array of relevance labels.</returns>
-	protected int[] GetRelevanceLabels(RankList rl)
+	protected int[] GetRelevanceLabels(RankList rankList)
 	{
-		var rel = new int[rl.Count];
-		for (var i = 0; i < rl.Count; i++)
+		var rel = new int[rankList.Count];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			rel[i] = (int)rl[i].Label;
+			rel[i] = (int)rankList[i].Label;
 		}
 		return rel;
 	}
@@ -57,12 +57,6 @@ public abstract class MetricScorer
 	/// <param name="rankList">The RankList to score.</param>
 	/// <returns>The score for the RankList.</returns>
 	public abstract double Score(RankList rankList);
-
-	/// <summary>
-	/// Creates a copy of the current MetricScorer.
-	/// </summary>
-	/// <returns>A copy of this MetricScorer.</returns>
-	public abstract MetricScorer Copy();
 
 	/// <summary>
 	/// Gets the name of this MetricScorer.

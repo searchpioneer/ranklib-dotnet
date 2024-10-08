@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace RankLib.Features;
 
 internal static class ListExtensions
@@ -7,6 +9,7 @@ internal static class ListExtensions
 	/// <summary>
 	/// Shuffles a list using Fisher-Yates shuffle
 	/// </summary>
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	public static void Shuffle<T>(this IList<T> list)
 	{
 		var n = list.Count;

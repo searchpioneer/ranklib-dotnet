@@ -1,6 +1,6 @@
 namespace RankLib.Stats;
 
-public class BasicStats
+public static class BasicStats
 {
 	public static double Mean(double[] values)
 	{

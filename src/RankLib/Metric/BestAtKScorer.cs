@@ -14,8 +14,6 @@ public class BestAtKScorer : MetricScorer
 		return rankList[k].Label;
 	}
 
-	public override MetricScorer Copy() => new BestAtKScorer();
-
 	/// <summary>
 	/// Return the position of the best object (e.g., docs with highest degree of relevance) among objects in the range [0..k].
 	/// NOTE: If you want best-at-k (i.e., best among top-k), you need MaxToK(rl, k-1).

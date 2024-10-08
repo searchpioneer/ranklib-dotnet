@@ -5,6 +5,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Metric;
 
+/// <summary>
+/// MAP (Mean Average Precision) Scorer
+/// </summary>
 public class APScorer : MetricScorer
 {
 	private readonly ILogger<APScorer> _logger;
@@ -20,8 +23,6 @@ public class APScorer : MetricScorer
 		// consider the whole list
 		K = 0;
 	}
-
-	public override MetricScorer Copy() => new APScorer(_logger);
 
 	public override void LoadExternalRelevanceJudgment(string queryRelevanceFile)
 	{

@@ -109,7 +109,7 @@ public class Split
 
 	public string ToString(string indent)
 	{
-		var buf = new StringBuilder(100);
+		var buf = new StringBuilder();
 		buf.Append(indent).Append("<split>\n");
 		buf.Append(GetString(indent + "\t"));
 		buf.Append(indent).Append("</split>\n");
@@ -118,7 +118,7 @@ public class Split
 
 	public string GetString(string indent)
 	{
-		var buf = new StringBuilder(100);
+		var buf = new StringBuilder();
 		if (featureID == -1)
 		{
 			buf.Append(indent).Append("<output>").Append(avgLabel).Append(" </output>\n");
@@ -152,9 +152,9 @@ public class Split
 
 	public int[][]? GetSampleSortedIndex() => sortedSampleIDs;
 
-	public double GetSumLabel() => sumLabel;
+	public double SumLabel => sumLabel;
 
-	public double GetSqSumLabel() => sqSumLabel;
+	public double SqSumLabel => sqSumLabel;
 
 	public void ClearSamples()
 	{

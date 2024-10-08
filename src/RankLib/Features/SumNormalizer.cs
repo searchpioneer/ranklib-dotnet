@@ -4,6 +4,8 @@ namespace RankLib.Features;
 
 public class SumNormalizer : Normalizer
 {
+	public static readonly SumNormalizer Instance = new();
+
 	public override void Normalize(RankList rl)
 	{
 		if (rl.Count == 0)

@@ -22,8 +22,6 @@ public class ReciprocalRankScorer : MetricScorer
 		return (firstRank == -1) ? 0 : (1.0 / firstRank);
 	}
 
-	public override MetricScorer Copy() => new ReciprocalRankScorer();
-
 	public override string Name => $"RR@{K}";
 
 	public override double[][] SwapChange(RankList rankList)

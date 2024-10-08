@@ -172,14 +172,14 @@ public class RFRanker : Ranker
 			}
 		});
 
-		ISet<int> uniqueFeatures = new HashSet<int>();
+		var uniqueFeatures = new HashSet<int>();
 		ensembles = new Ensemble[ens.Count];
 		for (var i = 0; i < ens.Count; i++)
 		{
 			ensembles[i] = ens[i];
 
 			// Obtain used features
-			var fids = ens[i].GetFeatures();
+			var fids = ens[i].Features;
 			foreach (var fid in fids)
 			{
 				uniqueFeatures.Add(fid);

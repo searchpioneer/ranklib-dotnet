@@ -145,8 +145,8 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private readonly RankerFactory _rankerFactory;
 
 	public EvaluateCommandOptionsHandler(
-		ILoggerFactory loggerFactory, 
-		EvaluatorFactory evaluatorFactory, 
+		ILoggerFactory loggerFactory,
+		EvaluatorFactory evaluatorFactory,
 		RankerFactory rankerFactory)
 	{
 		_loggerFactory = loggerFactory;
@@ -182,18 +182,6 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		var prpFile = options.Idv;
 
 		var scoreFile = options.Score;
-
-		if (options.Norm != null)
-		{
-			Evaluator.normalize = true;
-			Evaluator.Normalizer = options.Norm switch
-			{
-				NormalizerType.Sum => new SumNormalizer(),
-				NormalizerType.ZScore => new ZScoreNormalizer(),
-				NormalizerType.Linear => new LinearNormalizer(),
-				_ => throw RankLibException.Create("Unknown normalizer: " + options.Norm)
-			};
-		}
 
 		if (options.Save != null)
 		{
@@ -355,67 +343,73 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		{
 			options.Metric2T = options.Metric2t;
 		}
-		
-		var evaluator = _evaluatorFactory.CreateEvaluator(options.Ranker, options.Metric2t, options.Metric2T, options.QRel?.FullName);
+
+		Normalizer? normalizer = null;
+		if (options.Norm != null)
+		{
+			normalizer = options.Norm switch
+			{
+				NormalizerType.Sum => SumNormalizer.Instance,
+				NormalizerType.ZScore => new ZScoreNormalizer(),
+				NormalizerType.Linear => new LinearNormalizer(),
+				_ => throw RankLibException.Create("Unknown normalizer: " + options.Norm)
+			};
+		}
+
+		var evaluator = _evaluatorFactory.CreateEvaluator(
+			options.Ranker,
+			options.Metric2t,
+			options.Metric2T,
+			normalizer,
+			options.QRel?.FullName);
 
 		if (options.Train != null)
 		{
-			logger.LogInformation($"Training data: {trainFile}");
+			logger.LogInformation("Training data: {TrainFile}", trainFile);
 
 			if (foldCv != -1)
 			{
-				logger.LogInformation($"Cross validation: {foldCv} folds.");
+				logger.LogInformation("Cross validation: {FoldCv} folds.", foldCv);
 				if (tvSplit > 0)
 				{
-					logger.LogInformation($"Train-Validation split: {tvSplit}");
+					logger.LogInformation("Train-Validation split: {TvSplit}", tvSplit);
 				}
 			}
 			else
 			{
 				if (testFile != null)
-				{
-					logger.LogInformation($"Test data: {testFile}");
-				}
+					logger.LogInformation("Test data: {TestFile}", testFile);
 				else if (ttSplit > 0)
-				{
-					logger.LogInformation($"Train-Test split: {ttSplit}");
-				}
+					logger.LogInformation("Train-Test split: {TrainTestSplit}", ttSplit);
 
 				if (validationFile != null)
-				{
-					logger.LogInformation($"Validation data: {validationFile}");
-				}
+					logger.LogInformation("Validation data: {ValidationFile}", validationFile);
 				else if (ttSplit <= 0 && tvSplit > 0)
-				{
-					logger.LogInformation($"Train-Validation split: {tvSplit}");
-				}
+					logger.LogInformation("Train-Validation split: {TrainValidationSplit}", tvSplit);
 			}
+
 			logger.LogInformation($"Feature vector representation: {(Evaluator.UseSparseRepresentation ? "Sparse" : "Dense")}.");
-			logger.LogInformation($"Ranking method: {options.Ranker}");
+			logger.LogInformation("Ranking method: {Ranker}", options.Ranker);
+
 			if (featureDescriptionFile != null)
-			{
-				logger.LogInformation($"Feature description file: {featureDescriptionFile}");
-			}
+				logger.LogInformation("Feature description file: {FeatureDescriptionFile}", featureDescriptionFile);
 			else
-			{
 				logger.LogInformation("Feature description file: Unspecified. All features will be used.");
-			}
-			logger.LogInformation($"Train metric: {trainMetric}");
-			logger.LogInformation($"Test metric: {testMetric}");
+
+			logger.LogInformation("Train metric: {TrainMetric}", trainMetric);
+			logger.LogInformation("Test metric: {TestMetric}", testMetric);
 
 			if (trainMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase) || testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
-			{
-				logger.LogInformation($"Highest relevance label (to compute ERR): {(int)SimpleMath.LogBase2(ERRScorer.MAX)}");
-			}
+				logger.LogInformation("Highest relevance label (to compute ERR): {HighRelevanceLabel}", (int)SimpleMath.LogBase2(ERRScorer.MAX));
+
 			if (options.QRel != null)
-			{
 				logger.LogInformation("TREC-format relevance judgment (only affects MAP and NDCG scores): {QueryRelevanceJudgementFile}", options.QRel.FullName);
-			}
-			logger.LogInformation($"Feature normalization: {(Evaluator.normalize ? Evaluator.Normalizer.Name : "No")}");
+
+			logger.LogInformation("Feature normalization: {FeatureNormalization}", normalizer != null ? normalizer.Name : "No");
 
 			if (kcvModelDir != null)
 			{
-				logger.LogInformation($"Models directory: {kcvModelDir}");
+				logger.LogInformation("Models directory: {KcvModelDir}", kcvModelDir);
 			}
 
 			if (!string.IsNullOrEmpty(kcvModelFile))
@@ -470,7 +464,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		else
 		{
 			logger.LogInformation($"Model file: {savedModelFile}");
-			logger.LogInformation($"Feature normalization: {(Evaluator.normalize ? Evaluator.Normalizer.Name : "No")}");
+			logger.LogInformation($"Feature normalization: {(normalizer != null ? normalizer.Name : "No")}");
 
 			if (rankFile != null)
 			{
