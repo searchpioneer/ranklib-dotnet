@@ -8,9 +8,9 @@ namespace RankLib.Console;
 
 public class CombineCommandOptions : ICommandOptions
 {
-	public DirectoryInfo Directory { get; set; }
+	public DirectoryInfo Directory { get; set; } = default!;
 
-	public FileInfo Output { get; set; }
+	public FileInfo Output { get; set; } = default!;
 }
 
 public class CombineCommand : Command<CombineCommandOptions, CombineCommandOptionsHandler>

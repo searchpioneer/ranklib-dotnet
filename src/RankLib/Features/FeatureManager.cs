@@ -7,168 +7,14 @@ namespace RankLib.Features;
 
 public class FeatureManager
 {
-	// Fields
-	internal static ILogger<FeatureManager> Logger = NullLogger<FeatureManager>.Instance;
+	private readonly ILogger<FeatureManager> _logger;
 
-	// Static main method
-	public static void Main(string[] args)
-	{
-		var rankingFiles = new List<string>();
-		var outputDir = "";
-		var modelFileName = "";
-		var shuffle = false;
-		var doFeatureStats = false;
+	public FeatureManager(ILogger<FeatureManager>? logger = null) =>
+		_logger = logger ?? NullLogger<FeatureManager>.Instance;
 
-		var nFold = 0;
-		float tvs = -1; // train-validation split in each fold
-		float tts = -1; // train-test validation split of the whole dataset
-		var argsLen = args.Length;
+	public List<RankList> ReadInput(string inputFile) => ReadInput(inputFile, false, false);
 
-		if ((argsLen < 3 && !args.Contains("-feature_stats")) || (argsLen != 2 && args.Contains("-feature_stats")))
-		{
-			Logger.LogInformation("Usage: dotnet run ciir.umass.edu.features.FeatureManager <Params>");
-			Logger.LogInformation("Params:");
-			Logger.LogInformation("\t-input <file>\t\tSource data (ranked lists)");
-			Logger.LogInformation("\t-output <dir>\t\tThe output directory");
-			Logger.LogInformation("  [+] Shuffling");
-			Logger.LogInformation("\t-shuffle\t\tCreate a copy of the input file in which the ordering of all ranked lists is randomized.");
-			Logger.LogInformation("  [+] k-fold Partitioning (sequential split)");
-			Logger.LogInformation("\t-k <fold>\t\tThe number of folds");
-			Logger.LogInformation("\t[ -tvs <x \\in [0..1]> ] Train-validation split ratio (x)(1.0-x)");
-			Logger.LogInformation("  [+] Train-test split");
-			Logger.LogInformation("\t-tts <x \\in [0..1]> ] Train-test split ratio (x)(1.0-x)");
-
-			Logger.LogInformation("  NOTE: If both -shuffle and -k are specified, the input data will be shuffled and then sequentially partitioned.");
-			Logger.LogInformation("Feature Statistics -- Saved model feature use frequencies and statistics.");
-			return;
-		}
-
-		for (var i = 0; i < args.Length; i++)
-		{
-			if (args[i].Equals("-input", StringComparison.OrdinalIgnoreCase))
-			{
-				rankingFiles.Add(args[++i]);
-			}
-			else if (args[i].Equals("-k", StringComparison.OrdinalIgnoreCase))
-			{
-				nFold = int.Parse(args[++i]);
-			}
-			else if (args[i].Equals("-shuffle", StringComparison.OrdinalIgnoreCase))
-			{
-				shuffle = true;
-			}
-			else if (args[i].Equals("-tvs", StringComparison.OrdinalIgnoreCase))
-			{
-				tvs = float.Parse(args[++i]);
-			}
-			else if (args[i].Equals("-tts", StringComparison.OrdinalIgnoreCase))
-			{
-				tts = float.Parse(args[++i]);
-			}
-			else if (args[i].Equals("-output", StringComparison.OrdinalIgnoreCase))
-			{
-				outputDir = FileUtils.MakePathStandard(args[++i]);
-			}
-			else if (args[i].Equals("-feature_stats", StringComparison.OrdinalIgnoreCase))
-			{
-				doFeatureStats = true;
-				modelFileName = args[++i];
-			}
-		}
-
-		if (nFold > 0 && tts != -1)
-		{
-			Logger.LogInformation("Error: Only one of k or tts should be specified.");
-			return;
-		}
-
-		if (shuffle || nFold > 0 || tts != -1)
-		{
-			var samples = ReadInput(rankingFiles);
-
-			if (!samples.Any())
-			{
-				Logger.LogInformation("Error: The input file is empty.");
-				return;
-			}
-
-			var fn = FileUtils.GetFileName(rankingFiles[0]);
-
-			Directory.CreateDirectory(outputDir);
-
-			if (shuffle)
-			{
-				fn += ".shuffled";
-				Logger.LogInformation("Shuffling... ");
-				samples.Shuffle();
-				Logger.LogInformation("Saving... ");
-				Save(samples, Path.Combine(outputDir, fn));
-			}
-
-			if (tts != -1)
-			{
-				var trains = new List<RankList>();
-				var tests = new List<RankList>();
-
-				Logger.LogInformation("Splitting... ");
-				PrepareSplit(samples, tts, trains, tests);
-
-				try
-				{
-					Logger.LogInformation("Saving splits...");
-					Save(trains, Path.Combine(outputDir, $"train.{fn}"));
-					Save(tests, Path.Combine(outputDir, $"test.{fn}"));
-				}
-				catch (Exception ex)
-				{
-					throw RankLibError.Create("Cannot save partition data.\nOccurred in FeatureManager::main(): ", ex);
-				}
-			}
-
-			if (nFold > 0)
-			{
-				var trains = new List<List<RankList>>();
-				var tests = new List<List<RankList>>();
-				var valis = new List<List<RankList>>();
-				Logger.LogInformation("Partitioning... ");
-				PrepareCV(samples, nFold, tvs, trains, valis, tests);
-
-				try
-				{
-					for (var i = 0; i < trains.Count; i++)
-					{
-						Logger.LogInformation($"Saving fold {i + 1}/{nFold}... ");
-						Save(trains[i], Path.Combine(outputDir, $"f{i + 1}.train.{fn}"));
-						Save(tests[i], Path.Combine(outputDir, $"f{i + 1}.test.{fn}"));
-						if (tvs > 0)
-						{
-							Save(valis[i], Path.Combine(outputDir, $"f{i + 1}.validation.{fn}"));
-						}
-					}
-				}
-				catch (Exception ex)
-				{
-					throw RankLibError.Create("Cannot save partition data.\nOccurred in FeatureManager::main(): ", ex);
-				}
-			}
-		}
-		else if (doFeatureStats)
-		{
-			try
-			{
-				var fs = new FeatureStats(modelFileName);
-				fs.WriteFeatureStats();
-			}
-			catch (Exception ex)
-			{
-				throw RankLibError.Create($"Failure processing saved {modelFileName} model file.\nError occurred in FeatureManager::main(): ", ex);
-			}
-		}
-	}
-
-	public static List<RankList> ReadInput(string inputFile) => ReadInput(inputFile, false, false);
-
-	public static List<RankList> ReadInput(string inputFile, bool mustHaveRelDoc, bool useSparseRepresentation)
+	public List<RankList> ReadInput(string inputFile, bool mustHaveRelDoc, bool useSparseRepresentation)
 	{
 		var samples = new List<RankList>(1000);
 		var countEntries = 0;
@@ -190,7 +36,7 @@ public class FeatureManager
 
 				if (countEntries % 10000 == 0)
 				{
-					Logger.LogInformation("Reading feature file [{InputFile}]: {CountEntries}...", inputFile, countEntries);
+					_logger.LogInformation("Reading feature file [{InputFile}]: {CountEntries}...", inputFile, countEntries);
 				}
 
 				DataPoint qp = useSparseRepresentation
@@ -222,7 +68,7 @@ public class FeatureManager
 				samples.Add(new RankList(rl));
 			}
 
-			Logger.LogInformation(
+			_logger.LogInformation(
 				"Reading feature file [{InputFile}] completed. (Read {SamplesCount} ranked lists, {CountEntries} entries)",
 				inputFile,
 				samples.Count,
@@ -236,7 +82,7 @@ public class FeatureManager
 		return samples;
 	}
 
-	public static List<RankList> ReadInput(List<string> inputFiles)
+	public List<RankList> ReadInput(List<string> inputFiles)
 	{
 		var samples = new List<RankList>();
 		foreach (var inputFile in inputFiles)
@@ -247,7 +93,7 @@ public class FeatureManager
 		return samples;
 	}
 
-	public static int[] ReadFeature(string featureDefFile)
+	public int[] ReadFeature(string featureDefFile)
 	{
 		int[] features;
 		var fids = new List<string>();
@@ -277,7 +123,7 @@ public class FeatureManager
 		return features;
 	}
 
-	public static int[] GetFeatureFromSampleVector(List<RankList> samples)
+	public int[] GetFeatureFromSampleVector(List<RankList> samples)
 	{
 		if (!samples.Any())
 		{
@@ -290,9 +136,9 @@ public class FeatureManager
 		return features;
 	}
 
-	public static void PrepareCV(List<RankList> samples, int nFold, List<List<RankList>> trainingData, List<List<RankList>> testData) => PrepareCV(samples, nFold, -1, trainingData, null, testData);
+	public void PrepareCV(List<RankList> samples, int nFold, List<List<RankList>> trainingData, List<List<RankList>> testData) => PrepareCV(samples, nFold, -1, trainingData, null, testData);
 
-	public static void PrepareCV(List<RankList> samples, int nFold, float tvs, List<List<RankList>> trainingData, List<List<RankList>> validationData, List<List<RankList>> testData)
+	public void PrepareCV(List<RankList> samples, int nFold, float tvs, List<List<RankList>> trainingData, List<List<RankList>> validationData, List<List<RankList>> testData)
 	{
 		var trainSamplesIdx = new List<List<int>>();
 		var size = samples.Count / nFold;
@@ -318,7 +164,7 @@ public class FeatureManager
 
 		foreach (var indexes in trainSamplesIdx)
 		{
-			Logger.LogInformation($"Creating data for fold {trainSamplesIdx.IndexOf(indexes) + 1}/{nFold}...");
+			_logger.LogInformation($"Creating data for fold {trainSamplesIdx.IndexOf(indexes) + 1}/{nFold}...");
 			var train = new List<RankList>();
 			var test = new List<RankList>();
 			var validation = new List<RankList>();
@@ -354,31 +200,31 @@ public class FeatureManager
 			}
 		}
 
-		Logger.LogInformation($"Creating data for {nFold} folds completed.");
+		_logger.LogInformation($"Creating data for {nFold} folds completed.");
 		PrintQueriesForSplit("Train", trainingData);
 		PrintQueriesForSplit("Validate", validationData);
 		PrintQueriesForSplit("Test", testData);
 	}
 
-	public static void PrintQueriesForSplit(string name, List<List<RankList>>? split)
+	public void PrintQueriesForSplit(string name, List<List<RankList>>? split)
 	{
 		if (split == null)
 		{
-			Logger.LogInformation("No {Name} split.", name);
+			_logger.LogInformation("No {Name} split.", name);
 			return;
 		}
 
 		foreach (var rankLists in split)
 		{
-			Logger.LogInformation("{Name} [{RankListIndex}] = ", name, split.IndexOf(rankLists));
+			_logger.LogInformation("{Name} [{RankListIndex}] = ", name, split.IndexOf(rankLists));
 			foreach (var rankList in rankLists)
 			{
-				Logger.LogInformation(" \"{RankListId}\"", rankList.Id);
+				_logger.LogInformation(" \"{RankListId}\"", rankList.Id);
 			}
 		}
 	}
 
-	public static void PrepareSplit(List<RankList> samples, double percentTrain, List<RankList> trainingData, List<RankList> testData)
+	public void PrepareSplit(List<RankList> samples, double percentTrain, List<RankList> trainingData, List<RankList> testData)
 	{
 		var size = (int)(samples.Count * percentTrain);
 
@@ -393,7 +239,7 @@ public class FeatureManager
 		}
 	}
 
-	public static void Save(List<RankList> samples, string outputFile)
+	public void Save(List<RankList> samples, string outputFile)
 	{
 		try
 		{
@@ -409,7 +255,7 @@ public class FeatureManager
 		}
 	}
 
-	private static void Save(RankList r, StreamWriter outStream)
+	private void Save(RankList r, StreamWriter outStream)
 	{
 		for (var i = 0; i < r.Count; i++)
 		{

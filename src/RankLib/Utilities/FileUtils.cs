@@ -5,9 +5,9 @@ namespace RankLib.Utilities;
 
 public static class FileUtils
 {
-	private const int BufSize = 51200;
+	public static StreamReader SmartReader(string inputFile) => SmartReader(inputFile, Encoding.UTF8);
 
-	public static StreamReader SmartReader(string inputFile, string encoding = "UTF-8")
+	public static StreamReader SmartReader(string inputFile, Encoding encoding)
 	{
 		Stream input = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
 
@@ -16,10 +16,10 @@ public static class FileUtils
 			input = new GZipStream(input, CompressionMode.Decompress);
 		}
 
-		return new StreamReader(input, Encoding.GetEncoding(encoding));
+		return new StreamReader(input, encoding);
 	}
 
-	public static string Read(string filename, string encoding)
+	public static string Read(string filename, Encoding encoding)
 	{
 		try
 		{
@@ -31,36 +31,6 @@ public static class FileUtils
 			throw new InvalidOperationException("Error reading file", e);
 		}
 	}
-
-	public static List<string> ReadLine(string filename, string encoding)
-	{
-		var lines = new List<string>();
-
-		try
-		{
-			using var reader = SmartReader(filename, encoding);
-			while (reader.ReadLine() is { } line)
-			{
-				line = line.Trim();
-
-				if (line.Length == 0)
-				{
-					continue;
-				}
-
-				lines.Add(line);
-			}
-		}
-		catch (Exception e)
-		{
-			throw new InvalidOperationException("Error reading lines from file", e);
-		}
-
-		return lines;
-	}
-
-	public static void Write(string filename, string encoding, string content) =>
-		Write(filename, Encoding.GetEncoding(encoding), content);
 
 	public static void Write(string filename, Encoding encoding, string content)
 	{
@@ -75,87 +45,5 @@ public static class FileUtils
 		}
 	}
 
-	public static string[] GetAllFiles(string directory) => Directory.GetFiles(directory);
-
-	public static bool Exists(string file) => File.Exists(file);
-
-	public static void CopyFile(string srcFile, string dstFile)
-	{
-		try
-		{
-			File.Copy(srcFile, dstFile, overwrite: true);
-		}
-		catch (IOException e)
-		{
-			throw new InvalidOperationException("Error copying file", e);
-		}
-	}
-
-	public static void CopyFiles(string srcDir, string dstDir, List<string> files)
-	{
-		foreach (var file in files)
-		{
-			CopyFile(Path.Combine(srcDir, file), Path.Combine(dstDir, file));
-		}
-	}
-
-	public static int GunzipFile(FileInfo fileInput, DirectoryInfo dirOutput)
-	{
-		var fileOutputName = Path.GetFileNameWithoutExtension(fileInput.Name);
-		var outputFile = new FileInfo(Path.Combine(dirOutput.FullName, fileOutputName));
-
-		var buffer = new byte[BufSize];
-
-		try
-		{
-			using (var gzipStream = new GZipStream(fileInput.OpenRead(), CompressionMode.Decompress))
-			using (var destinationStream = outputFile.OpenWrite())
-			{
-				int len;
-
-				while ((len = gzipStream.Read(buffer, 0, buffer.Length)) > 0)
-				{
-					destinationStream.Write(buffer, 0, len);
-				}
-
-				destinationStream.Flush();
-			}
-		}
-		catch (IOException e)
-		{
-			throw new InvalidOperationException("Error decompressing file", e);
-		}
-
-		return 1;
-	}
-
-	public static int GzipFile(string inputFile, string gzipFilename)
-	{
-		try
-		{
-			using (var inStream = new FileStream(inputFile, FileMode.Open, FileAccess.Read))
-			using (var outStream = new GZipStream(new FileStream(gzipFilename, FileMode.Create), CompressionMode.Compress))
-			{
-				inStream.CopyTo(outStream);
-			}
-		}
-		catch (Exception e)
-		{
-			throw new InvalidOperationException("Error compressing file", e);
-		}
-
-		return 1;
-	}
-
 	public static string GetFileName(string pathName) => Path.GetFileName(pathName);
-
-	public static string MakePathStandard(string directory)
-	{
-		if (!directory.EndsWith(Path.DirectorySeparatorChar.ToString()))
-		{
-			return directory + Path.DirectorySeparatorChar;
-		}
-
-		return directory;
-	}
 }

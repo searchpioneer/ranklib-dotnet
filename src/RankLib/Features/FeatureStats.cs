@@ -10,15 +10,17 @@ public partial class FeatureStats
 	[GeneratedRegex(@"<feature>(\d+)</feature>")]
 	private static partial Regex FeatureIdRegex();
 
-	// TODO: logging
-	private static readonly ILogger logger = NullLogger.Instance;
+	private readonly ILogger<FeatureStats> _logger;
 
-	private string _modelName;
 	private readonly string _modelFileName;
 	private readonly FileInfo _file;
+	private static readonly string[] ModelsThatUseAllFeatures = ["Coordinate Ascent", "LambdaRank", "Linear Regression", "ListNet", "RankNet"];
+	private static readonly string[] FeatureWeightModels = ["AdaRank", "RankBoost"];
+	private static readonly string[] TreeModels = ["LambdaMART", "MART", "Random Forests"];
 
-	public FeatureStats(string modelFileName)
+	public FeatureStats(string modelFileName, ILogger<FeatureStats>? logger = null)
 	{
+		_logger = logger ?? NullLogger<FeatureStats>.Instance;
 		_file = new FileInfo(modelFileName);
 		_modelFileName = _file.FullName;
 	}
@@ -87,7 +89,8 @@ public partial class FeatureStats
 
 	public void WriteFeatureStats()
 	{
-		SortedDictionary<int, int> featureFrequencies = null;
+		SortedDictionary<int, int>? featureFrequencies = null;
+		string? modelName = null;
 
 		try
 		{
@@ -97,35 +100,35 @@ public partial class FeatureStats
 			var modelLine = sr.ReadLine()?.Trim();
 			var nameParts = modelLine?.Split(" ");
 			var len = nameParts?.Length ?? 0;
-
+			
 			if (len == 2)
 			{
-				_modelName = nameParts![1].Trim();
+				modelName = nameParts![1].Trim();
 			}
 			else if (len == 3)
 			{
-				_modelName = $"{nameParts![1].Trim()} {nameParts[2].Trim()}";
+				modelName = $"{nameParts![1].Trim()} {nameParts[2].Trim()}";
 			}
 
-			if (string.IsNullOrEmpty(_modelName))
+			if (string.IsNullOrEmpty(modelName))
 			{
 				throw new Exception("No model name defined. Quitting.");
 			}
 
 			// Handle models that use all features
-			if (new[] { "Coordinate Ascent", "LambdaRank", "Linear Regression", "ListNet", "RankNet" }.Contains(_modelName))
+			if (ModelsThatUseAllFeatures.Contains(modelName))
 			{
-				logger.LogInformation("{ModelName} uses all features. Can't do selected model statistics for this algorithm.", _modelName);
+				_logger.LogInformation("{ModelName} uses all features. Can't do selected model statistics for this algorithm.", modelName);
 				return;
 			}
 
 			// Feature:Weight models
-			if (new[] { "AdaRank", "RankBoost" }.Contains(_modelName))
+			if (FeatureWeightModels.Contains(modelName))
 			{
 				featureFrequencies = GetFeatureWeightFeatureFrequencies(sr);
 			}
 			// Tree models
-			else if (new[] { "LambdaMART", "MART", "Random Forests" }.Contains(_modelName))
+			else if (TreeModels.Contains(modelName))
 			{
 				featureFrequencies = GetTreeFeatureFrequencies(sr);
 			}
@@ -135,12 +138,17 @@ public partial class FeatureStats
 			throw new Exception($"IOException on file {_modelFileName}: {ioe.Message}", ioe);
 		}
 
-		// Calculate feature statistics
-		var featuresUsed = featureFrequencies?.Count ?? 0;
+		if (featureFrequencies is null)
+		{
+			throw new Exception("No feature frequencies defined.");
+		}
 
-		logger.LogInformation("Model File: {ModelFileName}", _modelFileName);
-		logger.LogInformation("Algorithm: {ModelName}", _modelName);
-		logger.LogInformation("Feature frequencies:");
+		// Calculate feature statistics
+		var featuresUsed = featureFrequencies.Count;
+
+		_logger.LogInformation("Model File: {ModelFileName}", _modelFileName);
+		_logger.LogInformation("Algorithm: {ModelName}", modelName);
+		_logger.LogInformation("Feature frequencies:");
 
 		var data = new List<double>(featuresUsed);
 
@@ -148,20 +156,20 @@ public partial class FeatureStats
 		{
 			var featureId = entry.Key;
 			var freq = entry.Value;
-			logger.LogInformation("\tFeature[{FeatureId}] : {Freq}", featureId, freq);
+			_logger.LogInformation("\tFeature[{FeatureId}] : {Freq}", featureId, freq);
 			data.Add(freq);
 		}
 
 		var stats = new DescriptiveStatistics(data);
 
 		// Print out summary statistics
-		logger.LogInformation($"Total Features Used: {featuresUsed}");
-		logger.LogInformation($"Min frequency    : {stats.Minimum:0.00}");
-		logger.LogInformation($"Max frequency    : {stats.Maximum:0.00}");
+		_logger.LogInformation($"Total Features Used: {featuresUsed}");
+		_logger.LogInformation($"Min frequency    : {stats.Minimum:0.00}");
+		_logger.LogInformation($"Max frequency    : {stats.Maximum:0.00}");
 		//logger.LogInformation($"Median frequency : {stats.Median:0.00}");
-		logger.LogInformation($"Avg frequency    : {stats.Mean:0.00}");
-		logger.LogInformation($"Variance         : {stats.Variance:0.00}");
-		logger.LogInformation($"STD              : {stats.StandardDeviation:0.00}");
+		_logger.LogInformation($"Avg frequency    : {stats.Mean:0.00}");
+		_logger.LogInformation($"Variance         : {stats.Variance:0.00}");
+		_logger.LogInformation($"STD              : {stats.StandardDeviation:0.00}");
 	}
 
 

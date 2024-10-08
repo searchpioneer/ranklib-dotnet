@@ -154,8 +154,6 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	public Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
 		var logger = _loggerFactory.CreateLogger<Evaluator>();
-		Evaluator.LoggerFactory = _loggerFactory;
-		FeatureManager.Logger = _loggerFactory.CreateLogger<FeatureManager>();
 
 		var trainFile = options.Train;
 		var foldCV = options.Kcv;
@@ -377,7 +375,8 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		logger.LogInformation(options.Keep ? "Keep orig. features" : "Discard orig. features");
 
-		var evaluator = new Evaluator(options.Ranker, options.Metric2t, options.Metric2T);
+		var featureManager = new FeatureManager(_loggerFactory.CreateLogger<FeatureManager>());
+		var evaluator = new Evaluator(featureManager, options.Ranker, options.Metric2t, options.Metric2T, _loggerFactory);
 
 		if (options.Train != null)
 		{

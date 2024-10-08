@@ -15,7 +15,9 @@ internal class Program
 		{
 			new EvaluateCommand(),
 			new AnalyzeCommand(),
-			new CombineCommand()
+			new CombineCommand(),
+			new PrepareCommand(),
+			new StatsCommand()
 		};
 
 		var builder = new CommandLineBuilder(rootCommand)

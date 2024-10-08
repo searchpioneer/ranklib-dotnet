@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Learning.Boosting;
@@ -108,7 +109,7 @@ public class RankerFactory
 
 	public Ranker LoadRankerFromFile(string modelFile)
 	{
-		var fullText = FileUtils.Read(modelFile, "ASCII");
+		var fullText = FileUtils.Read(modelFile, Encoding.ASCII);
 		return LoadRankerFromString(fullText);
 	}
 
