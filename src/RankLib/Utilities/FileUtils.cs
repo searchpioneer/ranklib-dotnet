@@ -59,11 +59,14 @@ public static class FileUtils
 		return lines;
 	}
 
-	public static void Write(string filename, string encoding, string content)
+	public static void Write(string filename, string encoding, string content) =>
+		Write(filename, Encoding.GetEncoding(encoding), content);
+
+	public static void Write(string filename, Encoding encoding, string content)
 	{
 		try
 		{
-			using var writer = new StreamWriter(new FileStream(filename, FileMode.Create), Encoding.GetEncoding(encoding));
+			using var writer = new StreamWriter(new FileStream(filename, FileMode.Create), encoding);
 			writer.Write(content);
 		}
 		catch (Exception e)

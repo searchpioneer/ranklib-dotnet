@@ -376,31 +376,36 @@ public class RankNet : Ranker
 		return output.ToString();
 	}
 
-	public override string Model()
+	public override string Model
 	{
-		var output = new System.Text.StringBuilder();
-		output.AppendLine($"## {Name}");
-		output.AppendLine($"## Epochs = {NIteration}");
-		output.AppendLine($"## No. of features = {Features.Length}");
-		output.AppendLine($"## No. of hidden layers = {_layers.Count - 2}");
-		for (var i = 1; i < _layers.Count - 1; i++)
+		get
 		{
-			output.AppendLine($"## Layer {i}: {_layers[i].Count} neurons");
-		}
+			var output = new System.Text.StringBuilder();
+			output.AppendLine($"## {Name}");
+			output.AppendLine($"## Epochs = {NIteration}");
+			output.AppendLine($"## No. of features = {Features.Length}");
+			output.AppendLine($"## No. of hidden layers = {_layers.Count - 2}");
+			for (var i = 1; i < _layers.Count - 1; i++)
+			{
+				output.AppendLine($"## Layer {i}: {_layers[i].Count} neurons");
+			}
 
-		for (var i = 0; i < Features.Length; i++)
-		{
-			output.Append($"{Features[i]}{(i == Features.Length - 1 ? "" : " ")}");
-		}
-		output.AppendLine();
-		output.AppendLine($"{_layers.Count - 2}");
-		for (var i = 1; i < _layers.Count - 1; i++)
-		{
-			output.AppendLine($"{_layers[i].Count}");
-		}
-		output.AppendLine(ToString());
+			for (var i = 0; i < Features.Length; i++)
+			{
+				output.Append($"{Features[i]}{(i == Features.Length - 1 ? "" : " ")}");
+			}
 
-		return output.ToString();
+			output.AppendLine();
+			output.AppendLine($"{_layers.Count - 2}");
+			for (var i = 1; i < _layers.Count - 1; i++)
+			{
+				output.AppendLine($"{_layers[i].Count}");
+			}
+
+			output.AppendLine(ToString());
+
+			return output.ToString();
+		}
 	}
 
 	public override void LoadFromString(string fullText)

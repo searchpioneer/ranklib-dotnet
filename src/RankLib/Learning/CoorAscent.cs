@@ -237,19 +237,22 @@ public class CoorAscent : Ranker
 		return output.ToString();
 	}
 
-	public override string Model()
+	public override string Model
 	{
-		var output = new StringBuilder();
-		output.AppendLine($"## {Name}");
-		output.AppendLine($"## Restart = {nRestart}");
-		output.AppendLine($"## MaxIteration = {nMaxIteration}");
-		output.AppendLine($"## StepBase = {stepBase}");
-		output.AppendLine($"## StepScale = {stepScale}");
-		output.AppendLine($"## Tolerance = {tolerance}");
-		output.AppendLine($"## Regularized = {regularized}");
-		output.AppendLine($"## Slack = {slack}");
-		output.AppendLine(ToString());
-		return output.ToString();
+		get
+		{
+			var output = new StringBuilder();
+			output.AppendLine($"## {Name}");
+			output.AppendLine($"## Restart = {nRestart}");
+			output.AppendLine($"## MaxIteration = {nMaxIteration}");
+			output.AppendLine($"## StepBase = {stepBase}");
+			output.AppendLine($"## StepScale = {stepScale}");
+			output.AppendLine($"## Tolerance = {tolerance}");
+			output.AppendLine($"## Regularized = {regularized}");
+			output.AppendLine($"## Slack = {slack}");
+			output.AppendLine(ToString());
+			return output.ToString();
+		}
 	}
 
 	public override void LoadFromString(string fullText)

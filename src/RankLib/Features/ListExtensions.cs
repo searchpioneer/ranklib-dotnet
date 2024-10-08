@@ -4,6 +4,9 @@ internal static class ListExtensions
 {
 	private static readonly Random Random = Random.Shared;
 
+	/// <summary>
+	/// Shuffles a list using Fisher-Yates shuffle
+	/// </summary>
 	public static void Shuffle<T>(this IList<T> list)
 	{
 		var n = list.Count;

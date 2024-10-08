@@ -140,19 +140,22 @@ public class RFRanker : Ranker
 		return str.ToString();
 	}
 
-	public override string Model()
+	public override string Model
 	{
-		var output = new StringBuilder();
-		output.Append("## " + Name + "\n");
-		output.Append("## No. of bags = " + nBag + "\n");
-		output.Append("## Sub-sampling = " + subSamplingRate + "\n");
-		output.Append("## Feature-sampling = " + featureSamplingRate + "\n");
-		output.Append("## No. of trees = " + nTrees + "\n");
-		output.Append("## No. of leaves = " + nTreeLeaves + "\n");
-		output.Append("## No. of threshold candidates = " + nThreshold + "\n");
-		output.Append("## Learning rate = " + learningRate + "\n\n");
-		output.Append(ToString());
-		return output.ToString();
+		get
+		{
+			var output = new StringBuilder();
+			output.Append("## " + Name + "\n");
+			output.Append("## No. of bags = " + nBag + "\n");
+			output.Append("## Sub-sampling = " + subSamplingRate + "\n");
+			output.Append("## Feature-sampling = " + featureSamplingRate + "\n");
+			output.Append("## No. of trees = " + nTrees + "\n");
+			output.Append("## No. of leaves = " + nTreeLeaves + "\n");
+			output.Append("## No. of threshold candidates = " + nThreshold + "\n");
+			output.Append("## Learning rate = " + learningRate + "\n\n");
+			output.Append(ToString());
+			return output.ToString();
+		}
 	}
 
 	public override void LoadFromString(string fullText)

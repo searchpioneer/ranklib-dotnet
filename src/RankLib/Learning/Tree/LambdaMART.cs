@@ -231,18 +231,21 @@ public class LambdaMART : Ranker
 
 	public override string ToString() => ensemble.ToString();
 
-	public override string Model()
+	public override string Model
 	{
-		var output = new System.Text.StringBuilder();
-		output.AppendLine($"## {Name}");
-		output.AppendLine($"## No. of trees = {nTrees}");
-		output.AppendLine($"## No. of leaves = {nTreeLeaves}");
-		output.AppendLine($"## No. of threshold candidates = {nThreshold}");
-		output.AppendLine($"## Learning rate = {learningRate}");
-		output.AppendLine($"## Stop early = {nRoundToStopEarly}");
-		output.AppendLine();
-		output.AppendLine(ToString());
-		return output.ToString();
+		get
+		{
+			var output = new System.Text.StringBuilder();
+			output.AppendLine($"## {Name}");
+			output.AppendLine($"## No. of trees = {nTrees}");
+			output.AppendLine($"## No. of leaves = {nTreeLeaves}");
+			output.AppendLine($"## No. of threshold candidates = {nThreshold}");
+			output.AppendLine($"## Learning rate = {learningRate}");
+			output.AppendLine($"## Stop early = {nRoundToStopEarly}");
+			output.AppendLine();
+			output.AppendLine(ToString());
+			return output.ToString();
+		}
 	}
 
 	public override void LoadFromString(string fullText)

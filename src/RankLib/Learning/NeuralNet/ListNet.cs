@@ -147,25 +147,29 @@ public class ListNet : RankNet
 
 	public override string ToString() => base.ToString();
 
-	public override string Model()
+	public override string Model
 	{
-		var output = new System.Text.StringBuilder();
-		output.Append($"## {Name}\n");
-		output.Append($"## Epochs = {nIteration}\n");
-		output.Append($"## No. of features = {Features.Length}\n");
-
-		// Print used features
-		for (var i = 0; i < Features.Length; i++)
+		get
 		{
-			output.Append(Features[i] + (i == Features.Length - 1 ? "" : " "));
-		}
-		output.Append("\n");
+			var output = new System.Text.StringBuilder();
+			output.Append($"## {Name}\n");
+			output.Append($"## Epochs = {nIteration}\n");
+			output.Append($"## No. of features = {Features.Length}\n");
 
-		// Print network information
-		output.Append("0\n"); // [# hidden layers, *ALWAYS* 0 since we're using linear net]
-							  // Print learned weights
-		output.Append(ToString());
-		return output.ToString();
+			// Print used features
+			for (var i = 0; i < Features.Length; i++)
+			{
+				output.Append(Features[i] + (i == Features.Length - 1 ? "" : " "));
+			}
+
+			output.Append("\n");
+
+			// Print network information
+			output.Append("0\n"); // [# hidden layers, *ALWAYS* 0 since we're using linear net]
+			// Print learned weights
+			output.Append(ToString());
+			return output.ToString();
+		}
 	}
 
 	public override void LoadFromString(string fullText)

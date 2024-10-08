@@ -374,14 +374,17 @@ public class RankBoost : Ranker
 		return output.ToString();
 	}
 
-	public override string Model()
+	public override string Model
 	{
-		var output = new StringBuilder();
-		output.Append($"## {Name}\n");
-		output.Append($"## Iteration = {NIteration}\n");
-		output.Append($"## No. of threshold candidates = {NThreshold}\n");
-		output.Append(ToString());
-		return output.ToString();
+		get
+		{
+			var output = new StringBuilder();
+			output.Append($"## {Name}\n");
+			output.Append($"## Iteration = {NIteration}\n");
+			output.Append($"## No. of threshold candidates = {NThreshold}\n");
+			output.Append(ToString());
+			return output.ToString();
+		}
 	}
 
 	public override void LoadFromString(string fullText)

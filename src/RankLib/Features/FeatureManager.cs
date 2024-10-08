@@ -94,6 +94,8 @@ public class FeatureManager
 
 			var fn = FileUtils.GetFileName(rankingFiles[0]);
 
+			Directory.CreateDirectory(outputDir);
+
 			if (shuffle)
 			{
 				fn += ".shuffled";
@@ -362,16 +364,16 @@ public class FeatureManager
 	{
 		if (split == null)
 		{
-			Logger.LogInformation($"No {name} split.");
+			Logger.LogInformation("No {Name} split.", name);
 			return;
 		}
 
 		foreach (var rankLists in split)
 		{
-			Logger.LogInformation($"{name} [{split.IndexOf(rankLists)}] = ");
+			Logger.LogInformation("{Name} [{RankListIndex}] = ", name, split.IndexOf(rankLists));
 			foreach (var rankList in rankLists)
 			{
-				Logger.LogInformation($" \"{rankList.Id}\"");
+				Logger.LogInformation(" \"{RankListId}\"", rankList.Id);
 			}
 		}
 	}

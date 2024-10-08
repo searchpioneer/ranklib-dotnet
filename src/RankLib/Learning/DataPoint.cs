@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace RankLib.Learning;
 
 public abstract class DataPoint
@@ -131,18 +133,18 @@ public abstract class DataPoint
 	public override string ToString()
 	{
 		var fval = GetFeatureVector();
-		var output = new System.Text.StringBuilder();
-		output.Append(((int)Label) + " qid:" + Id + " ");
+		var output = new StringBuilder();
+		output.Append($"{(int)Label} qid:{Id} ");
 
 		for (var i = 1; i < fval.Length; i++)
 		{
 			if (!IsUnknown(fval[i]))
 			{
-				output.Append(i + ":" + fval[i] + (i == fval.Length - 1 ? "" : " "));
+				output.Append($"{i}:{fval[i]}{(i == fval.Length - 1 ? "" : " ")}");
 			}
 		}
 
-		output.Append(" " + Description);
+		output.Append($" {Description}");
 		return output.ToString();
 	}
 }

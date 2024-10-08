@@ -290,55 +290,54 @@ public class AdaRank : Ranker
 		return output.ToString();
 	}
 
-	public override string Model()
+	public override string Model
 	{
-		var output = new StringBuilder();
-		output.Append("## " + Name + "\n");
-		output.Append("## Iteration = " + NIteration + "\n");
-		output.Append("## Train with enqueue: " + (TrainWithEnqueue ? "Yes" : "No") + "\n");
-		output.Append("## Tolerance = " + Tolerance + "\n");
-		output.Append("## Max consecutive selection count = " + MaxSelCount + "\n");
-		output.Append(ToString());
-		return output.ToString();
+		get
+		{
+			var output = new StringBuilder();
+			output.Append("## " + Name + "\n");
+			output.Append("## Iteration = " + NIteration + "\n");
+			output.Append("## Train with enqueue: " + (TrainWithEnqueue ? "Yes" : "No") + "\n");
+			output.Append("## Tolerance = " + Tolerance + "\n");
+			output.Append("## Max consecutive selection count = " + MaxSelCount + "\n");
+			output.Append(ToString());
+			return output.ToString();
+		}
 	}
 
 	public override void LoadFromString(string fullText)
 	{
 		try
 		{
-			using (var reader = new StringReader(fullText))
+			using var reader = new StringReader(fullText);
+			KeyValuePair? kvp = null;
+			while (reader.ReadLine() is { } content)
 			{
-				string content = null;
-				KeyValuePair kvp = null;
-
-				while ((content = reader.ReadLine()) != null)
+				content = content.Trim();
+				if (content.Length == 0 || content.StartsWith("##"))
 				{
-					content = content.Trim();
-					if (content.Length == 0 || content.StartsWith("##"))
-					{
-						continue;
-					}
-					kvp = new KeyValuePair(content);
-					break;
+					continue;
 				}
+				kvp = new KeyValuePair(content);
+				break;
+			}
 
-				if (kvp == null)
-				{
-					throw new InvalidOperationException("Error in AdaRank::LoadFromString: Unable to load model");
-				}
+			if (kvp == null)
+			{
+				throw new InvalidOperationException("Error in AdaRank::LoadFromString: Unable to load model");
+			}
 
-				var keys = kvp.Keys();
-				var values = kvp.Values();
-				_rweight = new List<double>();
-				_rankers = new List<WeakRanker>();
-				Features = new int[keys.Count];
+			var keys = kvp.Keys();
+			var values = kvp.Values();
+			_rweight = new List<double>();
+			_rankers = new List<WeakRanker>();
+			Features = new int[keys.Count];
 
-				for (var i = 0; i < keys.Count; i++)
-				{
-					Features[i] = int.Parse(keys[i]);
-					_rankers.Add(new WeakRanker(Features[i]));
-					_rweight.Add(double.Parse(values[i]));
-				}
+			for (var i = 0; i < keys.Count; i++)
+			{
+				Features[i] = int.Parse(keys[i]);
+				_rankers.Add(new WeakRanker(Features[i]));
+				_rweight.Add(double.Parse(values[i]));
 			}
 		}
 		catch (Exception ex)
@@ -349,10 +348,10 @@ public class AdaRank : Ranker
 
 	public override void PrintParameters()
 	{
-		_logger.LogInformation($"No. of rounds: {NIteration}");
-		_logger.LogInformation($"Train with 'enqueue': {(TrainWithEnqueue ? "Yes" : "No")}");
-		_logger.LogInformation($"Tolerance: {Tolerance}");
-		_logger.LogInformation($"Max Sel. Count: {MaxSelCount}");
+		_logger.LogInformation("No. of rounds: {NIteration}", NIteration);
+		_logger.LogInformation("Train with 'enqueue': {TrainWithEnqueue}", TrainWithEnqueue ? "Yes" : "No");
+		_logger.LogInformation("Tolerance: {Tolerance}", Tolerance);
+		_logger.LogInformation("Max Sel. Count: {MaxSelCount}", MaxSelCount);
 	}
 
 	public override string Name => "AdaRank";

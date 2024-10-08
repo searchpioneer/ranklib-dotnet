@@ -79,7 +79,7 @@ public abstract class Ranker
 			}
 		}
 
-		FileUtils.Write(modelFile, "ASCII", Model());
+		FileUtils.Write(modelFile, Encoding.ASCII, Model);
 	}
 
 	protected void PrintLog(int[] len, string[] msgs)
@@ -141,7 +141,7 @@ public abstract class Ranker
 	public abstract double Eval(DataPoint p);
 	public abstract Ranker CreateNew();
 	public abstract override string ToString();
-	public abstract string Model();
+	public abstract string Model { get; }
 	public abstract void LoadFromString(string fullText);
 	public abstract string Name { get; }
 	public abstract void PrintParameters();
