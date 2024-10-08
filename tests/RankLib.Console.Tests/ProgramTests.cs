@@ -27,8 +27,8 @@ public class ProgramTests
 	[Fact]
 	public void TestCoorAscent()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
 		WriteRandomData(dataFile);
 
 		Program.ConfigureLogging = logging => { logging.AddProvider(new XUnitLoggerProvider(_testOutputHelper)); };
@@ -48,8 +48,8 @@ public class ProgramTests
 			]);
 		}
 
-		var rf = new RankerFactory();
-		var model = rf.LoadRankerFromFile(modelFile.Path);
+		var rankerFactory = new RankerFactory();
+		var model = rankerFactory.LoadRankerFromFile(modelFile.Path);
 
 		Assert.IsType<CoorAscent>(model);
 		var cmodel = (CoorAscent)model;
@@ -60,10 +60,10 @@ public class ProgramTests
 		Assert.True(cmodel.weight[1] < 0.1, $"Computed weight vector doesn't make sense with our fake data: {string.Join(",", cmodel.weight)}");
 	}
 
-	private void WriteRandomData(TmpFile dataFile)
+	private void WriteRandomData(TempFile dataFile)
 	{
-		using var outWriter = new StreamWriter(dataFile.Path);
-		var rand = new Random();
+		using var outWriter = dataFile.GetWriter();
+		var rand = Random.Shared;
 		for (var i = 0; i < 100; i++)
 		{
 			var w1 = rand.Next(2) == 0 ? "-1.0" : "1.0";
@@ -73,9 +73,9 @@ public class ProgramTests
 		}
 	}
 
-	private void WriteRandomDataCount(TmpFile dataFile, int numQ, int numD)
+	private void WriteRandomDataCount(TempFile dataFile, int numQ, int numD)
 	{
-		using var outWriter = new StreamWriter(dataFile.Path);
+		using var outWriter = dataFile.GetWriter();
 		var rand = Random.Shared;
 		for (var q = 0; q < numQ; q++)
 		{
@@ -93,9 +93,9 @@ public class ProgramTests
 	[Fact]
 	public void TestRF()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
 		TestRanker(dataFile, modelFile, rankFile, 8, "map");
 	}
@@ -103,9 +103,9 @@ public class ProgramTests
 	[Fact]
 	public void TestLinearReg()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
 		TestRanker(dataFile, modelFile, rankFile, 9, "map");
 	}
@@ -113,9 +113,9 @@ public class ProgramTests
 	[Fact]
 	public void TestCAscent()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
 		TestRanker(dataFile, modelFile, rankFile, 4, "map");
 	}
@@ -123,9 +123,9 @@ public class ProgramTests
 	[Fact]
 	public void TestMART()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
 		TestRanker(dataFile, modelFile, rankFile, 0, "map");
 	}
@@ -133,9 +133,9 @@ public class ProgramTests
 	[Fact(Skip = "Fails with NaN")]
 	public void TestRankBoost()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
 		TestRanker(dataFile, modelFile, rankFile, 1, "map");
 	}
@@ -143,9 +143,9 @@ public class ProgramTests
 	[Fact(Skip = "Fails with NaN")]
 	public void TestRankNet()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
 		TestRanker(dataFile, modelFile, rankFile, 2, "map");
 	}
@@ -153,9 +153,9 @@ public class ProgramTests
 	[Fact(Skip = "Fails with Infinity or doesn't learn")]
 	public void TestAdaRank()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomDataCount(dataFile, 20, 20);
 		TestRanker(dataFile, modelFile, rankFile, 3, "map");
 	}
@@ -163,9 +163,9 @@ public class ProgramTests
 	[Fact(Skip = "Unstable based on initial conditions")]
 	public void TestLambdaRank()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomDataCount(dataFile, 10, 50);
 		TestRanker(dataFile, modelFile, rankFile, 5, "map");
 	}
@@ -173,9 +173,9 @@ public class ProgramTests
 	[Fact]
 	public void TestLambdaMART()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
 		TestRanker(dataFile, modelFile, rankFile, 6, "map");
 	}
@@ -183,14 +183,14 @@ public class ProgramTests
 	[Fact(Skip = "Sometimes fails Assert.True(pRank < nRank)")]
 	public void TestListNet()
 	{
-		using var dataFile = new TmpFile();
-		using var modelFile = new TmpFile();
-		using var rankFile = new TmpFile();
+		using var dataFile = new TempFile();
+		using var modelFile = new TempFile();
+		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
 		TestRanker(dataFile, modelFile, rankFile, 7, "map");
 	}
 
-	private void TestRanker(TmpFile dataFile, TmpFile modelFile, TmpFile rankFile, int rnum, string measure)
+	private void TestRanker(TempFile dataFile, TempFile modelFile, TempFile rankFile, int rnum, string measure)
 	{
 		_testOutputHelper.WriteLine($"Test Ranker: {rnum}");
 		Program.ConfigureLogging = logging => { logging.AddProvider(new XUnitLoggerProvider(_testOutputHelper)); };
