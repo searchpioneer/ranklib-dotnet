@@ -59,7 +59,7 @@ public class MyThreadPool
 			}
 			catch (Exception ex)
 			{
-				throw RankLibError.Create("Error in MyThreadPool.Await(): ", ex);
+				throw RankLibException.Create("Error in MyThreadPool.Await(): ", ex);
 			}
 		}
 
@@ -102,7 +102,7 @@ public class MyThreadPool
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create("Error in MyThreadPool.Execute(): ", ex);
+			throw RankLibException.Create("Error in MyThreadPool.Execute(): ", ex);
 		}
 	}
 }

@@ -4,6 +4,10 @@ using System.CommandLine.Parsing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RankLib.Console;
+using RankLib.Eval;
+using RankLib.Features;
+using RankLib.Learning;
+using RankLib.Metric;
 
 internal class Program
 {
@@ -29,6 +33,11 @@ internal class Program
 					builder.AddConsole();
 					ConfigureLogging?.Invoke(builder);
 				});
+
+				services.AddSingleton<EvaluatorFactory>();
+				services.AddSingleton<RankerFactory>();
+				services.AddSingleton<MetricScorerFactory>();
+				services.AddSingleton<FeatureManager>();
 			});
 
 		return builder.Build().Invoke(args);

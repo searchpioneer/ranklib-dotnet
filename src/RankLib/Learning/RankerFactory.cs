@@ -78,22 +78,22 @@ public class RankerFactory
 			var type = Type.GetType(typeName);
 			if (type == null)
 			{
-				throw RankLibError.Create($"Type '{typeName}' does not exist.");
+				throw RankLibException.Create($"Type '{typeName}' does not exist.");
 			}
 
 			ranker = (Ranker)Activator.CreateInstance(type, _loggerFactory.CreateLogger(type))!;
 		}
 		catch (TypeLoadException e)
 		{
-			throw RankLibError.Create($"Could not find the type \"{typeName}\" specified. Make sure the assembly is referenced.", e);
+			throw RankLibException.Create($"Could not find the type \"{typeName}\" specified. Make sure the assembly is referenced.", e);
 		}
 		catch (MissingMethodException e)
 		{
-			throw RankLibError.Create($"Cannot create an instance from the type \"{typeName}\".", e);
+			throw RankLibException.Create($"Cannot create an instance from the type \"{typeName}\".", e);
 		}
 		catch (InvalidCastException e)
 		{
-			throw RankLibError.Create($"The class \"{typeName}\" does not derive from \"{typeof(Ranker).FullName}\".", e);
+			throw RankLibException.Create($"The class \"{typeName}\" does not derive from \"{typeof(Ranker).FullName}\".", e);
 		}
 		return ranker;
 	}
@@ -126,7 +126,7 @@ public class RankerFactory
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create(ex);
+			throw RankLibException.Create(ex);
 		}
 	}
 }

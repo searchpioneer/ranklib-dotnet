@@ -78,7 +78,7 @@ public class ModelLineProducer
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create("Error in model loading", ex);
+			throw RankLibException.Create("Error in model loading", ex);
 		}
 	}
 }

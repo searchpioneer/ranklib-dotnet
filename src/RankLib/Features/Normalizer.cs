@@ -2,6 +2,9 @@ using RankLib.Learning;
 
 namespace RankLib.Features;
 
+/// <summary>
+/// Normalizes features
+/// </summary>
 public abstract class Normalizer
 {
 	public abstract void Normalize(RankList rl);

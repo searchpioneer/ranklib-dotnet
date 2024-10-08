@@ -8,10 +8,10 @@ public class BestAtKScorer : MetricScorer
 
 	public BestAtKScorer(int k) => K = k;
 
-	public override double Score(RankList rl)
+	public override double Score(RankList rankList)
 	{
-		var k = MaxToK(rl, K - 1);
-		return rl[k].Label;
+		var k = MaxToK(rankList, K - 1);
+		return rankList[k].Label;
 	}
 
 	public override MetricScorer Copy() => new BestAtKScorer();
@@ -47,19 +47,19 @@ public class BestAtKScorer : MetricScorer
 
 	public override string Name => "Best@" + K;
 
-	public override double[][] SwapChange(RankList rl)
+	public override double[][] SwapChange(RankList rankList)
 	{
 		//FIXME: Not sure if this implementation is correct!
-		var labels = new int[rl.Count];
-		var best = new int[rl.Count];
+		var labels = new int[rankList.Count];
+		var best = new int[rankList.Count];
 		var max = -1;
 		var maxVal = -1;
 		var secondMaxVal = -1; // within top-K
 		var maxCount = 0; // within top-K
 
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			var v = (int)rl[i].Label;
+			var v = (int)rankList[i].Label;
 			labels[i] = v;
 
 			if (maxVal < v)
@@ -84,17 +84,17 @@ public class BestAtKScorer : MetricScorer
 			secondMaxVal = 0;
 		}
 
-		var changes = new double[rl.Count][];
-		for (var i = 0; i < rl.Count; i++)
+		var changes = new double[rankList.Count][];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			changes[i] = new double[rl.Count];
+			changes[i] = new double[rankList.Count];
 			Array.Fill(changes[i], 0);
 		}
 
 		//FIXME: THIS IS VERY *INEFFICIENT*
-		for (var i = 0; i < rl.Count - 1; i++)
+		for (var i = 0; i < rankList.Count - 1; i++)
 		{
-			for (var j = i + 1; j < rl.Count; j++)
+			for (var j = i + 1; j < rankList.Count; j++)
 			{
 				double change = 0;
 				if (j < K || i >= K)

@@ -84,7 +84,7 @@ public class SparseDataPoint : DataPoint
 			{
 				return 0f;
 			}
-			throw RankLibError.Create("Error in SparseDataPoint::GetFeatureValue(): requesting unspecified feature, fid=" + fid);
+			throw RankLibException.Create("Error in SparseDataPoint::GetFeatureValue(): requesting unspecified feature, fid=" + fid);
 		}
 
 		var pos = Locate(fid);
@@ -100,7 +100,7 @@ public class SparseDataPoint : DataPoint
 	{
 		if (fid <= 0 || fid > FeatureCount)
 		{
-			throw RankLibError.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + fid + ") out of range.");
+			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + fid + ") out of range.");
 		}
 
 		var pos = Locate(fid);
@@ -110,7 +110,7 @@ public class SparseDataPoint : DataPoint
 		}
 		else
 		{
-			throw RankLibError.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + fid + ") not found.");
+			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + fid + ") not found.");
 		}
 	}
 

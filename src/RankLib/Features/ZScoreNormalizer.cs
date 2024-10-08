@@ -8,7 +8,7 @@ public class ZScoreNormalizer : Normalizer
 	{
 		if (rl.Count == 0)
 		{
-			throw new InvalidOperationException("Error in ZScoreNormalizer::Normalize(): The input ranked list is empty");
+			throw new InvalidOperationException("The input ranked list is empty");
 		}
 
 		var nFeature = rl.FeatureCount;
@@ -44,7 +44,7 @@ public class ZScoreNormalizer : Normalizer
 				{
 					var p = rl[i];
 					var x = (p.GetFeatureValue(j) - means[j - 1]) / std; // standard normal (0, 1)
-					p.SetFeatureValue(j, (float)x);
+					p.SetFeatureValue(j, Convert.ToSingle(x));
 				}
 			}
 		}
@@ -54,7 +54,7 @@ public class ZScoreNormalizer : Normalizer
 	{
 		if (rl.Count == 0)
 		{
-			throw new InvalidOperationException("Error in ZScoreNormalizer::Normalize(): The input ranked list is empty");
+			throw new InvalidOperationException("The input ranked list is empty");
 		}
 
 		// Remove duplicate features from the input fids to avoid normalizing the same features multiple times
@@ -92,7 +92,7 @@ public class ZScoreNormalizer : Normalizer
 				{
 					var p = rl[i];
 					var x = (p.GetFeatureValue(fids[j]) - means[j]) / std; // standard normal (0, 1)
-					p.SetFeatureValue(fids[j], (float)x);
+					p.SetFeatureValue(fids[j], Convert.ToSingle(x));
 				}
 			}
 		}

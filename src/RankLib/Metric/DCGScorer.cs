@@ -3,75 +3,74 @@ using RankLib.Utilities;
 
 namespace RankLib.Metric;
 
+/// <summary>
+/// Discounted Cumulative Gain scorer
+/// </summary>
+/// <remarks>
+/// https://en.wikipedia.org/wiki/Discounted_cumulative_gain
+/// </remarks>
 public class DCGScorer : MetricScorer
 {
-	protected static double[]? discount = null; // Cache
-	protected static double[]? gain = null; // Cache
-
-	public DCGScorer()
+	protected static readonly Lazy<double[]> DiscountCache = new(() =>
 	{
-		K = 10;
-		InitCache();
-	}
-
-	public DCGScorer(int k)
-	{
-		K = k;
-		InitCache();
-	}
-
-	private void InitCache()
-	{
-		if (discount == null)
+		var discount = new double[5000];
+		for (var i = 0; i < discount.Length; i++)
 		{
-			discount = new double[5000];
-			for (var i = 0; i < discount.Length; i++)
-			{
-				discount[i] = 1.0 / SimpleMath.LogBase2(i + 2);
-			}
-			gain = new double[6];
-			for (var i = 0; i < 6; i++)
-			{
-				gain[i] = (1 << i) - 1; // 2^i - 1
-			}
+			discount[i] = 1.0 / SimpleMath.LogBase2(i + 2);
 		}
+		return discount;
+	});
+
+	protected static readonly Lazy<double[]> GainCache = new(() =>
+	{
+		var gain = new double[6];
+		for (var i = 0; i < gain.Length; i++)
+		{
+			gain[i] = (1 << i) - 1;
+		}
+		return gain;
+	});
+
+
+	public DCGScorer() : this(10)
+	{
 	}
+
+	public DCGScorer(int k) => K = k;
 
 	public override MetricScorer Copy() => new DCGScorer();
 
 	/// <summary>
 	/// Compute DCG at k.
 	/// </summary>
-	public override double Score(RankList rl)
+	public override double Score(RankList rankList)
 	{
-		if (rl.Count == 0)
+		if (rankList.Count == 0)
 		{
 			return 0;
 		}
 
-		var size = K;
-		if (K > rl.Count || K <= 0)
-		{
-			size = rl.Count;
-		}
+		var topK = K > rankList.Count || K <= 0
+			? rankList.Count
+			: K;
 
-		var rel = GetRelevanceLabels(rl);
-		return GetDCG(rel, size);
+		var rel = GetRelevanceLabels(rankList);
+		return GetDCG(rel, topK);
 	}
 
-	public override double[][] SwapChange(RankList rl)
+	public override double[][] SwapChange(RankList rankList)
 	{
-		var rel = GetRelevanceLabels(rl);
-		var size = (rl.Count > K) ? K : rl.Count;
-		var changes = new double[rl.Count][];
-		for (var i = 0; i < rl.Count; i++)
+		var rel = GetRelevanceLabels(rankList);
+		var size = (rankList.Count > K) ? K : rankList.Count;
+		var changes = new double[rankList.Count][];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			changes[i] = new double[rl.Count];
+			changes[i] = new double[rankList.Count];
 		}
 
 		for (var i = 0; i < size; i++)
 		{
-			for (var j = i + 1; j < rl.Count; j++)
+			for (var j = i + 1; j < rankList.Count; j++)
 			{
 				changes[j][i] = changes[i][j] = (Discount(i) - Discount(j)) * (Gain(rel[i]) - Gain(rel[j]));
 			}
@@ -80,7 +79,7 @@ public class DCGScorer : MetricScorer
 		return changes;
 	}
 
-	public override string Name => "DCG@" + K;
+	public override string Name => $"DCG@{K}";
 
 	protected double GetDCG(int[] rel, int topK)
 	{
@@ -95,6 +94,8 @@ public class DCGScorer : MetricScorer
 	// Lazy caching for discount
 	protected double Discount(int index)
 	{
+		var discount = DiscountCache.Value;
+
 		if (index < discount.Length)
 		{
 			return discount[index];
@@ -119,6 +120,8 @@ public class DCGScorer : MetricScorer
 	// Lazy caching for gain
 	protected double Gain(int rel)
 	{
+		var gain = GainCache.Value;
+
 		if (rel < gain.Length)
 		{
 			return gain[rel];

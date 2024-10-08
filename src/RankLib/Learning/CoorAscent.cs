@@ -365,7 +365,7 @@ public class CoorAscent : Ranker
 		weight = new double[Features.Length];
 		if (ranker.weight.Length != weight.Length)
 		{
-			throw RankLibError.Create("These two models use different feature set!!");
+			throw RankLibException.Create("These two models use different feature set!!");
 		}
 		Copy(ranker.weight, weight);
 		_logger.LogInformation("Model loaded.");

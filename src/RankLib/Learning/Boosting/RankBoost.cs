@@ -404,7 +404,7 @@ public class RankBoost : Ranker
 			}
 
 			if (content == null)
-				throw RankLibError.Create("Model name is not found.");
+				throw RankLibException.Create("Model name is not found.");
 
 			_rWeight = new List<double>();
 			_wRankers = new List<RBWeakRanker>();
@@ -437,7 +437,7 @@ public class RankBoost : Ranker
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create("Error in RankBoost::load(): ", ex);
+			throw RankLibException.Create("Error in RankBoost::load(): ", ex);
 		}
 	}
 

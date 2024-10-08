@@ -173,7 +173,7 @@ public class LinearRegRank : Ranker
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create("Error in LinearRegRank::load(): ", ex);
+			throw RankLibException.Create("Error in LinearRegRank::load(): ", ex);
 		}
 	}
 
@@ -184,11 +184,11 @@ public class LinearRegRank : Ranker
 	protected double[] Solve(double[][] a, double[] b)
 	{
 		if (a.Length == 0 || b.Length == 0)
-			throw RankLibError.Create("Error: some of the input arrays is empty.");
+			throw RankLibException.Create("Error: some of the input arrays is empty.");
 		if (a[0].Length == 0)
-			throw RankLibError.Create("Error: some of the input arrays is empty.");
+			throw RankLibException.Create("Error: some of the input arrays is empty.");
 		if (a.Length != b.Length)
-			throw RankLibError.Create("Error: Solving Ax=B: A and B have different dimensions.");
+			throw RankLibException.Create("Error: Solving Ax=B: A and B have different dimensions.");
 
 		var aCopy = new double[a.Length][];
 		var bCopy = new double[b.Length];
@@ -197,7 +197,7 @@ public class LinearRegRank : Ranker
 		{
 			aCopy[i] = new double[a[i].Length];
 			if (i > 0 && aCopy[i].Length != aCopy[i - 1].Length)
-				throw RankLibError.Create("Error: Solving Ax=B: A is NOT a square matrix.");
+				throw RankLibException.Create("Error: Solving Ax=B: A is NOT a square matrix.");
 			Array.Copy(a[i], aCopy[i], a[i].Length);
 		}
 

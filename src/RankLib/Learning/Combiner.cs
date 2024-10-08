@@ -32,7 +32,7 @@ public class Combiner
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create($"Error in Combiner::Combine(): {ex.Message}", ex);
+			throw RankLibException.Create($"Error in Combiner::Combine(): {ex.Message}", ex);
 		}
 	}
 }

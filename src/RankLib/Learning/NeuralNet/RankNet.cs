@@ -213,7 +213,7 @@ public class RankNet : Ranker
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create("Error in NeuralNetwork.restoreBestModelOnValidation(): ", ex);
+			throw RankLibException.Create("Error in NeuralNetwork.restoreBestModelOnValidation(): ", ex);
 		}
 	}
 

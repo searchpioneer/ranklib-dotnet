@@ -100,7 +100,7 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 				}
 				catch (Exception ex)
 				{
-					throw RankLibError.Create("Cannot save partition data.\nOccurred in FeatureManager::main(): ", ex);
+					throw RankLibException.Create("Cannot save partition data.\nOccurred in FeatureManager::main(): ", ex);
 				}
 			}
 
@@ -127,7 +127,7 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 				}
 				catch (Exception ex)
 				{
-					throw RankLibError.Create("Cannot save partition data.\nOccurred in FeatureManager::main(): ", ex);
+					throw RankLibException.Create("Cannot save partition data.\nOccurred in FeatureManager::main(): ", ex);
 				}
 			}
 		}

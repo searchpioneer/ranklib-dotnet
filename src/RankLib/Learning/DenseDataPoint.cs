@@ -24,7 +24,7 @@ public class DenseDataPoint : DataPoint
 			{
 				return 0f;
 			}
-			throw RankLibError.Create($"Error in DenseDataPoint::GetFeatureValue(): requesting unspecified feature, fid={fid}");
+			throw RankLibException.Create($"Error in DenseDataPoint::GetFeatureValue(): requesting unspecified feature, fid={fid}");
 		}
 		return IsUnknown(_fVals[fid]) ? 0 : _fVals[fid];
 	}
@@ -33,7 +33,7 @@ public class DenseDataPoint : DataPoint
 	{
 		if (fid <= 0 || fid >= _fVals.Length)
 		{
-			throw RankLibError.Create($"Error in DenseDataPoint::SetFeatureValue(): feature (id={fid}) not found.");
+			throw RankLibException.Create($"Error in DenseDataPoint::SetFeatureValue(): feature (id={fid}) not found.");
 		}
 		_fVals[fid] = fval;
 	}

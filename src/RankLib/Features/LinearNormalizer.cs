@@ -8,12 +8,12 @@ public class LinearNormalizer : Normalizer
 	{
 		if (rl.Count == 0)
 		{
-			throw new InvalidOperationException("Error in LinearNormalizer::Normalize(): The input ranked list is empty");
+			throw new InvalidOperationException("The input ranked list is empty");
 		}
 
-		var nFeature = rl.FeatureCount;
-		var fids = new int[nFeature];
-		for (var i = 1; i <= nFeature; i++)
+		var featureCount = rl.FeatureCount;
+		var fids = new int[featureCount];
+		for (var i = 1; i <= featureCount; i++)
 		{
 			fids[i - 1] = i;
 		}
@@ -25,7 +25,7 @@ public class LinearNormalizer : Normalizer
 	{
 		if (rl.Count == 0)
 		{
-			throw new InvalidOperationException("Error in LinearNormalizer::Normalize(): The input ranked list is empty");
+			throw new InvalidOperationException("The input ranked list is empty");
 		}
 
 		// Remove duplicate features from the input fids to avoid normalizing the same features multiple times

@@ -8,6 +8,94 @@ using RankLib.Utilities;
 
 namespace RankLib.Eval;
 
+public class EvaluatorFactory
+{
+	private readonly RankerFactory _rankerFactory;
+	private readonly MetricScorerFactory _metricScorerFactory;
+	private readonly FeatureManager _featureManager;
+	private readonly ILoggerFactory _loggerFactory;
+
+	public EvaluatorFactory(
+		RankerFactory rankerFactory,
+		MetricScorerFactory metricScorerFactory,
+		FeatureManager featureManager,
+		ILoggerFactory? loggerFactory = null)
+	{
+		_rankerFactory = rankerFactory;
+		_metricScorerFactory = metricScorerFactory;
+		_featureManager = featureManager;
+		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
+	}
+
+	public Evaluator CreateEvaluator(RankerType rankerType, Metric.Metric trainMetric, Metric.Metric testMetric, string? queryRelevanceFile = null)
+	{
+		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric);
+		var testScorer = _metricScorerFactory.CreateScorer(testMetric);
+
+		if (queryRelevanceFile != null)
+		{
+			trainScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
+			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
+		}
+
+		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _loggerFactory);
+	}
+
+	public Evaluator CreateEvaluator(RankerType rankerType, Metric.Metric trainMetric, int trainK, Metric.Metric testMetric, int testK, string? queryRelevanceFile = null)
+	{
+		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric, trainK);
+		var testScorer = _metricScorerFactory.CreateScorer(testMetric, testK);
+
+		if (queryRelevanceFile != null)
+		{
+			trainScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
+			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
+		}
+
+		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _loggerFactory);
+	}
+
+	public Evaluator CreateEvaluator(RankerType rankerType, Metric.Metric trainMetric, Metric.Metric testMetric, int k, string? queryRelevanceFile = null)
+	{
+		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric, k);
+		var testScorer = _metricScorerFactory.CreateScorer(testMetric, k);
+
+		if (queryRelevanceFile != null)
+		{
+			trainScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
+			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
+		}
+
+		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _loggerFactory);
+	}
+
+	public Evaluator CreateEvaluator(RankerType rankerType, Metric.Metric metric, int k, string? queryRelevanceFile = null)
+	{
+		var scorer = _metricScorerFactory.CreateScorer(metric, k);
+
+		if (queryRelevanceFile != null)
+		{
+			scorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
+		}
+
+		return new Evaluator(_rankerFactory, rankerType, _featureManager, scorer, _loggerFactory);
+	}
+
+	public Evaluator CreateEvaluator(RankerType rankerType, string trainMetric, string testMetric, string? queryRelevanceFile = null)
+	{
+		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric);
+		var testScorer = _metricScorerFactory.CreateScorer(testMetric);
+
+		if (queryRelevanceFile != null)
+		{
+			trainScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
+			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
+		}
+
+		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _loggerFactory);
+	}
+}
+
 public class Evaluator
 {
 	private readonly ILoggerFactory _loggerFactory;
@@ -20,106 +108,45 @@ public class Evaluator
 	public static Normalizer Normalizer = new SumNormalizer();
 	public static string ModelFile = "";
 
-	public static string QrelFile = ""; // measure such as NDCG and MAP requires "complete" judgment.
-
-	// tmp settings, for personal use
-	public static string NewFeatureFile = "";
-	public static bool KeepOrigFeatures = false;
-	public static int TopNew = 2000;
-
-	protected RankerFactory RankerFactory = new();
-	protected MetricScorerFactory MetricScorerFactory = new();
-
-	protected MetricScorer? TrainScorer;
-	protected MetricScorer? TestScorer;
+	private readonly RankerFactory _rankerFactory;
+	private readonly MetricScorer? _trainScorer;
+	private readonly MetricScorer? _testScorer;
 	private readonly FeatureManager _featureManager;
-	protected RankerType RankerType = RankerType.MART;
+	private readonly RankerType _rankerType;
 
-	public Evaluator(FeatureManager featureManager, RankerType rType, Metric.Metric trainMetric, Metric.Metric testMetric, ILoggerFactory? loggerFactory = null)
+	public Evaluator(
+		RankerFactory rankerFactory,
+		RankerType rankerType,
+		FeatureManager featureManager,
+		MetricScorer trainScorer,
+		MetricScorer testScorer,
+		ILoggerFactory? loggerFactory = null
+	)
 	{
+		_rankerFactory = rankerFactory;
+		_rankerType = rankerType;
 		_featureManager = featureManager;
+		_trainScorer = trainScorer;
+		_testScorer = testScorer;
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<Evaluator>();
-
-		RankerFactory = new(_loggerFactory);
-		MetricScorerFactory = new(_loggerFactory);
-
-		RankerType = rType;
-		TrainScorer = MetricScorerFactory.CreateScorer(trainMetric);
-		TestScorer = MetricScorerFactory.CreateScorer(testMetric);
-
-		if (!string.IsNullOrEmpty(QrelFile))
-		{
-			TrainScorer.LoadExternalRelevanceJudgment(QrelFile);
-			TestScorer.LoadExternalRelevanceJudgment(QrelFile);
-		}
 	}
 
-	public Evaluator(FeatureManager featureManager, RankerType rType, Metric.Metric trainMetric, int trainK, Metric.Metric testMetric, int testK, ILoggerFactory? loggerFactory = null)
+	public Evaluator(
+		RankerFactory rankerFactory,
+		RankerType rankerType,
+		FeatureManager featureManager,
+		MetricScorer scorer,
+		ILoggerFactory? loggerFactory = null
+	)
 	{
+		_rankerFactory = rankerFactory;
+		_rankerType = rankerType;
 		_featureManager = featureManager;
+		_trainScorer = scorer;
+		_testScorer = scorer;
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<Evaluator>();
-
-		RankerType = rType;
-		TrainScorer = MetricScorerFactory.CreateScorer(trainMetric, trainK);
-		TestScorer = MetricScorerFactory.CreateScorer(testMetric, testK);
-
-		if (!string.IsNullOrEmpty(QrelFile))
-		{
-			TrainScorer.LoadExternalRelevanceJudgment(QrelFile);
-			TestScorer.LoadExternalRelevanceJudgment(QrelFile);
-		}
-	}
-
-	public Evaluator(FeatureManager featureManager, RankerType rType, Metric.Metric trainMetric, Metric.Metric testMetric, int k, ILoggerFactory? loggerFactory = null)
-	{
-		_featureManager = featureManager;
-		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = _loggerFactory.CreateLogger<Evaluator>();
-
-		RankerType = rType;
-		TrainScorer = MetricScorerFactory.CreateScorer(trainMetric, k);
-		TestScorer = MetricScorerFactory.CreateScorer(testMetric, k);
-
-		if (!string.IsNullOrEmpty(QrelFile))
-		{
-			TrainScorer.LoadExternalRelevanceJudgment(QrelFile);
-			TestScorer.LoadExternalRelevanceJudgment(QrelFile);
-		}
-	}
-
-	public Evaluator(FeatureManager featureManager, RankerType rType, Metric.Metric metric, int k, ILoggerFactory? loggerFactory = null)
-	{
-		_featureManager = featureManager;
-		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = _loggerFactory.CreateLogger<Evaluator>();
-
-		RankerType = rType;
-		TrainScorer = MetricScorerFactory.CreateScorer(metric, k);
-
-		if (!string.IsNullOrEmpty(QrelFile))
-		{
-			TrainScorer.LoadExternalRelevanceJudgment(QrelFile);
-		}
-		TestScorer = TrainScorer;
-	}
-
-	public Evaluator(FeatureManager featureManager, RankerType rType, string trainMetric, string testMetric, ILoggerFactory? loggerFactory = null)
-	{
-		_featureManager = featureManager;
-		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = _loggerFactory.CreateLogger<Evaluator>();
-
-		RankerType = rType;
-		TrainScorer = MetricScorerFactory.CreateScorer(trainMetric);
-		TestScorer = MetricScorerFactory.CreateScorer(testMetric);
-
-		if (!string.IsNullOrEmpty(QrelFile))
-		{
-			TrainScorer.LoadExternalRelevanceJudgment(QrelFile);
-			TestScorer.LoadExternalRelevanceJudgment(QrelFile);
-		}
 	}
 
 	public List<RankList> ReadInput(string inputFile) =>
@@ -161,7 +188,7 @@ public class Evaluator
 	public double Evaluate(Ranker? ranker, List<RankList> rl)
 	{
 		var rankedList = ranker != null ? ranker.Rank(rl) : rl;
-		return TestScorer.Score(rankedList);
+		return _testScorer.Score(rankedList);
 	}
 
 	public void Evaluate(string trainFile, string? validationFile, string? testFile, string? featureDefFile)
@@ -182,12 +209,12 @@ public class Evaluator
 		}
 
 		var trainer = new RankerTrainer(_loggerFactory);
-		var ranker = trainer.Train(RankerType, train, validation, features, TestScorer);
+		var ranker = trainer.Train(_rankerType, train, validation, features, _trainScorer);
 
 		if (test != null)
 		{
 			var rankScore = Evaluate(ranker, test);
-			_logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+			_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 		}
 
 		if (!string.IsNullOrEmpty(ModelFile))
@@ -210,10 +237,10 @@ public class Evaluator
 		}
 
 		var trainer = new RankerTrainer(_loggerFactory);
-		var ranker = trainer.Train(RankerType, trainingData, validation, features, TestScorer);
+		var ranker = trainer.Train(_rankerType, trainingData, validation, features, _trainScorer);
 
 		var rankScore = Evaluate(ranker, testData);
-		_logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(ModelFile))
 		{
@@ -235,12 +262,12 @@ public class Evaluator
 		}
 
 		var trainer = new RankerTrainer(_loggerFactory);
-		var ranker = trainer.Train(RankerType, train, validation, features, TestScorer);
+		var ranker = trainer.Train(_rankerType, train, validation, features, _trainScorer);
 
 		if (test != null)
 		{
 			var rankScore = Evaluate(ranker, test);
-			_logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+			_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 		}
 
 		if (!string.IsNullOrEmpty(ModelFile))
@@ -285,7 +312,7 @@ public class Evaluator
 			var test = testData[i];
 
 			var trainer = new RankerTrainer(_loggerFactory);
-			var ranker = trainer.Train(RankerType, train, validation, features, TestScorer);
+			var ranker = trainer.Train(_rankerType, train, validation, features, _trainScorer);
 
 			var testScore = Evaluate(ranker, test);
 			scoreOnTrain += ranker.GetScoreOnTrainingData();
@@ -304,7 +331,7 @@ public class Evaluator
 		}
 
 		_logger.LogInformation("Summary:");
-		_logger.LogInformation($"{TestScorer.Name}\t|   Train\t| Test");
+		_logger.LogInformation($"{_testScorer.Name}\t|   Train\t| Test");
 
 		for (var i = 0; i < nFold; i++)
 		{
@@ -319,7 +346,7 @@ public class Evaluator
 	{
 		var test = ReadInput(testFile);
 		var rankScore = Evaluate(null, test);
-		_logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 	}
 
 	public void Test(string testFile, string prpFile)
@@ -331,7 +358,7 @@ public class Evaluator
 
 		foreach (var l in test)
 		{
-			var score = TestScorer.Score(l);
+			var score = _testScorer.Score(l);
 			ids.Add(l.Id);
 			scores.Add(score);
 			rankScore += score;
@@ -341,7 +368,7 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		_logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -352,7 +379,7 @@ public class Evaluator
 
 	public void Test(string modelFile, string testFile, string prpFile)
 	{
-		var ranker = RankerFactory.LoadRankerFromFile(modelFile);
+		var ranker = _rankerFactory.LoadRankerFromFile(modelFile);
 		var features = ranker.Features;
 		var test = ReadInput(testFile);
 
@@ -368,7 +395,7 @@ public class Evaluator
 		foreach (var aTest in test)
 		{
 			var rankedList = ranker.Rank(aTest);
-			var score = TestScorer.Score(rankedList);
+			var score = _testScorer.Score(rankedList);
 			ids.Add(rankedList.Id);
 			scores.Add(score);
 			rankScore += score;
@@ -378,7 +405,7 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		_logger.LogInformation($"{TestScorer.Name} on test data: {SimpleMath.Round(rankScore, 4)}");
+		_logger.LogInformation($"{_testScorer.Name} on test data: {SimpleMath.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -405,7 +432,7 @@ public class Evaluator
 		for (var f = 0; f < nFold; f++)
 		{
 			var test = testData[f];
-			var ranker = RankerFactory.LoadRankerFromFile(modelFiles[f]);
+			var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 			var features = ranker.Features;
 
 			if (normalize)
@@ -416,7 +443,7 @@ public class Evaluator
 			foreach (var aTest in test)
 			{
 				var rankedList = ranker.Rank(aTest);
-				var score = TestScorer.Score(rankedList);
+				var score = _testScorer.Score(rankedList);
 				ids.Add(rankedList.Id);
 				scores.Add(score);
 				rankScore += score;
@@ -427,7 +454,7 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		_logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -446,7 +473,7 @@ public class Evaluator
 		for (var f = 0; f < nFold; f++)
 		{
 			var test = ReadInput(testFiles[f]);
-			var ranker = RankerFactory.LoadRankerFromFile(modelFiles[f]);
+			var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 			var features = ranker.Features;
 
 			if (normalize)
@@ -457,7 +484,7 @@ public class Evaluator
 			foreach (var aTest in test)
 			{
 				var rankedList = ranker.Rank(aTest);
-				var score = TestScorer.Score(rankedList);
+				var score = _testScorer.Score(rankedList);
 				ids.Add(rankedList.Id);
 				scores.Add(score);
 				rankScore += score;
@@ -468,7 +495,7 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		_logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -510,18 +537,18 @@ public class Evaluator
 				}
 
 				var rankScore = Evaluate(null, test);
-				_logger.LogInformation($"{TestScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+				_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 			}
 		}
 		catch (IOException e)
 		{
-			throw RankLibError.Create(e);
+			throw RankLibException.Create(e);
 		}
 	}
 
 	public void Score(string modelFile, string testFile, string outputFile)
 	{
-		var ranker = RankerFactory.LoadRankerFromFile(modelFile);
+		var ranker = _rankerFactory.LoadRankerFromFile(modelFile);
 		var features = ranker.Features;
 		var test = ReadInput(testFile);
 
@@ -545,7 +572,7 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create("Error in Evaluator::Score(): ", ex);
+			throw RankLibException.Create("Error in Evaluator::Score(): ", ex);
 		}
 	}
 
@@ -566,7 +593,7 @@ public class Evaluator
 				for (var f = 0; f < nFold; f++)
 				{
 					var test = testData[f];
-					var ranker = RankerFactory.LoadRankerFromFile(modelFiles[f]);
+					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 					var features = ranker.Features;
 
 					if (normalize)
@@ -586,7 +613,7 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create("Error in Evaluator::Score(): ", ex);
+			throw RankLibException.Create("Error in Evaluator::Score(): ", ex);
 		}
 	}
 
@@ -601,7 +628,7 @@ public class Evaluator
 				for (var f = 0; f < nFold; f++)
 				{
 					var test = ReadInput(testFiles[f]);
-					var ranker = RankerFactory.LoadRankerFromFile(modelFiles[f]);
+					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 					var features = ranker.Features;
 
 					if (normalize)
@@ -621,13 +648,13 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create("Error in Evaluator::Score(): ", ex);
+			throw RankLibException.Create("Error in Evaluator::Score(): ", ex);
 		}
 	}
 
 	public void Rank(string modelFile, string testFile, string indriRanking)
 	{
-		var ranker = RankerFactory.LoadRankerFromFile(modelFile);
+		var ranker = _rankerFactory.LoadRankerFromFile(modelFile);
 		var features = ranker.Features;
 		var test = ReadInput(testFile);
 
@@ -658,7 +685,7 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create("Error in Evaluator::Rank(): ", ex);
+			throw RankLibException.Create("Error in Evaluator::Rank(): ", ex);
 		}
 	}
 
@@ -682,7 +709,7 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create("Error in Evaluator::Rank(): ", ex);
+			throw RankLibException.Create("Error in Evaluator::Rank(): ", ex);
 		}
 	}
 
@@ -703,7 +730,7 @@ public class Evaluator
 				for (var f = 0; f < nFold; f++)
 				{
 					var test = testData[f];
-					var ranker = RankerFactory.LoadRankerFromFile(modelFiles[f]);
+					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 					var features = ranker.Features;
 
 					if (normalize)
@@ -732,7 +759,7 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create("Error in Evaluator::Rank(): ", ex);
+			throw RankLibException.Create("Error in Evaluator::Rank(): ", ex);
 		}
 	}
 
@@ -747,7 +774,7 @@ public class Evaluator
 				for (var f = 0; f < nFold; f++)
 				{
 					var test = ReadInput(testFiles[f]);
-					var ranker = RankerFactory.LoadRankerFromFile(modelFiles[f]);
+					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 					var features = ranker.Features;
 
 					if (normalize)
@@ -776,7 +803,7 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create("Error in Evaluator::Rank(): ", ex);
+			throw RankLibException.Create("Error in Evaluator::Rank(): ", ex);
 		}
 	}
 
@@ -800,7 +827,7 @@ public class Evaluator
 		{
 			for (var i = 0; i < ids.Count; i++)
 			{
-				writer.WriteLine($"{TestScorer.Name}   {ids[i]}   {scores[i]}");
+				writer.WriteLine($"{_testScorer.Name}   {ids[i]}   {scores[i]}");
 			}
 		}
 	}

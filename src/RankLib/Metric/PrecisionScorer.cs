@@ -8,19 +8,19 @@ public class PrecisionScorer : MetricScorer
 
 	public PrecisionScorer(int k) => K = k;
 
-	public override double Score(RankList rl)
+	public override double Score(RankList rankList)
 	{
 		var count = 0;
 		var size = K;
 
-		if (K > rl.Count || K <= 0)
+		if (K > rankList.Count || K <= 0)
 		{
-			size = rl.Count;
+			size = rankList.Count;
 		}
 
 		for (var i = 0; i < size; i++)
 		{
-			if (rl[i].Label > 0.0)
+			if (rankList[i].Label > 0.0)
 			{
 				count++;
 			}
@@ -33,22 +33,22 @@ public class PrecisionScorer : MetricScorer
 
 	public override string Name => $"P@{K}";
 
-	public override double[][] SwapChange(RankList rl)
+	public override double[][] SwapChange(RankList rankList)
 	{
-		var size = (rl.Count > K) ? K : rl.Count;
+		var size = (rankList.Count > K) ? K : rankList.Count;
 
-		var changes = new double[rl.Count][];
-		for (var i = 0; i < rl.Count; i++)
+		var changes = new double[rankList.Count][];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			changes[i] = new double[rl.Count];
+			changes[i] = new double[rankList.Count];
 			Array.Fill(changes[i], 0);
 		}
 
 		for (var i = 0; i < size; i++)
 		{
-			for (var j = size; j < rl.Count; j++)
+			for (var j = size; j < rankList.Count; j++)
 			{
-				var c = GetBinaryRelevance(rl[j].Label) - GetBinaryRelevance(rl[i].Label);
+				var c = GetBinaryRelevance(rankList[j].Label) - GetBinaryRelevance(rankList[i].Label);
 				changes[i][j] = changes[j][i] = (double)c / size;
 			}
 		}

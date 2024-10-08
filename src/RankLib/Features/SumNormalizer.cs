@@ -8,7 +8,7 @@ public class SumNormalizer : Normalizer
 	{
 		if (rl.Count == 0)
 		{
-			throw new InvalidOperationException("Error in SumNormalizer::Normalize(): The input ranked list is empty");
+			throw new InvalidOperationException("The input ranked list is empty");
 		}
 
 		var nFeature = rl.FeatureCount;
@@ -41,7 +41,7 @@ public class SumNormalizer : Normalizer
 	{
 		if (rl.Count == 0)
 		{
-			throw new InvalidOperationException("Error in SumNormalizer::Normalize(): The input ranked list is empty");
+			throw new InvalidOperationException("The input ranked list is empty");
 		}
 
 		// Remove duplicate features from the input fids to avoid normalizing the same features multiple times
@@ -66,7 +66,7 @@ public class SumNormalizer : Normalizer
 			{
 				if (norm[j] > 0)
 				{
-					dp.SetFeatureValue(fids[j], (float)(dp.GetFeatureValue(fids[j]) / norm[j]));
+					dp.SetFeatureValue(fids[j], Convert.ToSingle(dp.GetFeatureValue(fids[j]) / norm[j]));
 				}
 			}
 		}

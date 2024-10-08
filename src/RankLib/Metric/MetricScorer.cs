@@ -2,18 +2,21 @@ using RankLib.Learning;
 
 namespace RankLib.Metric;
 
+/// <summary>
+/// Retrieval metric score
+/// </summary>
 public abstract class MetricScorer
 {
-	// The depth parameter, or how deep of a ranked list to use to score the measure.
+	/// <summary>
+	/// The depth parameter, or how deep of a ranked list to use to score the measure.
+	/// </summary>
 	public int K { get; set; } = 10;
 
-	public MetricScorer() { }
-
 	/// <summary>
-	/// Loads external relevance judgments from a qrel file.
+	/// Loads external relevance judgments from a file.
 	/// </summary>
-	/// <param name="qrelFile">The qrel file containing relevance judgments.</param>
-	public virtual void LoadExternalRelevanceJudgment(string qrelFile)
+	/// <param name="queryRelevanceFile">The file containing relevance judgments.</param>
+	public virtual void LoadExternalRelevanceJudgment(string queryRelevanceFile)
 	{
 		// Can be overridden if needed, currently no implementation.
 	}
@@ -51,9 +54,9 @@ public abstract class MetricScorer
 	/// <summary>
 	/// Abstract method to score a RankList.
 	/// </summary>
-	/// <param name="rl">The RankList to score.</param>
+	/// <param name="rankList">The RankList to score.</param>
 	/// <returns>The score for the RankList.</returns>
-	public abstract double Score(RankList rl);
+	public abstract double Score(RankList rankList);
 
 	/// <summary>
 	/// Creates a copy of the current MetricScorer.
@@ -70,7 +73,7 @@ public abstract class MetricScorer
 	/// <summary>
 	/// Calculates the changes in score caused by swapping elements in the RankList.
 	/// </summary>
-	/// <param name="rl">The RankList to calculate score changes for.</param>
+	/// <param name="rankList">The RankList to calculate score changes for.</param>
 	/// <returns>A 2D array representing the change in score for each swap.</returns>
-	public abstract double[][] SwapChange(RankList rl);
+	public abstract double[][] SwapChange(RankList rankList);
 }

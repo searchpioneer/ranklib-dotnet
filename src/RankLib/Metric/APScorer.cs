@@ -15,7 +15,7 @@ public class APScorer : MetricScorer
 
 	public APScorer(ILogger<APScorer>? logger)
 	{
-		_logger = logger;
+		_logger = logger ?? NullLogger<APScorer>.Instance;
 
 		// consider the whole list
 		K = 0;
@@ -23,12 +23,12 @@ public class APScorer : MetricScorer
 
 	public override MetricScorer Copy() => new APScorer(_logger);
 
-	public override void LoadExternalRelevanceJudgment(string qrelFile)
+	public override void LoadExternalRelevanceJudgment(string queryRelevanceFile)
 	{
 		relDocCount = new Dictionary<string, int>();
 		try
 		{
-			using (var reader = new StreamReader(qrelFile))
+			using (var reader = new StreamReader(queryRelevanceFile))
 			{
 				while (reader.ReadLine() is { } content)
 				{
@@ -52,7 +52,7 @@ public class APScorer : MetricScorer
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create("Error in APScorer::LoadExternalRelevanceJudgment(): ", ex);
+			throw RankLibException.Create("Error in APScorer::LoadExternalRelevanceJudgment(): ", ex);
 		}
 	}
 
@@ -60,14 +60,14 @@ public class APScorer : MetricScorer
 	/// Compute Average Precision (AP) of the list.
 	/// AP of a list is the average of precision evaluated at ranks where a relevant document is observed.
 	/// </summary>
-	public override double Score(RankList rl)
+	public override double Score(RankList rankList)
 	{
 		var ap = 0.0;
 		var count = 0;
 
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			if (rl[i].Label > 0.0) // relevant
+			if (rankList[i].Label > 0.0) // relevant
 			{
 				count++;
 				ap += ((double)count) / (i + 1);
@@ -76,7 +76,7 @@ public class APScorer : MetricScorer
 
 		var rdCount = 0;
 
-		if (relDocCount != null && relDocCount.TryGetValue(rl.Id, out var relCount))
+		if (relDocCount != null && relDocCount.TryGetValue(rankList.Id, out var relCount))
 		{
 			rdCount = relCount;
 		}
@@ -93,16 +93,16 @@ public class APScorer : MetricScorer
 
 	public override string Name => "MAP";
 
-	public override double[][] SwapChange(RankList rl)
+	public override double[][] SwapChange(RankList rankList)
 	{
 		// NOTE: Compute swap-change *IGNORING* K (consider the entire ranked list)
-		var relCount = new int[rl.Count];
-		var labels = new int[rl.Count];
+		var relCount = new int[rankList.Count];
+		var labels = new int[rankList.Count];
 		var count = 0;
 
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			if (rl[i].Label > 0) // relevant
+			if (rankList[i].Label > 0) // relevant
 			{
 				labels[i] = 1;
 				count++;
@@ -116,7 +116,7 @@ public class APScorer : MetricScorer
 
 		var rdCount = 0; // total number of relevant documents
 
-		if (relDocCount != null && relDocCount.TryGetValue(rl.Id, out var relCountInList))
+		if (relDocCount != null && relDocCount.TryGetValue(rankList.Id, out var relCountInList))
 		{
 			rdCount = relCountInList;
 		}
@@ -125,10 +125,10 @@ public class APScorer : MetricScorer
 			rdCount = count;
 		}
 
-		var changes = new double[rl.Count][];
-		for (var i = 0; i < rl.Count; i++)
+		var changes = new double[rankList.Count][];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			changes[i] = new double[rl.Count];
+			changes[i] = new double[rankList.Count];
 			Array.Fill(changes[i], 0);
 		}
 
@@ -137,9 +137,9 @@ public class APScorer : MetricScorer
 			return changes; // all "0"
 		}
 
-		for (var i = 0; i < rl.Count - 1; i++)
+		for (var i = 0; i < rankList.Count - 1; i++)
 		{
-			for (var j = i + 1; j < rl.Count; j++)
+			for (var j = i + 1; j < rankList.Count; j++)
 			{
 				double change = 0;
 				if (labels[i] != labels[j])

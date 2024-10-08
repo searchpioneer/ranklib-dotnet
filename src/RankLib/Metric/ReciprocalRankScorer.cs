@@ -6,14 +6,14 @@ public class ReciprocalRankScorer : MetricScorer
 {
 	public ReciprocalRankScorer() => K = 0; // consider the whole list
 
-	public override double Score(RankList rl)
+	public override double Score(RankList rankList)
 	{
-		var size = (rl.Count > K) ? K : rl.Count;
+		var size = (rankList.Count > K) ? K : rankList.Count;
 		var firstRank = -1;
 
 		for (var i = 0; i < size && firstRank == -1; i++)
 		{
-			if (rl[i].Label > 0.0)
+			if (rankList[i].Label > 0.0)
 			{
 				firstRank = i + 1;
 			}
@@ -26,15 +26,15 @@ public class ReciprocalRankScorer : MetricScorer
 
 	public override string Name => $"RR@{K}";
 
-	public override double[][] SwapChange(RankList rl)
+	public override double[][] SwapChange(RankList rankList)
 	{
 		var firstRank = -1;
 		var secondRank = -1;
-		var size = (rl.Count > K) ? K : rl.Count;
+		var size = (rankList.Count > K) ? K : rankList.Count;
 
 		for (var i = 0; i < size; i++)
 		{
-			if (rl[i].Label > 0.0)
+			if (rankList[i].Label > 0.0)
 			{
 				if (firstRank == -1)
 				{
@@ -48,10 +48,10 @@ public class ReciprocalRankScorer : MetricScorer
 		}
 
 		// Initialize changes array
-		var changes = new double[rl.Count][];
-		for (var i = 0; i < rl.Count; i++)
+		var changes = new double[rankList.Count][];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			changes[i] = new double[rl.Count];
+			changes[i] = new double[rankList.Count];
 			Array.Fill(changes[i], 0);
 		}
 
@@ -62,7 +62,7 @@ public class ReciprocalRankScorer : MetricScorer
 			rr = 1.0 / (firstRank + 1);
 			for (var j = firstRank + 1; j < size; j++)
 			{
-				if (rl[j].Label == 0)
+				if (rankList[j].Label == 0)
 				{
 					if (secondRank == -1 || j < secondRank)
 					{
@@ -75,9 +75,9 @@ public class ReciprocalRankScorer : MetricScorer
 				}
 			}
 
-			for (var j = size; j < rl.Count; j++)
+			for (var j = size; j < rankList.Count; j++)
 			{
-				if (rl[j].Label == 0)
+				if (rankList[j].Label == 0)
 				{
 					if (secondRank == -1)
 					{
@@ -98,9 +98,9 @@ public class ReciprocalRankScorer : MetricScorer
 		// Consider swapping documents below firstRank with those earlier in the list
 		for (var i = 0; i < firstRank; i++)
 		{
-			for (var j = firstRank; j < rl.Count; j++)
+			for (var j = firstRank; j < rankList.Count; j++)
 			{
-				if (rl[j].Label > 0)
+				if (rankList[j].Label > 0)
 				{
 					changes[i][j] = changes[j][i] = 1.0 / (i + 1) - rr;
 				}

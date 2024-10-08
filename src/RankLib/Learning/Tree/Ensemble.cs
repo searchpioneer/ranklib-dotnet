@@ -53,7 +53,7 @@ public class Ensemble
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create("Error in Ensemble(xmlRepresentation): ", ex);
+			throw RankLibException.Create("Error in Ensemble(xmlRepresentation): ", ex);
 		}
 	}
 

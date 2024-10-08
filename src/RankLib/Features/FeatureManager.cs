@@ -76,7 +76,7 @@ public class FeatureManager
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create("Error reading samples from file", ex);
+			throw RankLibException.Create("Error reading samples from file", ex);
 		}
 
 		return samples;
@@ -117,7 +117,7 @@ public class FeatureManager
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create("Error in FeatureManager::readFeature(): ", ex);
+			throw RankLibException.Create("Error in FeatureManager::readFeature(): ", ex);
 		}
 
 		return features;
@@ -127,7 +127,7 @@ public class FeatureManager
 	{
 		if (!samples.Any())
 		{
-			throw RankLibError.Create("Error in FeatureManager::getFeatureFromSampleVector(): There are no training samples.");
+			throw RankLibException.Create("Error in FeatureManager::getFeatureFromSampleVector(): There are no training samples.");
 		}
 
 		var maxFeatureCount = samples.Max(rl => rl.FeatureCount);
@@ -251,7 +251,7 @@ public class FeatureManager
 		}
 		catch (Exception ex)
 		{
-			throw RankLibError.Create("Error in FeatureManager::save(): ", ex);
+			throw RankLibException.Create("Error in FeatureManager::save(): ", ex);
 		}
 	}
 

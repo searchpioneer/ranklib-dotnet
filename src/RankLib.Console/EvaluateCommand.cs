@@ -38,8 +38,6 @@ public class EvaluateCommandOptions : ICommandOptions
 	public FileInfo? Save { get; set; }
 	public IEnumerable<FileInfo>? Load { get; set; }
 	public int Thread { get; set; }
-	public bool Keep { get; set; }
-
 	public FileInfo? Rank { get; set; }
 
 	public FileInfo? Indri { get; set; }
@@ -75,8 +73,6 @@ public class EvaluateCommandOptions : ICommandOptions
 	public float? FRate { get; set; }
 	public RankerType? RType { get; set; }
 	public double? L2 { get; set; }
-	public string? Nf { get; set; }
-	public int? T { get; set; }
 	public bool? Hr { get; set; }
 }
 
@@ -85,12 +81,12 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 	public EvaluateCommand()
 	: base("eval", "evaluate")
 	{
-		AddOption(new Option<FileInfo>("--train", "Training data file"));
+		AddOption(new Option<FileInfo>("--train", "Training data file").ExistingOnly());
 		AddOption(new Option<RankerType>("--ranker", () => RankerType.COOR_ASCENT, "Ranking algorithm to use"));
 		AddOption(new Option<string>("--feature", "Feature description file: list features to be considered by the learner, each on a separate line. If not specified, all features will be used."));
 		AddOption(new Option<string>("--metric2t", () => "ERR@10", "Metric to optimize on the training data"));
 		AddOption(new Option<double?>("--gmax", "Highest judged relevance label"));
-		AddOption(new Option<FileInfo>("--qrel", "TREC-style relevance judgment file"));
+		AddOption(new Option<FileInfo>("--qrel", "TREC-style relevance judgment file").ExistingOnly());
 		AddOption(new Option<bool>("--missingZero", "Substitute zero for missing feature values rather than throwing an exception."));
 		AddOption(new Option<FileInfo>("--validate", "Specify if you want to tune your system on the validation data (default=unspecified)"));
 		AddOption(new Option<float>("--tvs", "If you don't have separate validation data, use this to set train-validation split to be (x)(1.0-x)"));
@@ -108,11 +104,10 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 
 		AddOption(new Option<IEnumerable<FileInfo>>("--load", "Load saved model file"));
 		AddOption(new Option<int>("--thread", () => -1, "Number of threads to use"));
-		AddOption(new Option<bool>("--keep", "Whether to keep original features"));
-		AddOption(new Option<FileInfo>("--rank", "Rank the samples in the specified file (specify either this or -test but not both)"));
-		AddOption(new Option<FileInfo>("--indri", "Indri ranking file"));
+		AddOption(new Option<FileInfo>("--rank", "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
+		AddOption(new Option<FileInfo>("--indri", "Indri ranking file").ExistingOnly());
 		AddOption(new Option<bool>("--sparse", "Use sparse representation"));
-		AddOption(new Option<FileInfo>("--idv", "Per-ranked list model performance (in test metric). Has to be used with -test"));
+		AddOption(new Option<FileInfo>("--idv", "Per-ranked list model performance (in test metric). Has to be used with -test").ExistingOnly());
 		AddOption(new Option<FileInfo>("--score", "TODO"));
 		AddOption(new Option<int?>("--epoch", "TODO"));
 		AddOption(new Option<int?>("--layer", "TODO: layer count"));
@@ -139,8 +134,6 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<float?>("--frate", "Feature sampling rate (default=0.3)"));
 		AddOption(new Option<RankerType?>("--rtype", "RfRanker ranker type to bag. Random Forests only support MART/LambdaMART"));
 		AddOption(new Option<double?>("--L2", "TODO: Lambda"));
-		AddOption(new Option<string?>("--nf", "TODO: New Feature File"));
-		AddOption(new Option<int?>("--t", "TODO: Top New"));
 		AddOption(new Option<bool?>("--hr", "TODO: Must Have Relevance Doc"));
 	}
 }
@@ -148,15 +141,25 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateCommandOptions>
 {
 	private readonly ILoggerFactory _loggerFactory;
+	private readonly EvaluatorFactory _evaluatorFactory;
+	private readonly RankerFactory _rankerFactory;
 
-	public EvaluateCommandOptionsHandler(ILoggerFactory loggerFactory) => _loggerFactory = loggerFactory;
+	public EvaluateCommandOptionsHandler(
+		ILoggerFactory loggerFactory, 
+		EvaluatorFactory evaluatorFactory, 
+		RankerFactory rankerFactory)
+	{
+		_loggerFactory = loggerFactory;
+		_evaluatorFactory = evaluatorFactory;
+		_rankerFactory = rankerFactory;
+	}
 
 	public Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
 		var logger = _loggerFactory.CreateLogger<Evaluator>();
 
 		var trainFile = options.Train;
-		var foldCV = options.Kcv;
+		var foldCv = options.Kcv;
 		var testMetric = options.Metric2T;
 		var trainMetric = options.Metric2t;
 		var testFile = options.Test?.LastOrDefault();
@@ -188,7 +191,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				NormalizerType.Sum => new SumNormalizer(),
 				NormalizerType.ZScore => new ZScoreNormalizer(),
 				NormalizerType.Linear => new LinearNormalizer(),
-				_ => throw RankLibError.Create("Unknown normalizer: " + options.Norm)
+				_ => throw RankLibException.Create("Unknown normalizer: " + options.Norm)
 			};
 		}
 
@@ -205,11 +208,6 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.MissingZero)
 		{
 			DataPoint.MissingZero = true;
-		}
-
-		if (options.QRel != null)
-		{
-			Evaluator.QrelFile = options.QRel.FullName;
 		}
 
 		if (options.GMax != null)
@@ -331,7 +329,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		{
 			if (options.RType != RankerType.MART && options.RType != RankerType.LAMBDAMART)
 			{
-				throw RankLibError.Create(options.RType + " cannot be bagged. Random Forests only supports MART/LambdaMART.");
+				throw RankLibException.Create(options.RType + " cannot be bagged. Random Forests only supports MART/LambdaMART.");
 			}
 
 			RFRanker.rType = options.RType.Value;
@@ -340,21 +338,6 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.L2 != null)
 		{
 			LinearRegRank.lambda = options.L2.Value;
-		}
-
-		if (options.Nf != null)
-		{
-			Evaluator.NewFeatureFile = options.Nf;
-		}
-
-		if (options.Keep)
-		{
-			Evaluator.KeepOrigFeatures = true;
-		}
-
-		if (options.T != null)
-		{
-			Evaluator.TopNew = options.T.Value;
 		}
 
 		if (options.Hr != null)
@@ -372,19 +355,16 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		{
 			options.Metric2T = options.Metric2t;
 		}
-
-		logger.LogInformation(options.Keep ? "Keep orig. features" : "Discard orig. features");
-
-		var featureManager = new FeatureManager(_loggerFactory.CreateLogger<FeatureManager>());
-		var evaluator = new Evaluator(featureManager, options.Ranker, options.Metric2t, options.Metric2T, _loggerFactory);
+		
+		var evaluator = _evaluatorFactory.CreateEvaluator(options.Ranker, options.Metric2t, options.Metric2T, options.QRel?.FullName);
 
 		if (options.Train != null)
 		{
 			logger.LogInformation($"Training data: {trainFile}");
 
-			if (foldCV != -1)
+			if (foldCv != -1)
 			{
-				logger.LogInformation($"Cross validation: {foldCV} folds.");
+				logger.LogInformation($"Cross validation: {foldCv} folds.");
 				if (tvSplit > 0)
 				{
 					logger.LogInformation($"Train-Validation split: {tvSplit}");
@@ -427,9 +407,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			{
 				logger.LogInformation($"Highest relevance label (to compute ERR): {(int)SimpleMath.LogBase2(ERRScorer.MAX)}");
 			}
-			if (!string.IsNullOrEmpty(Evaluator.QrelFile))
+			if (options.QRel != null)
 			{
-				logger.LogInformation($"TREC-format relevance judgment (only affects MAP and NDCG scores): {Evaluator.QrelFile}");
+				logger.LogInformation("TREC-format relevance judgment (only affects MAP and NDCG scores): {QueryRelevanceJudgementFile}", options.QRel.FullName);
 			}
 			logger.LogInformation($"Feature normalization: {(Evaluator.normalize ? Evaluator.Normalizer.Name : "No")}");
 
@@ -449,12 +429,11 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			}
 
 			logger.LogInformation($"[+] {options.Ranker}'s Parameters:");
-			var rf = new RankerFactory(_loggerFactory);
 
-			rf.CreateRanker(options.Ranker).PrintParameters();
+			_rankerFactory.CreateRanker(options.Ranker).PrintParameters();
 
 			// starting to do some work
-			if (foldCV != -1)
+			if (foldCv != -1)
 			{
 				//- Behavioral changes: Write kcv models if kcvmd OR kcvmn defined.  Use
 				//  default names for missing arguments: "kcvmodels" default directory
@@ -470,7 +449,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 				//- models won't be saved if kcvModelDir=""   [OBSOLETE]
 				//- Models saved if EITHER kcvmd OR kcvmn defined.  Use default names for missing values.
-				evaluator.Evaluate(trainFile!.FullName, featureDescriptionFile?.FullName, foldCV, tvSplit, kcvModelDir!.FullName, kcvModelFile!);
+				evaluator.Evaluate(trainFile!.FullName, featureDescriptionFile?.FullName, foldCv, tvSplit, kcvModelDir!.FullName, kcvModelFile!);
 			}
 			else
 			{
@@ -523,7 +502,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				}
 				else
 				{
-					throw RankLibError.Create("This function has been removed. Consider using -score in addition to " +
+					throw RankLibException.Create("This function has been removed. Consider using -score in addition to " +
 											  "your current parameters and do the ranking yourself based on these scores.");
 				}
 			}

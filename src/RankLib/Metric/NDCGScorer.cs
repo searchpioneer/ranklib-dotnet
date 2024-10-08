@@ -5,10 +5,16 @@ using RankLib.Utilities;
 
 namespace RankLib.Metric;
 
+/// <summary>
+/// Normalized Discounted Cumulative Gain scorer
+/// </summary>
+/// <remarks>
+/// https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG
+/// </remarks>
 public class NDCGScorer : DCGScorer
 {
 	private readonly ILogger<NDCGScorer> _logger;
-	protected Dictionary<string, double> idealGains = new();
+	private readonly Dictionary<string, double> _idealGains = new();
 
 	public NDCGScorer(ILogger<NDCGScorer>? logger = null) =>
 		_logger = logger ?? NullLogger<NDCGScorer>.Instance;
@@ -18,13 +24,13 @@ public class NDCGScorer : DCGScorer
 
 	public override MetricScorer Copy() => new NDCGScorer(_logger);
 
-	public override void LoadExternalRelevanceJudgment(string qrelFile)
+	public override void LoadExternalRelevanceJudgment(string queryRelevanceFile)
 	{
 		// Queries with external relevance judgment will have their cached ideal gain value overridden
 		try
 		{
-			using var reader = new StreamReader(qrelFile);
-			var lastQID = string.Empty;
+			using var reader = new StreamReader(queryRelevanceFile);
+			var lastQid = string.Empty;
 			var rel = new List<int>();
 			var nQueries = 0;
 
@@ -40,26 +46,29 @@ public class NDCGScorer : DCGScorer
 				var qid = parts[0].Trim();
 				var label = (int)Math.Round(double.Parse(parts[3].Trim()));
 
-				if (!string.IsNullOrEmpty(lastQID) && !lastQID.Equals(qid, StringComparison.Ordinal))
+				if (!string.IsNullOrEmpty(lastQid) && !lastQid.Equals(qid, StringComparison.Ordinal))
 				{
 					var size = (rel.Count > K) ? K : rel.Count;
 					var r = rel.ToArray();
 					var ideal = GetIdealDCG(r, size);
-					idealGains[lastQID] = ideal;
+					_idealGains[lastQid] = ideal;
 					rel.Clear();
 					nQueries++;
 				}
 
-				lastQID = qid;
+				lastQid = qid;
 				rel.Add(label);
 			}
 
 			if (rel.Count > 0)
 			{
-				var size = (rel.Count > K) ? K : rel.Count;
+				var size = rel.Count > K
+					? K
+					: rel.Count;
+
 				var r = rel.ToArray();
 				var ideal = GetIdealDCG(r, size);
-				idealGains[lastQID] = ideal;
+				_idealGains[lastQid] = ideal;
 				rel.Clear();
 				nQueries++;
 			}
@@ -68,37 +77,34 @@ public class NDCGScorer : DCGScorer
 		}
 		catch (IOException ex)
 		{
-			throw RankLibError.Create($"Error in NDCGScorer::loadExternalRelevanceJudgment(): {ex.Message}", ex);
+			throw RankLibException.Create(ex);
 		}
 	}
 
 	/// <summary>
 	/// Compute NDCG at k. NDCG(k) = DCG(k) / DCG_{perfect}(k).
 	/// </summary>
-	public override double Score(RankList rl)
+	public override double Score(RankList rankList)
 	{
-		if (rl.Count == 0)
+		if (rankList.Count == 0)
 		{
 			return 0;
 		}
 
-		var size = K;
-		if (K > rl.Count || K <= 0)
-		{
-			size = rl.Count;
-		}
+		var size = K > rankList.Count || K <= 0
+			? rankList.Count
+			: K;
+		var rel = GetRelevanceLabels(rankList);
 
-		var rel = GetRelevanceLabels(rl);
-
-		double ideal = 0;
-		if (idealGains.TryGetValue(rl.Id, out var cachedIdeal))
+		double ideal;
+		if (_idealGains.TryGetValue(rankList.Id, out var cachedIdeal))
 		{
 			ideal = cachedIdeal;
 		}
 		else
 		{
 			ideal = GetIdealDCG(rel, size);
-			idealGains[rl.Id] = ideal;
+			_idealGains[rankList.Id] = ideal;
 		}
 
 		if (ideal <= 0.0)
@@ -109,31 +115,25 @@ public class NDCGScorer : DCGScorer
 		return GetDCG(rel, size) / ideal;
 	}
 
-	public override double[][] SwapChange(RankList rl)
+	public override double[][] SwapChange(RankList rankList)
 	{
-		var size = (rl.Count > K) ? K : rl.Count;
-		var rel = GetRelevanceLabels(rl);
+		var size = (rankList.Count > K) ? K : rankList.Count;
+		var rel = GetRelevanceLabels(rankList);
 
-		double ideal = 0;
-		if (idealGains.TryGetValue(rl.Id, out var cachedIdeal))
-		{
-			ideal = cachedIdeal;
-		}
-		else
-		{
-			ideal = GetIdealDCG(rel, size);
-		}
+		var ideal = _idealGains.TryGetValue(rankList.Id, out var cachedIdeal)
+			? cachedIdeal
+			: GetIdealDCG(rel, size);
 
-		var changes = new double[rl.Count][];
-		for (var i = 0; i < rl.Count; i++)
+		var changes = new double[rankList.Count][];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			changes[i] = new double[rl.Count];
+			changes[i] = new double[rankList.Count];
 			Array.Fill(changes[i], 0);
 		}
 
 		for (var i = 0; i < size; i++)
 		{
-			for (var j = i + 1; j < rl.Count; j++)
+			for (var j = i + 1; j < rankList.Count; j++)
 			{
 				if (ideal > 0)
 				{
@@ -145,7 +145,7 @@ public class NDCGScorer : DCGScorer
 		return changes;
 	}
 
-	public override string Name => "NDCG@" + K;
+	public override string Name => $"NDCG@{K}";
 
 	private double GetIdealDCG(int[] rel, int topK)
 	{
