@@ -8,22 +8,19 @@ namespace RankLib.Learning;
 
 public class RankerTrainer
 {
-	private readonly ILoggerFactory _loggerFactory;
 	private readonly ILogger<RankerTrainer> _logger;
-
-	protected RankerFactory rf;
+	private readonly RankerFactory _rankerFactory;
 	public double TrainingTime { get; protected set; }
 
-	public RankerTrainer(ILoggerFactory? loggerFactory = null)
+	public RankerTrainer(RankerFactory rankerFactory, ILogger<RankerTrainer>? logger = null)
 	{
-		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = _loggerFactory.CreateLogger<RankerTrainer>();
-		rf = new RankerFactory(_loggerFactory);
+		_logger = logger ?? NullLogger<RankerTrainer>.Instance;
+		_rankerFactory = rankerFactory;
 	}
 
 	public Ranker Train(RankerType type, List<RankList> train, int[] features, MetricScorer scorer)
 	{
-		var ranker = rf.CreateRanker(type, train, features, scorer);
+		var ranker = _rankerFactory.CreateRanker(type, train, features, scorer);
 		var stopwatch = Stopwatch.StartNew();
 		ranker.Init();
 		ranker.Learn();
@@ -34,7 +31,7 @@ public class RankerTrainer
 
 	public Ranker Train(RankerType type, List<RankList> train, List<RankList> validation, int[] features, MetricScorer scorer)
 	{
-		var ranker = rf.CreateRanker(type, train, features, scorer);
+		var ranker = _rankerFactory.CreateRanker(type, train, features, scorer);
 		ranker.SetValidationSet(validation);
 		var stopwatch = Stopwatch.StartNew();
 		ranker.Init();

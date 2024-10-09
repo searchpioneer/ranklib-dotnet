@@ -7,6 +7,12 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Boosting;
 
+public class RankBoostParameters
+{
+	public int NIteration { get; set; } = 300; // Number of rounds
+	public int NThreshold { get; set; } = 10;
+}
+
 public class RankBoost : Ranker
 {
 	private readonly ILogger<RankBoost> _logger;
@@ -14,18 +20,18 @@ public class RankBoost : Ranker
 	public static int NIteration = 300; // Number of rounds
 	public static int NThreshold = 10;
 
-	protected double[][][] _sweight = null; // Sample weight D(x_0, x_1) -- the weight of x_1 ranked above x_2
-	protected double[][] _potential = null; // pi(x)
-	protected List<List<int[]>> _sortedSamples = new List<List<int[]>>();
-	protected double[][] _thresholds = null; // Candidate values for weak rankers' threshold, selected from feature values
-	protected int[][] _tSortedIdx = null; // Sorted (descend) index for @thresholds
+	private double[][][] _sweight = null; // Sample weight D(x_0, x_1) -- the weight of x_1 ranked above x_2
+	private double[][] _potential = null; // pi(x)
+	private List<List<int[]>> _sortedSamples = [];
+	private double[][] _thresholds = null; // Candidate values for weak rankers' threshold, selected from feature values
+	private int[][] _tSortedIdx = null; // Sorted (descend) index for @thresholds
 
-	protected List<RBWeakRanker> _wRankers = null; // Best weak rankers at each round
-	protected List<double> _rWeight = null; // Alpha (weak rankers' weight)
+	private List<RBWeakRanker> _wRankers = null; // Best weak rankers at each round
+	private List<double> _rWeight = null; // Alpha (weak rankers' weight)
 
 	// To store the best model on validation data (if specified)
-	protected List<RBWeakRanker> _bestModelRankers = new List<RBWeakRanker>();
-	protected List<double> _bestModelWeights = new List<double>();
+	private List<RBWeakRanker> _bestModelRankers = [];
+	private List<double> _bestModelWeights = [];
 
 	private double _R_t = 0.0;
 	private double _Z_t = 1.0;
@@ -128,7 +134,7 @@ public class RankBoost : Ranker
 		return new RBWeakRanker(bestFid, bestThreshold);
 	}
 
-	private void UpdateSampleWeights(double alpha_t)
+	private void UpdateSampleWeights(double alphaT)
 	{
 		// Normalize sample weights after updating them
 		_Z_t = 0.0; // Normalization factor
@@ -144,7 +150,7 @@ public class RankBoost : Ranker
 
 				for (var k = j + 1; k < rl.Count; k++)
 				{
-					D_t[j][k] = _sweight[i][j][k] * Math.Exp(alpha_t * (_wRankers.Last().Score(rl[k]) - _wRankers.Last().Score(rl[j])));
+					D_t[j][k] = _sweight[i][j][k] * Math.Exp(alphaT * (_wRankers.Last().Score(rl[k]) - _wRankers.Last().Score(rl[j])));
 					_Z_t += D_t[j][k]; // Sum the new weight for normalization
 				}
 			}

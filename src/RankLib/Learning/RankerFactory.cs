@@ -13,48 +13,43 @@ public class RankerFactory
 {
 	private readonly ILoggerFactory _loggerFactory;
 	private readonly ILogger<RankerFactory> _logger;
-
-	// Factory for creating Ranker instances
-	protected Ranker[] Rankers;
-
-	// Map for custom registered rankers
-	protected Dictionary<string, string> map = new();
+	private readonly Dictionary<string, string> _map = new();
 
 	public RankerFactory(ILoggerFactory? loggerFactory = null)
 	{
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<RankerFactory>();
 
-		Rankers =
-		[
-			new MART(_loggerFactory.CreateLogger<MART>()),
-			new RankBoost(_loggerFactory.CreateLogger<RankBoost>()),
-			new RankNet(_loggerFactory.CreateLogger<RankNet>()),
-			new AdaRank(_loggerFactory.CreateLogger<AdaRank>()),
-			new CoorAscent(_loggerFactory.CreateLogger<CoorAscent>()),
-			new LambdaRank(_loggerFactory.CreateLogger<LambdaRank>()),
-			new LambdaMART(_loggerFactory.CreateLogger<LambdaMART>()),
-			new ListNet(_loggerFactory.CreateLogger<ListNet>()),
-			new RFRanker(_loggerFactory),
-			new LinearRegRank(_loggerFactory.CreateLogger<LinearRegRank>()),
-		];
-
 		// Register all predefined rankers
-		map[CreateRanker(RankerType.MART).Name.ToUpper()] = RankerType.MART.ToString();
-		map[CreateRanker(RankerType.RANKNET).Name.ToUpper()] = RankerType.RANKNET.ToString();
-		map[CreateRanker(RankerType.RANKBOOST).Name.ToUpper()] = RankerType.RANKBOOST.ToString();
-		map[CreateRanker(RankerType.ADARANK).Name.ToUpper()] = RankerType.ADARANK.ToString();
-		map[CreateRanker(RankerType.COOR_ASCENT).Name.ToUpper()] = RankerType.COOR_ASCENT.ToString();
-		map[CreateRanker(RankerType.LAMBDARANK).Name.ToUpper()] = RankerType.LAMBDARANK.ToString();
-		map[CreateRanker(RankerType.LAMBDAMART).Name.ToUpper()] = RankerType.LAMBDAMART.ToString();
-		map[CreateRanker(RankerType.LISTNET).Name.ToUpper()] = RankerType.LISTNET.ToString();
-		map[CreateRanker(RankerType.RANDOM_FOREST).Name.ToUpper()] = RankerType.RANDOM_FOREST.ToString();
-		map[CreateRanker(RankerType.LINEAR_REGRESSION).Name.ToUpper()] = RankerType.LINEAR_REGRESSION.ToString();
+		_map[CreateRanker(RankerType.MART).Name.ToUpper()] = RankerType.MART.ToString();
+		_map[CreateRanker(RankerType.RANKNET).Name.ToUpper()] = RankerType.RANKNET.ToString();
+		_map[CreateRanker(RankerType.RANKBOOST).Name.ToUpper()] = RankerType.RANKBOOST.ToString();
+		_map[CreateRanker(RankerType.ADARANK).Name.ToUpper()] = RankerType.ADARANK.ToString();
+		_map[CreateRanker(RankerType.COOR_ASCENT).Name.ToUpper()] = RankerType.COOR_ASCENT.ToString();
+		_map[CreateRanker(RankerType.LAMBDARANK).Name.ToUpper()] = RankerType.LAMBDARANK.ToString();
+		_map[CreateRanker(RankerType.LAMBDAMART).Name.ToUpper()] = RankerType.LAMBDAMART.ToString();
+		_map[CreateRanker(RankerType.LISTNET).Name.ToUpper()] = RankerType.LISTNET.ToString();
+		_map[CreateRanker(RankerType.RANDOM_FOREST).Name.ToUpper()] = RankerType.RANDOM_FOREST.ToString();
+		_map[CreateRanker(RankerType.LINEAR_REGRESSION).Name.ToUpper()] = RankerType.LINEAR_REGRESSION.ToString();
 	}
 
-	public void Register(string name, string className) => map[name] = className;
+	public void Register(string name, string className) => _map[name] = className;
 
-	public Ranker CreateRanker(RankerType type) => Rankers[(int)type - (int)RankerType.MART].CreateNew();
+	public Ranker CreateRanker(RankerType type) =>
+		type switch
+		{
+			RankerType.MART => new MART(_loggerFactory.CreateLogger<MART>()),
+			RankerType.RANKBOOST => new RankBoost(_loggerFactory.CreateLogger<RankBoost>()),
+			RankerType.RANKNET => new RankNet(_loggerFactory.CreateLogger<RankNet>()),
+			RankerType.ADARANK => new AdaRank(_loggerFactory.CreateLogger<AdaRank>()),
+			RankerType.COOR_ASCENT => new CoorAscent(_loggerFactory.CreateLogger<CoorAscent>()),
+			RankerType.LAMBDARANK => new LambdaRank(_loggerFactory.CreateLogger<LambdaRank>()),
+			RankerType.LAMBDAMART => new LambdaMART(_loggerFactory.CreateLogger<LambdaMART>()),
+			RankerType.LISTNET => new ListNet(_loggerFactory.CreateLogger<ListNet>()),
+			RankerType.RANDOM_FOREST => new RFRanker(_loggerFactory),
+			RankerType.LINEAR_REGRESSION => new LinearRegRank(_loggerFactory.CreateLogger<LinearRegRank>()),
+			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+		};
 
 	public Ranker CreateRanker(RankerType type, List<RankList> samples, int[] features, MetricScorer scorer)
 	{
@@ -118,9 +113,9 @@ public class RankerFactory
 		try
 		{
 			using var reader = new StringReader(fullText);
-			var content = reader.ReadLine().Replace("## ", "").Trim(); // read the first line to get the ranker name
-			_logger.LogInformation($"Model: {content}");
-			var r = CreateRanker(map[content.ToUpper()]);
+			var rankerName = reader.ReadLine().Replace("## ", "").Trim(); // read the first line to get the ranker name
+			_logger.LogInformation("Model: {RankerName}", rankerName);
+			var r = CreateRanker(_map[rankerName.ToUpper()]);
 			r.LoadFromString(fullText);
 			return r;
 		}

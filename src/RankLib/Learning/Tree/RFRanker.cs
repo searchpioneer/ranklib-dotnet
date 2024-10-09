@@ -7,6 +7,23 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
 
+public class RFRankerParameters
+{
+	// Parameters
+	// [a] general bagging parameters
+	public int nBag { get; set; } = 300;
+	public float subSamplingRate { get; set; } = 1.0f; // sampling of samples (*WITH* replacement)
+	public float featureSamplingRate { get; set; } = 0.3f; // sampling of features (*WITHOUT* replacement)
+
+	// [b] what to do in each bag
+	public RankerType rType { get; set; } = RankerType.MART; // which algorithm to bag
+	public int nTrees { get; set; } = 1; // how many trees in each bag
+	public int nTreeLeaves { get; set; } = 100;
+	public float learningRate { get; set; } = 0.1F; // or shrinkage, only matters if nTrees > 1
+	public int nThreshold { get; set; } = 256;
+	public int minLeafSupport { get; set; } = 1;
+}
+
 public class RFRanker : Ranker
 {
 	private readonly ILoggerFactory _loggerFactory;
@@ -27,7 +44,8 @@ public class RFRanker : Ranker
 	public static int minLeafSupport = 1;
 
 	// Variables
-	protected Ensemble[] ensembles = null; // bag of ensembles
+	protected Ensemble[] ensembles = []; // bag of ensembles
+	private LambdaMARTParameters _lambdaMARTParameters;
 
 	public RFRanker(ILoggerFactory? loggerFactory = null) : base((loggerFactory ?? NullLoggerFactory.Instance)
 		.CreateLogger<RFRanker>())
@@ -48,13 +66,15 @@ public class RFRanker : Ranker
 		_logger.LogInformation("Initializing...");
 		ensembles = new Ensemble[nBag];
 
-		// Initialize parameters for the tree(s) built in each bag
-		LambdaMART.nTrees = nTrees;
-		LambdaMART.nTreeLeaves = nTreeLeaves;
-		LambdaMART.learningRate = learningRate;
-		LambdaMART.nThreshold = nThreshold;
-		LambdaMART.minLeafSupport = minLeafSupport;
-		LambdaMART.nRoundToStopEarly = -1; // no early stopping since we're doing bagging
+		_lambdaMARTParameters = new LambdaMARTParameters
+		{
+			nTrees = nTrees,
+			nTreeLeaves = nTreeLeaves,
+			learningRate = learningRate,
+			nThreshold = nThreshold,
+			minLeafSupport = minLeafSupport,
+			nRoundToStopEarly = -1, // no early stopping since we're doing bagging
+		};
 
 		// Turn on feature sampling
 		FeatureHistogram.samplingRate = featureSamplingRate;
@@ -76,6 +96,7 @@ public class RFRanker : Ranker
 			var bag = sp.Sample(Samples, subSamplingRate, true);
 			var r = (LambdaMART)rankerFactory.CreateRanker(rType, bag, Features, Scorer);
 
+			r.Parameters = _lambdaMARTParameters;
 			r.Init();
 			r.Learn();
 

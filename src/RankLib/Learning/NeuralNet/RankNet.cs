@@ -6,6 +6,14 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.NeuralNet;
 
+public class RankNetParameters
+{
+	public int NIteration { get; set; } = 100;
+	public int NHiddenLayer { get; set; } = 1;
+	public int NHiddenNodePerLayer { get; set; } = 10;
+	public double LearningRate { get; set; } = 0.00005;
+}
+
 public class RankNet : Ranker
 {
 	private readonly ILogger<RankNet> _logger;

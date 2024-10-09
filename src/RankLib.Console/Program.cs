@@ -40,6 +40,7 @@ internal class Program
 				services.AddSingleton<RankerFactory>();
 				services.AddSingleton<MetricScorerFactory>();
 				services.AddSingleton<FeatureManager>();
+				services.AddSingleton<RankerTrainer>();
 			});
 
 		return builder.Build().Invoke(args);

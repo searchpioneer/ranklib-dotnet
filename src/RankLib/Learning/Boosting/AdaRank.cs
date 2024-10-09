@@ -6,6 +6,14 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Boosting;
 
+public class AdaRankParameters
+{
+	public int NIteration { get; set; } = 500;
+	public double Tolerance { get; set; } = 0.002;
+	public bool TrainWithEnqueue { get; set; } = true;
+	public int MaxSelCount { get; set; } = 5; // Max number of times a feature can be selected consecutively before being removed
+}
+
 public class AdaRank : Ranker
 {
 	private readonly ILogger<AdaRank> _logger;

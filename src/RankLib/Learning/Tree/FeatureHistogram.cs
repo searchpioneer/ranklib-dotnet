@@ -29,8 +29,6 @@ public class FeatureHistogram
 	// Reuse of parent resources
 	private bool reuseParent = false;
 
-	public FeatureHistogram() { }
-
 	public void Construct(DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, int[] features, float[][] thresholds, double[] impacts)
 	{
 		this.features = features;

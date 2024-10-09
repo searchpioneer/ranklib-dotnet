@@ -21,6 +21,7 @@ public class Evaluator
 	private readonly RankerFactory _rankerFactory;
 	private readonly MetricScorer _trainScorer;
 	private readonly MetricScorer _testScorer;
+	private readonly RankerTrainer _trainer;
 	private readonly FeatureManager _featureManager;
 	private readonly RankerType _rankerType;
 	private readonly bool _normalize;
@@ -32,6 +33,7 @@ public class Evaluator
 		FeatureManager featureManager,
 		MetricScorer trainScorer,
 		MetricScorer testScorer,
+		RankerTrainer trainer,
 		Normalizer? normalizer = null,
 		ILoggerFactory? loggerFactory = null
 	)
@@ -41,6 +43,7 @@ public class Evaluator
 		_featureManager = featureManager;
 		_trainScorer = trainScorer;
 		_testScorer = testScorer;
+		_trainer = trainer;
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<Evaluator>();
 		_normalize = normalizer != null;
@@ -52,6 +55,7 @@ public class Evaluator
 		RankerType rankerType,
 		FeatureManager featureManager,
 		MetricScorer scorer,
+		RankerTrainer trainer,
 		Normalizer? normalizer = null,
 		ILoggerFactory? loggerFactory = null
 	)
@@ -61,6 +65,7 @@ public class Evaluator
 		_featureManager = featureManager;
 		_trainScorer = scorer;
 		_testScorer = scorer;
+		_trainer = trainer;
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<Evaluator>();
 		_normalize = normalizer != null;
@@ -126,8 +131,7 @@ public class Evaluator
 				Normalize(test, features);
 		}
 
-		var trainer = new RankerTrainer(_loggerFactory);
-		var ranker = trainer.Train(_rankerType, train, validation, features, _trainScorer);
+		var ranker = _trainer.Train(_rankerType, train, validation, features, _trainScorer);
 
 		if (test != null)
 		{
@@ -154,8 +158,7 @@ public class Evaluator
 			Normalize(validation, features);
 		}
 
-		var trainer = new RankerTrainer(_loggerFactory);
-		var ranker = trainer.Train(_rankerType, trainingData, validation, features, _trainScorer);
+		var ranker = _trainer.Train(_rankerType, trainingData, validation, features, _trainScorer);
 
 		var rankScore = Evaluate(ranker, testData);
 		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
@@ -179,8 +182,7 @@ public class Evaluator
 			Normalize(test, features);
 		}
 
-		var trainer = new RankerTrainer(_loggerFactory);
-		var ranker = trainer.Train(_rankerType, train, validation, features, _trainScorer);
+		var ranker = _trainer.Train(_rankerType, train, validation, features, _trainScorer);
 
 		if (test != null)
 		{
@@ -230,8 +232,7 @@ public class Evaluator
 			var validation = tvs > 0 ? validationData[i] : null;
 			var test = testData[i];
 
-			var trainer = new RankerTrainer(_loggerFactory);
-			var ranker = trainer.Train(_rankerType, train, validation, features, _trainScorer);
+			var ranker = _trainer.Train(_rankerType, train, validation, features, _trainScorer);
 
 			var testScore = Evaluate(ranker, test);
 			scoreOnTrain += ranker.GetScoreOnTrainingData();

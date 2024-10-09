@@ -8,16 +8,11 @@ public class MART : LambdaMART
 {
 	private readonly ILogger<MART> _logger;
 
-	public MART(ILogger<MART>? logger = null) : base(logger)
-	{
-		_logger = logger ?? NullLogger<MART>.Instance;
-	}
+	public MART(ILogger<MART>? logger = null) : base(logger) => _logger = logger ?? NullLogger<MART>.Instance;
 
 	public MART(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<MART>? logger = null)
-		: base(samples, features, scorer, logger)
-	{
+		: base(samples, features, scorer, logger) =>
 		_logger = logger ?? NullLogger<MART>.Instance;
-	}
 
 	public override Ranker CreateNew() => new MART(_logger);
 

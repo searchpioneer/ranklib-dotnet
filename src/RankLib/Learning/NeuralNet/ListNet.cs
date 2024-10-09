@@ -5,6 +5,13 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.NeuralNet;
 
+public class ListNetParameters
+{
+	public int nIteration { get; set; } = 1500;
+	public double learningRate { get; set; } = 0.00001;
+	public int nHiddenLayer { get; set; } = 0; // FIXED, it doesn't work with hidden layer
+}
+
 public class ListNet : RankNet
 {
 	private readonly ILogger<ListNet> _logger;

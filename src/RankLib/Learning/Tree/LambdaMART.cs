@@ -7,17 +7,27 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
 
+public class LambdaMARTParameters
+{
+	public int nTrees { get; set; } = 1000; // number of trees
+	public float learningRate { get; set; } = 0.1F; // shrinkage
+	public int nThreshold { get; set; } = 256;
+	public int nRoundToStopEarly { get; set; } = 100;
+	public int nTreeLeaves { get; set; } = 10;
+	public int minLeafSupport { get; set; } = 1;
+}
+
 public class LambdaMART : Ranker
 {
 	private readonly ILogger<LambdaMART> _logger;
 
 	// Parameters
-	public static int nTrees = 1000; // number of trees
-	public static float learningRate = 0.1F; // shrinkage
-	public static int nThreshold = 256;
-	public static int nRoundToStopEarly = 100;
-	public static int nTreeLeaves = 10;
-	public static int minLeafSupport = 1;
+	// public static int nTrees = 1000; // number of trees
+	// public static float learningRate = 0.1F; // shrinkage
+	// public static int nThreshold = 256;
+	// public static int nRoundToStopEarly = 100;
+	// public static int nTreeLeaves = 10;
+	// public static int minLeafSupport = 1;
 
 	// Local variables
 	protected float[][] thresholds = null;
@@ -33,12 +43,29 @@ public class LambdaMART : Ranker
 	protected double[] weights = null;
 	protected internal double[] impacts = null;
 
-	public LambdaMART(ILogger<LambdaMART>? logger = null) : base(logger) =>
-		_logger = logger ?? NullLogger<LambdaMART>.Instance;
+	public LambdaMARTParameters Parameters { get; set; }
 
-	public LambdaMART(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaMART>? logger = null)
-		: base(samples, features, scorer, logger) =>
+	public LambdaMART(ILogger<LambdaMART>? logger = null) : this(new LambdaMARTParameters(), logger)
+	{
+	}
+
+	public LambdaMART(LambdaMARTParameters parameters, ILogger<LambdaMART>? logger = null) : base(logger)
+	{
+		Parameters = parameters;
 		_logger = logger ?? NullLogger<LambdaMART>.Instance;
+	}
+
+	public LambdaMART(LambdaMARTParameters parameters, List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaMART>? logger = null)
+		: base(samples, features, scorer, logger)
+	{
+		Parameters = parameters;
+		_logger = logger ?? NullLogger<LambdaMART>.Instance;
+	}
+
+	public LambdaMART(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaMART>? logger = null) :
+		this(new LambdaMARTParameters(), samples, features, scorer, logger)
+	{
+	}
 
 	public override void Init()
 	{
@@ -106,21 +133,21 @@ public class LambdaMART : Ranker
 				i = j - 1;
 			}
 
-			if (values.Count <= nThreshold || nThreshold == -1)
+			if (values.Count <= Parameters.nThreshold || Parameters.nThreshold == -1)
 			{
 				thresholds[f] = values.ToArray();
 				thresholds[f] = thresholds[f].Concat(new float[] { float.MaxValue }).ToArray();
 			}
 			else
 			{
-				var step = Math.Abs(fmax - fmin) / nThreshold;
-				thresholds[f] = new float[nThreshold + 1];
+				var step = Math.Abs(fmax - fmin) / Parameters.nThreshold;
+				thresholds[f] = new float[Parameters.nThreshold + 1];
 				thresholds[f][0] = fmin;
-				for (var j = 1; j < nThreshold; j++)
+				for (var j = 1; j < Parameters.nThreshold; j++)
 				{
 					thresholds[f][j] = thresholds[f][j - 1] + step;
 				}
-				thresholds[f][nThreshold] = float.MaxValue;
+				thresholds[f][Parameters.nThreshold] = float.MaxValue;
 			}
 		}
 
@@ -153,14 +180,14 @@ public class LambdaMART : Ranker
 			PrintLogLn(new int[] { 7, 9 }, new string[] { "#iter", Scorer.Name + "-T" });
 		}
 
-		for (var m = 0; m < nTrees; m++)
+		for (var m = 0; m < Parameters.nTrees; m++)
 		{
 			PrintLog(new int[] { 7 }, new string[] { (m + 1).ToString() });
 			ComputePseudoResponses();
 			hist.Update(pseudoResponses);
-			var rt = new RegressionTree(nTreeLeaves, martSamples, pseudoResponses, hist, minLeafSupport);
+			var rt = new RegressionTree(Parameters.nTreeLeaves, martSamples, pseudoResponses, hist, Parameters.minLeafSupport);
 			rt.Fit();
-			ensemble.Add(rt, learningRate);
+			ensemble.Add(rt, Parameters.learningRate);
 			UpdateTreeOutput(rt);
 
 			var leaves = rt.Leaves;
@@ -170,7 +197,7 @@ public class LambdaMART : Ranker
 				var idx = s.GetSamples();
 				for (var j = 0; j < idx.Length; j++)
 				{
-					modelScores[idx[j]] += learningRate * s.GetOutput();
+					modelScores[idx[j]] += Parameters.learningRate * s.GetOutput();
 				}
 			}
 			rt.ClearSamples();
@@ -185,7 +212,7 @@ public class LambdaMART : Ranker
 					for (var j = 0; j < modelScoresOnValidation[i].Length; j++)
 					{
 						var tempQualifier = ValidationSamples[i];
-						modelScoresOnValidation[i][j] += learningRate * rt.Eval(tempQualifier[j]);
+						modelScoresOnValidation[i][j] += Parameters.learningRate * rt.Eval(tempQualifier[j]);
 					}
 				}
 				double score = ComputeModelScoreOnValidation();
@@ -198,7 +225,7 @@ public class LambdaMART : Ranker
 			}
 			FlushLog();
 
-			if (m - bestModelOnValidation > nRoundToStopEarly)
+			if (m - bestModelOnValidation > Parameters.nRoundToStopEarly)
 			{
 				break;
 			}
@@ -238,11 +265,11 @@ public class LambdaMART : Ranker
 		{
 			var output = new StringBuilder();
 			output.AppendLine($"## {Name}");
-			output.AppendLine($"## No. of trees = {nTrees}");
-			output.AppendLine($"## No. of leaves = {nTreeLeaves}");
-			output.AppendLine($"## No. of threshold candidates = {nThreshold}");
-			output.AppendLine($"## Learning rate = {learningRate}");
-			output.AppendLine($"## Stop early = {nRoundToStopEarly}");
+			output.AppendLine($"## No. of trees = {Parameters.nTrees}");
+			output.AppendLine($"## No. of leaves = {Parameters.nTreeLeaves}");
+			output.AppendLine($"## No. of threshold candidates = {Parameters.nThreshold}");
+			output.AppendLine($"## Learning rate = {Parameters.learningRate}");
+			output.AppendLine($"## Stop early = {Parameters.nRoundToStopEarly}");
 			output.AppendLine();
 			output.AppendLine(ToString());
 			return output.ToString();
@@ -259,12 +286,12 @@ public class LambdaMART : Ranker
 
 	public override void PrintParameters()
 	{
-		_logger.LogInformation($"No. of trees: {nTrees}");
-		_logger.LogInformation($"No. of leaves: {nTreeLeaves}");
-		_logger.LogInformation($"No. of threshold candidates: {nThreshold}");
-		_logger.LogInformation($"Min leaf support: {minLeafSupport}");
-		_logger.LogInformation($"Learning rate: {learningRate}");
-		_logger.LogInformation($"Stop early: {nRoundToStopEarly} rounds without performance gain on validation data");
+		_logger.LogInformation($"No. of trees: {Parameters.nTrees}");
+		_logger.LogInformation($"No. of leaves: {Parameters.nTreeLeaves}");
+		_logger.LogInformation($"No. of threshold candidates: {Parameters.nThreshold}");
+		_logger.LogInformation($"Min leaf support: {Parameters.minLeafSupport}");
+		_logger.LogInformation($"Learning rate: {Parameters.learningRate}");
+		_logger.LogInformation($"Stop early: {Parameters.nRoundToStopEarly} rounds without performance gain on validation data");
 	}
 
 	public override string Name => "LambdaMART";

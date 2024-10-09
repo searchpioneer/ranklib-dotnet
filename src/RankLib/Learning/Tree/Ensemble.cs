@@ -10,9 +10,9 @@ using System.Xml;
 
 public class Ensemble
 {
-	protected List<RegressionTree> trees = new();
-	protected List<float> weights = new();
-	protected int[] features = null;
+	private List<RegressionTree> trees = [];
+	private List<float> weights = [];
+	private int[] features = null;
 
 	public Ensemble() { }
 

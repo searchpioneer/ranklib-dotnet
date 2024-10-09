@@ -143,6 +143,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private readonly ILoggerFactory _loggerFactory;
 	private readonly EvaluatorFactory _evaluatorFactory;
 	private readonly RankerFactory _rankerFactory;
+	private LambdaMARTParameters? _lambdaMARTParameters;
 
 	public EvaluateCommandOptionsHandler(
 		ILoggerFactory loggerFactory,
@@ -153,6 +154,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		_evaluatorFactory = evaluatorFactory;
 		_rankerFactory = rankerFactory;
 	}
+
+	// TODO: this needs to be passed to any LambdaMART created
+	private LambdaMARTParameters LambdaMARTParameters => _lambdaMARTParameters ??= new LambdaMARTParameters();
 
 	public Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
@@ -228,7 +232,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.Tc != null)
 		{
 			RankBoost.NThreshold = options.Tc.Value;
-			LambdaMART.nThreshold = options.Tc.Value;
+			LambdaMARTParameters.nThreshold = options.Tc.Value;
 		}
 
 		if (options.NoEq != null)
@@ -271,31 +275,31 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Tree != null)
 		{
-			LambdaMART.nTrees = options.Tree.Value;
-			RFRanker.nTrees = options.Tree.Value;
+			LambdaMARTParameters.nTrees = options.Tree.Value;
+			RFRanker.nTrees = LambdaMARTParameters.nTrees;
 		}
 
 		if (options.Leaf != null)
 		{
-			LambdaMART.nTreeLeaves = options.Leaf.Value;
-			RFRanker.nTreeLeaves = options.Leaf.Value;
+			LambdaMARTParameters.nTreeLeaves = options.Leaf.Value;
+			RFRanker.nTreeLeaves = LambdaMARTParameters.nTreeLeaves;
 		}
 
 		if (options.Shrinkage != null)
 		{
-			LambdaMART.learningRate = options.Shrinkage.Value;
-			RFRanker.learningRate = options.Shrinkage.Value;
+			LambdaMARTParameters.learningRate = options.Shrinkage.Value;
+			RFRanker.learningRate = LambdaMARTParameters.learningRate;
 		}
 
 		if (options.Mls != null)
 		{
-			LambdaMART.minLeafSupport = options.Mls.Value;
-			RFRanker.minLeafSupport = LambdaMART.minLeafSupport;
+			LambdaMARTParameters.minLeafSupport = options.Mls.Value;
+			RFRanker.minLeafSupport = LambdaMARTParameters.minLeafSupport;
 		}
 
 		if (options.EStop != null)
 		{
-			LambdaMART.nRoundToStopEarly = options.EStop.Value;
+			LambdaMARTParameters.nRoundToStopEarly = options.EStop.Value;
 		}
 
 		if (options.Bag != null)
@@ -399,7 +403,8 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			logger.LogInformation("Train metric: {TrainMetric}", trainMetric);
 			logger.LogInformation("Test metric: {TestMetric}", testMetric);
 
-			if (trainMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase) || testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
+			if (trainMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase)
+			    || testMetric != null && testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
 				logger.LogInformation("Highest relevance label (to compute ERR): {HighRelevanceLabel}", (int)SimpleMath.LogBase2(ERRScorer.MAX));
 
 			if (options.QRel != null)
