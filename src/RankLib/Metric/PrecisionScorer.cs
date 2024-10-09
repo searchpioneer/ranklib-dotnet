@@ -10,14 +10,11 @@ public class PrecisionScorer : MetricScorer
 
 	public override double Score(RankList rankList)
 	{
+		var size = K > rankList.Count || K <= 0
+			? rankList.Count
+			: K;
+
 		var count = 0;
-		var size = K;
-
-		if (K > rankList.Count || K <= 0)
-		{
-			size = rankList.Count;
-		}
-
 		for (var i = 0; i < size; i++)
 		{
 			if (rankList[i].Label > 0.0)
@@ -33,7 +30,9 @@ public class PrecisionScorer : MetricScorer
 
 	public override double[][] SwapChange(RankList rankList)
 	{
-		var size = (rankList.Count > K) ? K : rankList.Count;
+		var size = rankList.Count > K
+			? K
+			: rankList.Count;
 
 		var changes = new double[rankList.Count][];
 		for (var i = 0; i < rankList.Count; i++)

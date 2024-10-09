@@ -326,17 +326,16 @@ public class AdaRank : Ranker
 				throw new InvalidOperationException("Error in AdaRank::LoadFromString: Unable to load model");
 			}
 
-			var keys = kvp.Keys;
-			var values = kvp.Values;
 			_rweight = new List<double>();
 			_rankers = new List<WeakRanker>();
-			Features = new int[keys.Count];
+			Features = new int[kvp.Count];
 
-			for (var i = 0; i < keys.Count; i++)
+			for (var i = 0; i < kvp.Count; i++)
 			{
-				Features[i] = int.Parse(keys[i]);
+				var kv = kvp[i];
+				Features[i] = int.Parse(kv.Key);
 				_rankers.Add(new WeakRanker(Features[i]));
-				_rweight.Add(double.Parse(values[i]));
+				_rweight.Add(double.Parse(kv.Key));
 			}
 		}
 		catch (Exception ex)

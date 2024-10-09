@@ -38,7 +38,7 @@ public class ERRScorer : MetricScorer
 		return s;
 	}
 
-	public override string Name => "ERR@" + K;
+	public override string Name => $"ERR@{K}";
 
 	private double R(int rel) => ((1 << rel) - 1) / MAX; // (2^rel - 1)/MAX
 
@@ -68,9 +68,9 @@ public class ERRScorer : MetricScorer
 		for (var i = 0; i < size; i++)
 		{
 			var v1 = 1.0 / (i + 1) * (i == 0 ? 1 : np[i - 1]);
-			double change = 0;
 			for (var j = i + 1; j < rankList.Count; j++)
 			{
+				double change;
 				if (labels[i] == labels[j])
 				{
 					change = 0;

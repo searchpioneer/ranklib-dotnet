@@ -146,25 +146,24 @@ public class LinearRegRank : Ranker
 			if (kvp == null)
 				return;
 
-			var keys = kvp.Keys;
-			var values = kvp.Values;
-
-			weight = new double[keys.Count];
-			Features = new int[keys.Count - 1];
+			weight = new double[kvp.Count];
+			Features = new int[kvp.Count - 1];
 
 			var idx = 0;
-			for (var i = 0; i < keys.Count; i++)
+			for (var i = 0; i < kvp.Count; i++)
 			{
-				var fid = int.Parse(keys[i]);
+				var kv = kvp[i];
+
+				var fid = int.Parse(kv.Key);
 				if (fid > 0)
 				{
 					Features[idx] = fid;
-					weight[idx] = double.Parse(values[i]);
+					weight[idx] = double.Parse(kv.Value);
 					idx++;
 				}
 				else
 				{
-					weight[^1] = double.Parse(values[i]);
+					weight[^1] = double.Parse(kv.Value);
 				}
 			}
 		}
@@ -195,6 +194,7 @@ public class LinearRegRank : Ranker
 			aCopy[i] = new double[a[i].Length];
 			if (i > 0 && aCopy[i].Length != aCopy[i - 1].Length)
 				throw RankLibException.Create("Error: Solving Ax=B: A is NOT a square matrix.");
+
 			Array.Copy(a[i], aCopy[i], a[i].Length);
 		}
 

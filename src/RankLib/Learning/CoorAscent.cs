@@ -261,15 +261,16 @@ public class CoorAscent : Ranker
 		{
 			if (line.StartsWith("##"))
 				continue;
+
 			var kvp = new KeyValuePairs(line);
-			var keys = kvp.Keys;
-			var values = kvp.Values;
-			weight = new double[keys.Count];
-			Features = new int[keys.Count];
-			for (var i = 0; i < keys.Count; i++)
+			weight = new double[kvp.Count];
+			Features = new int[kvp.Count];
+
+			for (var i = 0; i < kvp.Count; i++)
 			{
-				Features[i] = int.Parse(keys[i]);
-				weight[i] = double.Parse(values[i]);
+				var kv = kvp[i];
+				Features[i] = int.Parse(kv.Key);
+				weight[i] = double.Parse(kv.Value);
 			}
 			break;
 		}

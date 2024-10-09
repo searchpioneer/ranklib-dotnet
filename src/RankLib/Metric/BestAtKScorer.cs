@@ -15,7 +15,7 @@ public class BestAtKScorer : MetricScorer
 	}
 
 	/// <summary>
-	/// Return the position of the best object (e.g., docs with highest degree of relevance) among objects in the range [0..k].
+	/// Return the index of the best item (e.g., docs with highest degree of relevance) among items in the range [0..k].
 	/// NOTE: If you want best-at-k (i.e., best among top-k), you need MaxToK(rl, k-1).
 	/// </summary>
 	/// <param name="rl">The rank list.</param>
@@ -30,20 +30,20 @@ public class BestAtKScorer : MetricScorer
 		}
 
 		var max = -1.0;
-		var max_i = 0;
+		var maxI = 0;
 
 		for (var i = 0; i <= size; i++)
 		{
 			if (max < rl[i].Label)
 			{
 				max = rl[i].Label;
-				max_i = i;
+				maxI = i;
 			}
 		}
-		return max_i;
+		return maxI;
 	}
 
-	public override string Name => "Best@" + K;
+	public override string Name => $"Best@{K}";
 
 	public override double[][] SwapChange(RankList rankList)
 	{

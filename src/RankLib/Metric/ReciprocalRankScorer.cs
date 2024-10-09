@@ -8,18 +8,20 @@ public class ReciprocalRankScorer : MetricScorer
 
 	public override double Score(RankList rankList)
 	{
-		var size = (rankList.Count > K) ? K : rankList.Count;
+		var size = rankList.Count > K ? K : rankList.Count;
 		var firstRank = -1;
 
 		for (var i = 0; i < size && firstRank == -1; i++)
 		{
-			if (rankList[i].Label > 0.0)
+			if (rankList[i].Label > 0)
 			{
 				firstRank = i + 1;
 			}
 		}
 
-		return (firstRank == -1) ? 0 : (1.0 / firstRank);
+		return firstRank == -1
+			? 0
+			: 1.0 / firstRank;
 	}
 
 	public override string Name => $"RR@{K}";
