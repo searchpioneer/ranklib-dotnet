@@ -18,7 +18,6 @@ public abstract class MetricScorer
 	/// <param name="queryRelevanceFile">The file containing relevance judgments.</param>
 	public virtual void LoadExternalRelevanceJudgment(string queryRelevanceFile)
 	{
-		// Can be overridden if needed, currently no implementation.
 	}
 
 	/// <summary>

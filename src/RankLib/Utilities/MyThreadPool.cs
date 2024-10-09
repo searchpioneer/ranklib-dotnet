@@ -1,39 +1,43 @@
 namespace RankLib.Utilities;
 public class MyThreadPool
 {
-	private readonly SemaphoreSlim semaphore;
-	private readonly int size;
-	private static MyThreadPool? singleton;
-	private static readonly object lockObj = new();
+	private readonly SemaphoreSlim _semaphore;
+	private readonly int _size;
+	private static MyThreadPool? Singleton;
+	private static readonly object LockObj = new();
 
 	private MyThreadPool(int size)
 	{
-		this.size = size;
-		semaphore = new SemaphoreSlim(size, size);
+		_size = size;
+		_semaphore = new SemaphoreSlim(size, size);
 	}
 
-	public static MyThreadPool GetInstance()
+	public static MyThreadPool Instance
 	{
-		if (singleton == null)
+		get
 		{
-			lock (lockObj)
+			if (Singleton == null)
 			{
-				if (singleton == null)
+				lock (LockObj)
 				{
-					Init(Environment.ProcessorCount);
+					if (Singleton == null)
+					{
+						Init(Environment.ProcessorCount);
+					}
 				}
 			}
+
+			return Singleton!;
 		}
-		return singleton!;
 	}
 
-	public static void Init(int poolSize) => singleton = new MyThreadPool(poolSize);
+	public static void Init(int poolSize) => Singleton = new MyThreadPool(poolSize);
 
-	public int Size() => size;
+	public int Size() => _size;
 
 	public WorkerThread[] Execute(WorkerThread worker, int nTasks)
 	{
-		var p = GetInstance();
+		var p = Instance;
 		var partition = p.Partition(nTasks);
 		var workers = new WorkerThread[partition.Length - 1];
 
@@ -51,11 +55,11 @@ public class MyThreadPool
 
 	public void Await()
 	{
-		for (var i = 0; i < size; i++)
+		for (var i = 0; i < _size; i++)
 		{
 			try
 			{
-				semaphore.Wait();
+				_semaphore.Wait();
 			}
 			catch (Exception ex)
 			{
@@ -63,12 +67,12 @@ public class MyThreadPool
 			}
 		}
 
-		semaphore.Release(size);
+		_semaphore.Release(_size);
 	}
 
 	public int[] Partition(int listSize)
 	{
-		var nChunks = Math.Min(listSize, size);
+		var nChunks = Math.Min(listSize, _size);
 		var chunkSize = listSize / nChunks;
 		var mod = listSize % nChunks;
 
@@ -87,7 +91,7 @@ public class MyThreadPool
 	{
 		try
 		{
-			semaphore.Wait();
+			_semaphore.Wait();
 			Task.Run(() =>
 			{
 				try
@@ -96,7 +100,7 @@ public class MyThreadPool
 				}
 				finally
 				{
-					semaphore.Release();
+					_semaphore.Release();
 				}
 			});
 		}

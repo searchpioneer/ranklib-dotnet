@@ -7,16 +7,22 @@ namespace RankLib.Eval;
 
 public partial class Analyzer
 {
+
 	[GeneratedRegex(@"\s+")]
 	private static partial Regex WhitespaceRegex();
 
-	private static readonly RandomPermutationTest RandomizedTest = new();
+	//private static readonly RandomPermutationTest RandomizedTest = new();
 	private static readonly double[] ImprovementRatioThreshold = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1000];
 	private const int IndexOfZero = 4;
 
 	private readonly ILogger<Analyzer> _logger;
+	private readonly SignificanceTest _test;
 
-	public Analyzer(ILogger<Analyzer>? logger = null) => _logger = logger ?? NullLogger<Analyzer>.Instance;
+	public Analyzer(SignificanceTest test, ILogger<Analyzer>? logger = null)
+	{
+		_test = test;
+		_logger = logger ?? NullLogger<Analyzer>.Instance;
+	}
 
 	public class Result
 	{
@@ -98,7 +104,7 @@ public partial class Analyzer
 				var dp = delta * 100 / basePerformance["all"];
 				_logger.LogInformation($"{Path.GetFileName(targetFiles[i])}\t{targetPerformances[i]["all"]:F4}\t" +
 									  $"{(delta > 0 ? "+" : "")}{delta:F4} ({(delta > 0 ? "+" : "")}{dp:F2}%)" +
-									  $"\t{results[i].Win}\t{results[i].Loss}\t{RandomizedTest.Test(targetPerformances[i], basePerformance)}");
+									  $"\t{results[i].Win}\t{results[i].Loss}\t{_test.Test(targetPerformances[i], basePerformance)}");
 			}
 			else
 			{

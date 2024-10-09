@@ -86,7 +86,7 @@ public class RankNet : Ranker
 	protected void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron)
 	{
 		var tempQualifier = _layers[sourceLayer];
-		new Synapse(tempQualifier[sourceNeuron], _layers[targetLayer][targetNeuron]);
+		_ = new Synapse(tempQualifier[sourceNeuron], _layers[targetLayer][targetNeuron]);
 	}
 
 	protected void AddInput(DataPoint p)
@@ -165,8 +165,6 @@ public class RankNet : Ranker
 		}
 	}
 
-	// ----
-
 	protected virtual float[][]? ComputePairWeight(int[][] pairMap, RankList rl) => null;
 
 	protected virtual RankList InternalReorder(RankList rl) => rl;
@@ -213,7 +211,7 @@ public class RankNet : Ranker
 		}
 		catch (Exception ex)
 		{
-			throw RankLibException.Create("Error in NeuralNetwork.restoreBestModelOnValidation(): ", ex);
+			throw RankLibException.Create(ex);
 		}
 	}
 

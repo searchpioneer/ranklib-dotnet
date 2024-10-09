@@ -7,7 +7,7 @@ namespace RankLib.Learning.NeuralNet;
 public class LambdaRank : RankNet
 {
 	private readonly ILogger<LambdaRank>? _logger;
-	protected float[][]? targetValue = null;
+	private float[][] _targetValue = [];
 
 	public LambdaRank(ILogger<LambdaRank>? logger = null) : base(logger) =>
 		_logger = logger ?? NullLogger<LambdaRank>.Instance;
@@ -19,7 +19,7 @@ public class LambdaRank : RankNet
 	protected override int[][] BatchFeedForward(RankList rl)
 	{
 		var pairMap = new int[rl.Count][];
-		targetValue = new float[rl.Count][];
+		_targetValue = new float[rl.Count][];
 
 		for (var i = 0; i < rl.Count; i++)
 		{
@@ -36,7 +36,7 @@ public class LambdaRank : RankNet
 			}
 
 			pairMap[i] = new int[count];
-			targetValue[i] = new float[count];
+			_targetValue[i] = new float[count];
 
 			var k = 0;
 			for (var j = 0; j < rl.Count; j++)
@@ -44,7 +44,7 @@ public class LambdaRank : RankNet
 				if (rl[i].Label > rl[j].Label || rl[i].Label < rl[j].Label)
 				{
 					pairMap[i][k] = j;
-					targetValue[i][k] = rl[i].Label > rl[j].Label ? 1 : 0;
+					_targetValue[i][k] = rl[i].Label > rl[j].Label ? 1 : 0;
 					k++;
 				}
 			}
@@ -57,7 +57,7 @@ public class LambdaRank : RankNet
 	{
 		for (var i = 0; i < pairMap.Length; i++)
 		{
-			var p = new PropParameter(i, pairMap, pairWeight, targetValue);
+			var p = new PropParameter(i, pairMap, pairWeight, _targetValue);
 
 			// Back-propagate
 			_outputLayer.ComputeDelta(p); // Starting at the output layer

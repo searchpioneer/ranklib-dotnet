@@ -9,7 +9,7 @@ public class Sampler
 	protected List<RankList> samples = null; // Bag data
 	protected List<RankList> remains = null; // Out-of-bag data
 
-	public List<RankList> DoSampling(List<RankList> samplingPool, float samplingRate, bool withReplacement)
+	public List<RankList> Sample(List<RankList> samplingPool, float samplingRate, bool withReplacement)
 	{
 		var r = new Random();
 		samples = new List<RankList>();
@@ -56,7 +56,7 @@ public class Sampler
 		return samples;
 	}
 
-	public List<RankList> GetSamples() => samples;
+	public List<RankList> Samples => samples;
 
-	public List<RankList> GetRemains() => remains;
+	public List<RankList> Remains => remains;
 }

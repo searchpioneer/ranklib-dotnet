@@ -44,7 +44,7 @@ public class FeatureHistogram
 		count = new int[features.Length][];
 		sampleToThresholdMap = new int[features.Length][];
 
-		var threadPool = MyThreadPool.GetInstance();
+		var threadPool = MyThreadPool.Instance;
 		if (threadPool.Size() == 1)
 		{
 			Construct(samples, labels, sampleSortedIdx, thresholds, 0, features.Length - 1);
@@ -101,7 +101,7 @@ public class FeatureHistogram
 		sumResponse = 0;
 		sqSumResponse = 0;
 
-		var threadPool = MyThreadPool.GetInstance();
+		var threadPool = MyThreadPool.Instance;
 		if (threadPool.Size() == 1)
 		{
 			Update(labels, 0, features.Length - 1);
@@ -151,7 +151,7 @@ public class FeatureHistogram
 		count = new int[features.Length][];
 		sampleToThresholdMap = parent.sampleToThresholdMap;
 
-		var threadPool = MyThreadPool.GetInstance();
+		var threadPool = MyThreadPool.Instance;
 		if (threadPool.Size() == 1)
 		{
 			Construct(parent, soi, labels, 0, features.Length - 1);
@@ -219,7 +219,7 @@ public class FeatureHistogram
 		}
 		sampleToThresholdMap = parent.sampleToThresholdMap;
 
-		var p = MyThreadPool.GetInstance();
+		var p = MyThreadPool.Instance;
 		if (p.Size() == 1)
 		{
 			Construct(parent, leftSibling, 0, features.Length - 1);
@@ -315,7 +315,7 @@ public class FeatureHistogram
 		}
 
 		var best = new Config();
-		var threadPool = MyThreadPool.GetInstance();
+		var threadPool = MyThreadPool.Instance;
 		if (threadPool.Size() == 1)
 		{
 			best = FindBestSplit(usedFeatures, minLeafSupport, 0, usedFeatures.Length - 1);

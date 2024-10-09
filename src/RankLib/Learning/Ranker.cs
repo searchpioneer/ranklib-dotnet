@@ -12,7 +12,7 @@ public abstract class Ranker
 	private readonly StringBuilder _logBuffer = new();
 
 	protected List<RankList> Samples = new(); // training samples
-	public int[]? Features { get; set; }
+	public int[] Features { get; set; } = [];
 
 	/// <summary>
 	/// Gets or sets the scorer

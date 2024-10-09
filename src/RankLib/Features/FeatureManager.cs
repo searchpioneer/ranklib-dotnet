@@ -136,7 +136,8 @@ public class FeatureManager
 		return features;
 	}
 
-	public void PrepareCV(List<RankList> samples, int nFold, List<List<RankList>> trainingData, List<List<RankList>> testData) => PrepareCV(samples, nFold, -1, trainingData, null, testData);
+	public void PrepareCV(List<RankList> samples, int nFold, List<List<RankList>> trainingData, List<List<RankList>> testData) =>
+		PrepareCV(samples, nFold, -1, trainingData, [], testData);
 
 	public void PrepareCV(List<RankList> samples, int nFold, float tvs, List<List<RankList>> trainingData, List<List<RankList>> validationData, List<List<RankList>> testData)
 	{
@@ -255,11 +256,11 @@ public class FeatureManager
 		}
 	}
 
-	private void Save(RankList r, StreamWriter outStream)
+	private static void Save(RankList rankList, StreamWriter outStream)
 	{
-		for (var i = 0; i < r.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			var dataPoint = r[i];
+			var dataPoint = rankList[i];
 			outStream.WriteLine(dataPoint.ToString());
 		}
 	}

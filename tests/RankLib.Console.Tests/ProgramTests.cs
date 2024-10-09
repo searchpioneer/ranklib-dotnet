@@ -31,7 +31,11 @@ public class ProgramTests
 		using var modelFile = new TempFile();
 		WriteRandomData(dataFile);
 
-		Program.ConfigureLogging = logging => { logging.AddProvider(new XUnitLoggerProvider(_testOutputHelper)); };
+		Program.ConfigureLogging = logging =>
+		{
+			logging.ClearProviders();
+			logging.AddProvider(new XUnitLoggerProvider(_testOutputHelper));
+		};
 
 		lock (DataPointLock)
 		{
@@ -193,7 +197,11 @@ public class ProgramTests
 	private void TestRanker(TempFile dataFile, TempFile modelFile, TempFile rankFile, int rnum, string measure)
 	{
 		_testOutputHelper.WriteLine($"Test Ranker: {rnum}");
-		Program.ConfigureLogging = logging => { logging.AddProvider(new XUnitLoggerProvider(_testOutputHelper)); };
+		Program.ConfigureLogging = logging =>
+		{
+			logging.ClearProviders();
+			logging.AddProvider(new XUnitLoggerProvider(_testOutputHelper));
+		};
 
 		lock (DataPointLock)
 		{

@@ -109,26 +109,21 @@ public class Ensemble
 
 	public override string ToString()
 	{
-		var buf = new StringBuilder(1000);
-		buf.Append("<ensemble>\n");
+		var builder = new StringBuilder();
+		builder.Append("<ensemble>\n");
 		for (var i = 0; i < trees.Count; i++)
 		{
-			buf.Append("\t<tree id=\"").Append(i + 1).Append("\" weight=\"").Append(weights[i].ToString()).Append("\">\n");
-			buf.Append(trees[i].ToString("\t\t"));
-			buf.Append("\t</tree>\n");
+			builder.Append("\t<tree id=\"").Append(i + 1).Append("\" weight=\"").Append(weights[i].ToString()).Append("\">\n");
+			builder.Append(trees[i].ToString("\t\t"));
+			builder.Append("\t</tree>\n");
 		}
-		buf.Append("</ensemble>\n");
-		return buf.ToString();
+		builder.Append("</ensemble>\n");
+		return builder.ToString();
 	}
 
-	/**
-     * Each input node @n corresponds to a <split> tag in the model file.
-     * @param n
-     * @return
-     */
 	private Split Create(XmlNode n, Dictionary<int, int> fids)
 	{
-		Split s = null;
+		Split s;
 		if (n.FirstChild.Name.Equals("feature", StringComparison.OrdinalIgnoreCase)) // this is a split
 		{
 			var nl = n.ChildNodes;

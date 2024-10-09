@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 using RankLib.Parsing;
@@ -66,7 +67,7 @@ public class LambdaMART : Ranker
 
 		// Sort samples by each feature
 		sortedIdx = new int[Features.Length][];
-		var threadPool = MyThreadPool.GetInstance();
+		var threadPool = MyThreadPool.Instance;
 		if (threadPool.Size() == 1)
 		{
 			SortSamplesByFeature(0, Features.Length - 1);
@@ -235,7 +236,7 @@ public class LambdaMART : Ranker
 	{
 		get
 		{
-			var output = new System.Text.StringBuilder();
+			var output = new StringBuilder();
 			output.AppendLine($"## {Name}");
 			output.AppendLine($"## No. of trees = {nTrees}");
 			output.AppendLine($"## No. of leaves = {nTreeLeaves}");
@@ -275,7 +276,7 @@ public class LambdaMART : Ranker
 	{
 		Array.Fill(pseudoResponses, 0);
 		Array.Fill(weights, 0);
-		var p = MyThreadPool.GetInstance();
+		var p = MyThreadPool.Instance;
 		if (p.Size() == 1)
 		{
 			ComputePseudoResponses(0, Samples.Count - 1, 0);

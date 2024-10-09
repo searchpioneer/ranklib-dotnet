@@ -39,8 +39,13 @@ public class PrepareCommand : Command<PrepareCommandOptions, PrepareCommandOptio
 public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareCommandOptions>
 {
 	private readonly ILoggerFactory _loggerFactory;
+	private readonly FeatureManager _featureManager;
 
-	public PrepareCommandOptionsHandler(ILoggerFactory loggerFactory) => _loggerFactory = loggerFactory;
+	public PrepareCommandOptionsHandler(ILoggerFactory loggerFactory, FeatureManager featureManager)
+	{
+		_loggerFactory = loggerFactory;
+		_featureManager = featureManager;
+	}
 
 	public Task<int> HandleAsync(PrepareCommandOptions options, CancellationToken cancellationToken)
 	{
@@ -52,8 +57,6 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 			return Task.FromResult(1);
 		}
 
-		var featureManager = new FeatureManager(_loggerFactory.CreateLogger<FeatureManager>());
-
 		if (options.Shuffle || options.K > 0 || options.Tts is not null)
 		{
 			var nFold = options.K ?? 0;
@@ -63,9 +66,9 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 			var tts = options.Tts ?? -1;
 			var tvs = options.Tvs ?? -1;
 
-			var samples = featureManager.ReadInput(rankingFiles);
+			var samples = _featureManager.ReadInput(rankingFiles);
 
-			if (!samples.Any())
+			if (samples.Count == 0)
 			{
 				logger.LogInformation("Error: The input file is empty.");
 				return Task.FromResult(1);
@@ -81,7 +84,7 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 				logger.LogInformation("Shuffling... ");
 				samples.Shuffle();
 				logger.LogInformation("Saving... ");
-				featureManager.Save(samples, Path.Combine(outputDir, fn));
+				_featureManager.Save(samples, Path.Combine(outputDir, fn));
 			}
 
 			if (tts != -1)
@@ -90,13 +93,13 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 				var tests = new List<RankList>();
 
 				logger.LogInformation("Splitting... ");
-				featureManager.PrepareSplit(samples, tts, trains, tests);
+				_featureManager.PrepareSplit(samples, tts, trains, tests);
 
 				try
 				{
 					logger.LogInformation("Saving splits...");
-					featureManager.Save(trains, Path.Combine(outputDir, $"train.{fn}"));
-					featureManager.Save(tests, Path.Combine(outputDir, $"test.{fn}"));
+					_featureManager.Save(trains, Path.Combine(outputDir, $"train.{fn}"));
+					_featureManager.Save(tests, Path.Combine(outputDir, $"test.{fn}"));
 				}
 				catch (Exception ex)
 				{
@@ -110,18 +113,18 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 				var tests = new List<List<RankList>>();
 				var valis = new List<List<RankList>>();
 				logger.LogInformation("Partitioning... ");
-				featureManager.PrepareCV(samples, nFold, tvs, trains, valis, tests);
+				_featureManager.PrepareCV(samples, nFold, tvs, trains, valis, tests);
 
 				try
 				{
 					for (var i = 0; i < trains.Count; i++)
 					{
 						logger.LogInformation($"Saving fold {i + 1}/{nFold}... ");
-						featureManager.Save(trains[i], Path.Combine(outputDir, $"f{i + 1}.train.{fn}"));
-						featureManager.Save(tests[i], Path.Combine(outputDir, $"f{i + 1}.test.{fn}"));
+						_featureManager.Save(trains[i], Path.Combine(outputDir, $"f{i + 1}.train.{fn}"));
+						_featureManager.Save(tests[i], Path.Combine(outputDir, $"f{i + 1}.test.{fn}"));
 						if (tvs > 0)
 						{
-							featureManager.Save(valis[i], Path.Combine(outputDir, $"f{i + 1}.validation.{fn}"));
+							_featureManager.Save(valis[i], Path.Combine(outputDir, $"f{i + 1}.validation.{fn}"));
 						}
 					}
 				}

@@ -105,17 +105,15 @@ public class NDCGScorer : DCGScorer
 			_idealGains[rankList.Id] = ideal;
 		}
 
-		if (ideal <= 0.0)
-		{
-			return 0.0;
-		}
+		if (ideal <= 0)
+			return 0;
 
 		return GetDCG(rel, size) / ideal;
 	}
 
 	public override double[][] SwapChange(RankList rankList)
 	{
-		var size = (rankList.Count > K) ? K : rankList.Count;
+		var size = rankList.Count > K ? K : rankList.Count;
 		var rel = GetRelevanceLabels(rankList);
 
 		var ideal = _idealGains.TryGetValue(rankList.Id, out var cachedIdeal)

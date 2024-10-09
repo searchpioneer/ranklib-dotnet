@@ -195,7 +195,8 @@ public class Evaluator
 		}
 	}
 
-	public void Evaluate(string sampleFile, string featureDefFile, int nFold, string modelDir, string modelFile) => Evaluate(sampleFile, featureDefFile, nFold, -1, modelDir, modelFile);
+	public void Evaluate(string sampleFile, string featureDefFile, int nFold, string modelDir, string modelFile) =>
+		Evaluate(sampleFile, featureDefFile, nFold, -1, modelDir, modelFile);
 
 	public void Evaluate(string sampleFile, string featureDefFile, int nFold, float tvs, string modelDir, string modelFile)
 	{
@@ -264,7 +265,8 @@ public class Evaluator
 	{
 		var test = ReadInput(testFile);
 		var rankScore = Evaluate(null, test);
-		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+		_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
+			Math.Round(rankScore, 4));
 	}
 
 	public void Test(string testFile, string prpFile)
@@ -286,7 +288,8 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+		_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
+			Math.Round(rankScore, 4));
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -323,7 +326,8 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		_logger.LogInformation($"{_testScorer.Name} on test data: {SimpleMath.Round(rankScore, 4)}");
+		_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
+			Math.Round(rankScore, 4));
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -372,7 +376,8 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+		_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
+			Math.Round(rankScore, 4));
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
@@ -390,18 +395,18 @@ public class Evaluator
 
 		for (var f = 0; f < nFold; f++)
 		{
-			var test = ReadInput(testFiles[f]);
+			var testRankLists = ReadInput(testFiles[f]);
 			var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
 			var features = ranker.Features;
 
 			if (_normalize)
 			{
-				Normalize(test, features);
+				Normalize(testRankLists, features);
 			}
 
-			foreach (var aTest in test)
+			foreach (var rankList in testRankLists)
 			{
-				var rankedList = ranker.Rank(aTest);
+				var rankedList = ranker.Rank(rankList);
 				var score = _testScorer.Score(rankedList);
 				ids.Add(rankedList.Id);
 				scores.Add(score);
@@ -413,12 +418,13 @@ public class Evaluator
 		ids.Add("all");
 		scores.Add(rankScore);
 
-		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+		_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
+			Math.Round(rankScore, 4));
 
 		if (!string.IsNullOrEmpty(prpFile))
 		{
 			SavePerRankListPerformanceFile(ids, scores, prpFile);
-			_logger.LogInformation($"Per-ranked list performance saved to: {prpFile}");
+			_logger.LogInformation("Per-ranked list performance saved to: {PrpFile}", prpFile);
 		}
 	}
 
@@ -426,12 +432,11 @@ public class Evaluator
 	{
 		try
 		{
-			using (var inReader = FileUtils.SmartReader(scoreFile))
+			var test = ReadInput(testFile);
+			var scores = new List<double>();
+			using (var reader = FileUtils.SmartReader(scoreFile))
 			{
-				var test = ReadInput(testFile);
-				var scores = new List<double>();
-
-				while (inReader.ReadLine() is { } content)
+				while (reader.ReadLine() is { } content)
 				{
 					content = content.Trim();
 					if (!string.IsNullOrEmpty(content))
@@ -439,24 +444,26 @@ public class Evaluator
 						scores.Add(double.Parse(content));
 					}
 				}
+			}
 
-				var k = 0;
-				for (var i = 0; i < test.Count; i++)
+			var k = 0;
+			for (var i = 0; i < test.Count; i++)
+			{
+				var rl = test[i];
+				var scoreArray = new double[rl.Count];
+
+				for (var j = 0; j < rl.Count; j++)
 				{
-					var rl = test[i];
-					var scoreArray = new double[rl.Count];
-
-					for (var j = 0; j < rl.Count; j++)
-					{
-						scoreArray[j] = scores[k++];
-					}
-
-					test[i] = new RankList(rl, MergeSorter.Sort(scoreArray, false));
+					scoreArray[j] = scores[k++];
 				}
 
-				var rankScore = Evaluate(null, test);
-				_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
+				test[i] = new RankList(rl, MergeSorter.Sort(scoreArray, false));
 			}
+
+			var rankScore = Evaluate(null, test);
+			_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
+				Math.Round(rankScore, 4));
+
 		}
 		catch (IOException e)
 		{
@@ -468,23 +475,22 @@ public class Evaluator
 	{
 		var ranker = _rankerFactory.LoadRankerFromFile(modelFile);
 		var features = ranker.Features;
-		var test = ReadInput(testFile);
+		var testRankLists = ReadInput(testFile);
 
 		if (_normalize)
 		{
-			Normalize(test, features);
+			Normalize(testRankLists, features);
 		}
 
 		try
 		{
-			using (var outWriter = new StreamWriter(new FileStream(outputFile, FileMode.Create), System.Text.Encoding.UTF8))
+			using var outWriter = new StreamWriter(new FileStream(outputFile, FileMode.Create), Encoding.UTF8);
+			foreach (var rankList in testRankLists)
 			{
-				foreach (var l in test)
+				var rankListId = rankList.Id;
+				for (var j = 0; j < rankList.Count; j++)
 				{
-					for (var j = 0; j < l.Count; j++)
-					{
-						outWriter.WriteLine($"{l.Id}\t{j}\t{ranker.Eval(l[j])}");
-					}
+					outWriter.WriteLine($"{rankListId}\t{j}\t{ranker.Eval(rankList[j])}");
 				}
 			}
 		}
@@ -496,35 +502,34 @@ public class Evaluator
 
 	public void Score(List<string> modelFiles, string testFile, string outputFile)
 	{
-		var trainingData = new List<List<RankList>>();
-		var testData = new List<List<RankList>>();
 		var nFold = modelFiles.Count;
+		var trainingData = new List<List<RankList>>();
+		var testData = new List<List<RankList>>(nFold);
 		var samples = ReadInput(testFile);
 
-		_logger.LogInformation($"Preparing {nFold}-fold test data...");
+		_logger.LogInformation("Preparing {NFold}-fold test data...", nFold);
 		_featureManager.PrepareCV(samples, nFold, trainingData, testData);
 
 		try
 		{
-			using (var outWriter = new StreamWriter(new FileStream(outputFile, FileMode.Create), System.Text.Encoding.UTF8))
+			using var outWriter = new StreamWriter(new FileStream(outputFile, FileMode.Create), Encoding.UTF8);
+			for (var f = 0; f < nFold; f++)
 			{
-				for (var f = 0; f < nFold; f++)
+				var testRankLists = testData[f];
+				var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
+				var features = ranker.Features;
+
+				if (_normalize)
 				{
-					var test = testData[f];
-					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
-					var features = ranker.Features;
+					Normalize(testRankLists, features);
+				}
 
-					if (_normalize)
+				foreach (var rankList in testRankLists)
+				{
+					var rankListId = rankList.Id;
+					for (var j = 0; j < rankList.Count; j++)
 					{
-						Normalize(test, features);
-					}
-
-					foreach (var l in test)
-					{
-						for (var j = 0; j < l.Count; j++)
-						{
-							outWriter.WriteLine($"{l.Id}\t{j}\t{ranker.Eval(l[j])}");
-						}
+						outWriter.WriteLine($"{rankListId}\t{j}\t{ranker.Eval(rankList[j])}");
 					}
 				}
 			}
@@ -537,29 +542,26 @@ public class Evaluator
 
 	public void Score(List<string> modelFiles, List<string> testFiles, string outputFile)
 	{
-		var nFold = modelFiles.Count;
-
 		try
 		{
-			using (var outWriter = new StreamWriter(new FileStream(outputFile, FileMode.Create), System.Text.Encoding.UTF8))
+			using var outWriter = new StreamWriter(new FileStream(outputFile, FileMode.Create), Encoding.UTF8);
+			for (var f = 0; f < modelFiles.Count; f++)
 			{
-				for (var f = 0; f < nFold; f++)
+				var testRankLists = ReadInput(testFiles[f]);
+				var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
+				var features = ranker.Features;
+
+				if (_normalize)
 				{
-					var test = ReadInput(testFiles[f]);
-					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
-					var features = ranker.Features;
+					Normalize(testRankLists, features);
+				}
 
-					if (_normalize)
+				foreach (var rankList in testRankLists)
+				{
+					var rankListId = rankList.Id;
+					for (var j = 0; j < rankList.Count; j++)
 					{
-						Normalize(test, features);
-					}
-
-					foreach (var l in test)
-					{
-						for (var j = 0; j < l.Count; j++)
-						{
-							outWriter.WriteLine($"{l.Id}\t{j}\t{ranker.Eval(l[j])}");
-						}
+						outWriter.WriteLine($"{rankListId}\t{j}\t{ranker.Eval(rankList[j])}");
 					}
 				}
 			}
@@ -596,7 +598,7 @@ public class Evaluator
 				for (var j = 0; j < idx.Length; j++)
 				{
 					var k = idx[j];
-					var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(scores[k], 5)} indri";
+					var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {j + 1} {SimpleMath.Round(scores[k], 5)} indri";
 					outWriter.WriteLine(str);
 				}
 			}
@@ -613,15 +615,13 @@ public class Evaluator
 
 		try
 		{
-			using (var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), System.Text.Encoding.UTF8))
+			using var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), Encoding.UTF8);
+			foreach (var l in test)
 			{
-				foreach (var l in test)
+				for (var j = 0; j < l.Count; j++)
 				{
-					for (var j = 0; j < l.Count; j++)
-					{
-						var str = $"{l.Id} Q0 {l[j].Description.Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(1.0 - 0.0001 * j, 5)} indri";
-						outWriter.WriteLine(str);
-					}
+					var str = $"{l.Id} Q0 {l[j].Description.Replace("#", "").Trim()} {j + 1} {SimpleMath.Round(1.0 - 0.0001 * j, 5)} indri";
+					outWriter.WriteLine(str);
 				}
 			}
 		}
@@ -643,34 +643,32 @@ public class Evaluator
 
 		try
 		{
-			using (var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), System.Text.Encoding.UTF8))
+			using var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), System.Text.Encoding.UTF8);
+			for (var f = 0; f < nFold; f++)
 			{
-				for (var f = 0; f < nFold; f++)
-				{
-					var test = testData[f];
-					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
-					var features = ranker.Features;
+				var test = testData[f];
+				var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
+				var features = ranker.Features;
 
-					if (_normalize)
+				if (_normalize)
+				{
+					Normalize(test, features);
+				}
+
+				foreach (var l in test)
+				{
+					var scores = new double[l.Count];
+					for (var j = 0; j < l.Count; j++)
 					{
-						Normalize(test, features);
+						scores[j] = ranker.Eval(l[j]);
 					}
 
-					foreach (var l in test)
+					var idx = MergeSorter.Sort(scores, false);
+					for (var j = 0; j < idx.Length; j++)
 					{
-						var scores = new double[l.Count];
-						for (var j = 0; j < l.Count; j++)
-						{
-							scores[j] = ranker.Eval(l[j]);
-						}
-
-						var idx = MergeSorter.Sort(scores, false);
-						for (var j = 0; j < idx.Length; j++)
-						{
-							var k = idx[j];
-							var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(scores[k], 5)} indri";
-							outWriter.WriteLine(str);
-						}
+						var k = idx[j];
+						var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {j + 1} {SimpleMath.Round(scores[k], 5)} indri";
+						outWriter.WriteLine(str);
 					}
 				}
 			}
@@ -687,34 +685,32 @@ public class Evaluator
 
 		try
 		{
-			using (var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), System.Text.Encoding.UTF8))
+			using var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), Encoding.UTF8);
+			for (var f = 0; f < nFold; f++)
 			{
-				for (var f = 0; f < nFold; f++)
-				{
-					var test = ReadInput(testFiles[f]);
-					var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
-					var features = ranker.Features;
+				var test = ReadInput(testFiles[f]);
+				var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
+				var features = ranker.Features;
 
-					if (_normalize)
+				if (_normalize)
+				{
+					Normalize(test, features);
+				}
+
+				foreach (var l in test)
+				{
+					var scores = new double[l.Count];
+					for (var j = 0; j < l.Count; j++)
 					{
-						Normalize(test, features);
+						scores[j] = ranker.Eval(l[j]);
 					}
 
-					foreach (var l in test)
+					var idx = MergeSorter.Sort(scores, false);
+					for (var j = 0; j < idx.Length; j++)
 					{
-						var scores = new double[l.Count];
-						for (var j = 0; j < l.Count; j++)
-						{
-							scores[j] = ranker.Eval(l[j]);
-						}
-
-						var idx = MergeSorter.Sort(scores, false);
-						for (var j = 0; j < idx.Length; j++)
-						{
-							var k = idx[j];
-							var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {(j + 1)} {SimpleMath.Round(scores[k], 5)} indri";
-							outWriter.WriteLine(str);
-						}
+						var k = idx[j];
+						var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {j + 1} {SimpleMath.Round(scores[k], 5)} indri";
+						outWriter.WriteLine(str);
 					}
 				}
 			}
@@ -741,12 +737,10 @@ public class Evaluator
 
 	public void SavePerRankListPerformanceFile(List<string> ids, List<double> scores, string prpFile)
 	{
-		using (var writer = new StreamWriter(prpFile))
+		using var writer = new StreamWriter(prpFile);
+		for (var i = 0; i < ids.Count; i++)
 		{
-			for (var i = 0; i < ids.Count; i++)
-			{
-				writer.WriteLine($"{_testScorer.Name}   {ids[i]}   {scores[i]}");
-			}
+			writer.WriteLine($"{_testScorer.Name}   {ids[i]}   {scores[i]}");
 		}
 	}
 }

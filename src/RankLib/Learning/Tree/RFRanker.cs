@@ -62,7 +62,7 @@ public class RFRanker : Ranker
 
 	public override void Learn()
 	{
-		var rf = new RankerFactory(_loggerFactory);
+		var rankerFactory = new RankerFactory(_loggerFactory);
 		_logger.LogInformation("Training starts...");
 		PrintLogLn(new int[] { 9, 9, 11 }, new string[] { "bag", Scorer.Name + "-B", Scorer.Name + "-OOB" });
 
@@ -73,8 +73,8 @@ public class RFRanker : Ranker
 		{
 			var sp = new Sampler();
 			// Create a "bag" of samples by random sampling from the training set
-			var bag = sp.DoSampling(Samples, subSamplingRate, true);
-			var r = (LambdaMART)rf.CreateRanker(rType, bag, Features, Scorer);
+			var bag = sp.Sample(Samples, subSamplingRate, true);
+			var r = (LambdaMART)rankerFactory.CreateRanker(rType, bag, Features, Scorer);
 
 			r.Init();
 			r.Learn();
@@ -132,12 +132,12 @@ public class RFRanker : Ranker
 
 	public override string ToString()
 	{
-		var str = new StringBuilder();
+		var builder = new StringBuilder();
 		for (var i = 0; i < nBag; i++)
 		{
-			str.Append(ensembles[i]).Append("\n");
+			builder.Append(ensembles[i]).Append('\n');
 		}
-		return str.ToString();
+		return builder.ToString();
 	}
 
 	public override string Model
