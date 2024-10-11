@@ -49,7 +49,7 @@ public class RegressionTree
 		};
 
 		// Ensure inserts occur only after successful splits
-		if (root.split(trainingLabels, minLeafSupport))
+		if (root.TrySplit(trainingLabels, minLeafSupport))
 		{
 			Insert(queue, root.GetLeft());
 			Insert(queue, root.GetRight());
@@ -67,7 +67,7 @@ public class RegressionTree
 				continue;
 			}
 
-			if (!leaf.split(trainingLabels, minLeafSupport))
+			if (!leaf.TrySplit(trainingLabels, minLeafSupport))
 			{
 				taken++;
 			}

@@ -9,9 +9,7 @@ public class KeyValuePairs : IReadOnlyList<KeyValuePair<string, string>>
 	public KeyValuePairs(string text)
 	{
 		if (string.IsNullOrWhiteSpace(text))
-		{
 			throw new ArgumentException("Input text cannot be null or empty.", nameof(text));
-		}
 
 		var spanText = text.AsSpan();
 

@@ -10,7 +10,7 @@ public class Neuron
 	protected double _output;
 	protected List<double> _outputs = new();
 	protected double _delta_i = 0.0;
-	protected double[] _deltas_j;
+	protected double[] _deltas_j = [];
 
 	public List<Synapse> InLinks { get; } = new();
 	public List<Synapse> OutLinks { get; } = new();
@@ -117,13 +117,13 @@ public class Neuron
 	{
 		foreach (var synapse in InLinks)
 		{
-			var sum_j = 0.0;
+			var sumJ = 0.0;
 			for (var l = 0; l < _deltas_j.Length; l++)
 			{
-				sum_j += _deltas_j[l] * synapse.Source.GetOutput(param.PairMap[param.Current][l]);
+				sumJ += _deltas_j[l] * synapse.Source.GetOutput(param.PairMap[param.Current][l]);
 			}
 
-			var dw = LearningRate * (_delta_i * synapse.Source.GetOutput(param.Current) - sum_j);
+			var dw = LearningRate * (_delta_i * synapse.Source.GetOutput(param.Current) - sumJ);
 			synapse.UpdateWeight(dw);
 		}
 	}

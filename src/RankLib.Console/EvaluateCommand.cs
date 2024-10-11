@@ -148,6 +148,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private ListNetParameters? _listNetParameters;
 	private RankBoostParameters? _rankBoostParameters;
 	private RFRankerParameters? _rfRankerParameters;
+	private AdaRankParameters? _adaRankParameters;
 
 	public EvaluateCommandOptionsHandler(
 		ILoggerFactory loggerFactory,
@@ -165,6 +166,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private ListNetParameters ListNetParameters => _listNetParameters ??= new ListNetParameters();
 	private RankBoostParameters RankBoostParameters => _rankBoostParameters ??= new RankBoostParameters();
 	private RFRankerParameters RfRankerParameters => _rfRankerParameters ??= new RFRankerParameters();
+	private AdaRankParameters AdaRankParameters => _adaRankParameters ??= new AdaRankParameters();
 
 	public Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
@@ -235,12 +237,12 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.NoEq != null)
 		{
-			AdaRank.TrainWithEnqueue = false;
+			AdaRankParameters.TrainWithEnqueue = false;
 		}
 
 		if (options.Max != null)
 		{
-			AdaRank.MaxSelCount = options.Max.Value;
+			AdaRankParameters.MaxSelCount = options.Max.Value;
 		}
 
 		if (options.R != null)
@@ -256,7 +258,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.Round != null)
 		{
 			RankBoostParameters.NIteration = options.Round.Value;
-			AdaRank.NIteration = options.Round.Value;
+			AdaRankParameters.NIteration = options.Round.Value;
 		}
 
 		if (options.Reg != null)
@@ -267,7 +269,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Tolerance != null)
 		{
-			AdaRank.Tolerance = options.Tolerance.Value;
+			AdaRankParameters.Tolerance = options.Tolerance.Value;
 			CoorAscent.tolerance = options.Tolerance.Value;
 		}
 

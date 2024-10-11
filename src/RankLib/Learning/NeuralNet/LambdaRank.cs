@@ -135,7 +135,5 @@ public class LambdaRank : RankNet
 		_lastError = _error;
 	}
 
-	public override Ranker CreateNew() => new LambdaRank(_logger);
-
 	public override string Name => "LambdaRank";
 }

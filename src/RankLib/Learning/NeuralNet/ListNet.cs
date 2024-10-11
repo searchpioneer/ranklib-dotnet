@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Globalization;
+using System.Text;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 using RankLib.Utilities;
@@ -16,10 +18,7 @@ public class ListNet : RankNet
 {
 	private readonly ILogger<ListNet> _logger;
 
-	// Parameters
-	public static int nIteration = 1500;
-	public static double learningRate = 0.00001;
-	public static int nHiddenLayer = 0; // FIXED, it doesn't work with hidden layer
+	public ListNetParameters Parameters { get; set; } = new();
 
 	public ListNet(ILogger<ListNet>? logger = null) : base(logger) =>
 		_logger = logger ?? NullLogger<ListNet>.Instance;
@@ -82,7 +81,7 @@ public class ListNet : RankNet
 		_logger.LogInformation("Initializing...");
 
 		// Set up the network
-		SetInputOutput(Features.Length, 1, 1);
+		SetInputOutput(Features.Length, 1, NeuronType.List);
 		Wire();
 
 		if (ValidationSamples != null)
@@ -93,15 +92,15 @@ public class ListNet : RankNet
 			}
 		}
 
-		Neuron.LearningRate = learningRate;
+		Neuron.LearningRate = Parameters.learningRate;
 	}
 
 	public override void Learn()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 14, 9, 9 }, new[] { "#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V" });
+		PrintLogLn([7, 14, 9, 9], ["#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V"]);
 
-		for (var i = 1; i <= nIteration; i++)
+		for (var i = 1; i <= Parameters.nIteration; i++)
 		{
 			for (var j = 0; j < Samples.Count; j++)
 			{
@@ -115,7 +114,7 @@ public class ListNet : RankNet
 			if (i % 1 == 0)
 			{
 				ScoreOnTrainingData = Scorer.Score(Rank(Samples));
-				PrintLog(new[] { 9 }, new[] { SimpleMath.Round(ScoreOnTrainingData, 4).ToString() });
+				PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
 
 				if (ValidationSamples != null)
 				{
@@ -125,7 +124,7 @@ public class ListNet : RankNet
 						BestScoreOnValidationData = score;
 						SaveBestModelOnValidation();
 					}
-					PrintLog(new[] { 9 }, new[] { SimpleMath.Round(score, 4).ToString() });
+					PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
 				}
 			}
 			FlushLog();
@@ -148,19 +147,13 @@ public class ListNet : RankNet
 		}
 	}
 
-	public override double Eval(DataPoint p) => base.Eval(p);
-
-	public override Ranker CreateNew() => new ListNet(_logger);
-
-	public override string ToString() => base.ToString();
-
 	public override string Model
 	{
 		get
 		{
-			var output = new System.Text.StringBuilder();
+			var output = new StringBuilder();
 			output.Append($"## {Name}\n");
-			output.Append($"## Epochs = {nIteration}\n");
+			output.Append($"## Epochs = {Parameters.nIteration}\n");
 			output.Append($"## No. of features = {Features.Length}\n");
 
 			// Print used features
@@ -169,7 +162,7 @@ public class ListNet : RankNet
 				output.Append(Features[i] + (i == Features.Length - 1 ? "" : " "));
 			}
 
-			output.Append("\n");
+			output.Append('\n');
 
 			// Print network information
 			output.Append("0\n"); // [# hidden layers, *ALWAYS* 0 since we're using linear net]
@@ -183,13 +176,14 @@ public class ListNet : RankNet
 	{
 		try
 		{
-			using var inStream = new StringReader(fullText);
+			using var reader = new StringReader(fullText);
 			var l = new List<string>();
-			while (inStream.ReadLine() is { } content)
+			while (reader.ReadLine() is { } content)
 			{
 				content = content.Trim();
 				if (string.IsNullOrEmpty(content) || content.StartsWith("##"))
 					continue;
+
 				l.Add(content);
 			}
 
@@ -243,8 +237,8 @@ public class ListNet : RankNet
 
 	public override void PrintParameters()
 	{
-		_logger.LogInformation($"No. of epochs: {nIteration}");
-		_logger.LogInformation($"Learning rate: {learningRate}");
+		_logger.LogInformation($"No. of epochs: {Parameters.nIteration}");
+		_logger.LogInformation($"Learning rate: {Parameters.learningRate}");
 	}
 
 	public override string Name => "ListNet";

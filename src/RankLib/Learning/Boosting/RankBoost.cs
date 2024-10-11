@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Learning.Tree;
@@ -28,25 +29,24 @@ public class RankBoost : Ranker
 {
 	private readonly ILogger<RankBoost> _logger;
 
-	public static int NIteration = 300; // Number of rounds
-	public static int NThreshold = 10;
+	private double[][][] _sweight = []; // Sample weight D(x_0, x_1) -- the weight of x_1 ranked above x_2
+	private double[][] _potential = []; // pi(x)
+	private readonly List<List<int[]>> _sortedSamples = [];
+	private double[][] _thresholds = []; // Candidate values for weak rankers' threshold, selected from feature values
+	private int[][] _tSortedIdx = []; // Sorted (descend) index for @thresholds
 
-	private double[][][] _sweight = null; // Sample weight D(x_0, x_1) -- the weight of x_1 ranked above x_2
-	private double[][] _potential = null; // pi(x)
-	private List<List<int[]>> _sortedSamples = [];
-	private double[][] _thresholds = null; // Candidate values for weak rankers' threshold, selected from feature values
-	private int[][] _tSortedIdx = null; // Sorted (descend) index for @thresholds
-
-	private List<RankBoostWeakRanker> _wRankers = null; // Best weak rankers at each round
-	private List<double> _rWeight = null; // Alpha (weak rankers' weight)
+	private List<RankBoostWeakRanker> _wRankers = []; // Best weak rankers at each round
+	private List<double> _rWeight = []; // Alpha (weak rankers' weight)
 
 	// To store the best model on validation data (if specified)
-	private List<RankBoostWeakRanker> _bestModelRankers = [];
-	private List<double> _bestModelWeights = [];
+	private readonly List<RankBoostWeakRanker> _bestModelRankers = [];
+	private readonly List<double> _bestModelWeights = [];
 
-	private double _R_t = 0.0;
-	private double _Z_t = 1.0;
-	private int _totalCorrectPairs = 0; // Crucial pairs
+	private double _rT;
+	private double _zT = 1.0;
+	private int _totalCorrectPairs; // Crucial pairs
+
+	public RankBoostParameters Parameters { get; set; } = new();
 
 	public RankBoost(ILogger<RankBoost>? logger = null) : base(logger) =>
 		_logger = logger ?? NullLogger<RankBoost>.Instance;
@@ -55,12 +55,12 @@ public class RankBoost : Ranker
 		: base(samples, features, scorer, logger) =>
 		_logger = logger ?? NullLogger<RankBoost>.Instance;
 
-	private int[] Reorder(RankList rl, int fid)
+	private int[] Reorder(RankList rankList, int fid)
 	{
-		var score = new double[rl.Count];
-		for (var i = 0; i < rl.Count; i++)
+		var score = new double[rankList.Count];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			score[i] = rl[i].GetFeatureValue(fid);
+			score[i] = rankList[i].GetFeatureValue(fid);
 		}
 		return MergeSorter.Sort(score, false);
 	}
@@ -69,11 +69,11 @@ public class RankBoost : Ranker
 	{
 		for (var i = 0; i < Samples.Count; i++)
 		{
-			var rl = Samples[i];
-			for (var j = 0; j < rl.Count; j++)
+			var rankList = Samples[i];
+			for (var j = 0; j < rankList.Count; j++)
 			{
 				var p = 0.0;
-				for (var k = j + 1; k < rl.Count; k++)
+				for (var k = j + 1; k < rankList.Count; k++)
 				{
 					p += _sweight[i][j][k];
 				}
@@ -141,14 +141,14 @@ public class RankBoost : Ranker
 		if (bestFid == -1)
 			return null;
 
-		_R_t = _Z_t * maxR; // Save it so we won't have to re-compute when we need it
+		_rT = _zT * maxR; // Save it so we won't have to re-compute when we need it
 		return new RankBoostWeakRanker(bestFid, bestThreshold);
 	}
 
 	private void UpdateSampleWeights(double alphaT)
 	{
 		// Normalize sample weights after updating them
-		_Z_t = 0.0; // Normalization factor
+		_zT = 0.0; // Normalization factor
 
 		for (var i = 0; i < Samples.Count; i++)
 		{
@@ -162,7 +162,7 @@ public class RankBoost : Ranker
 				for (var k = j + 1; k < rl.Count; k++)
 				{
 					D_t[j][k] = _sweight[i][j][k] * Math.Exp(alphaT * (_wRankers.Last().Score(rl[k]) - _wRankers.Last().Score(rl[j])));
-					_Z_t += D_t[j][k]; // Sum the new weight for normalization
+					_zT += D_t[j][k]; // Sum the new weight for normalization
 				}
 			}
 			_sweight[i] = D_t;
@@ -176,7 +176,7 @@ public class RankBoost : Ranker
 			{
 				for (var k = j + 1; k < rl.Count; k++)
 				{
-					_sweight[i][j][k] /= _Z_t; // Normalize by Z_t
+					_sweight[i][j][k] /= _zT; // Normalize by Z_t
 				}
 			}
 		}
@@ -186,9 +186,8 @@ public class RankBoost : Ranker
 	{
 		_logger.LogInformation("Initializing...");
 
-		_wRankers = new List<RankBoostWeakRanker>();
-		_rWeight = new List<double>();
-
+		_wRankers = [];
+		_rWeight = [];
 		_totalCorrectPairs = 0;
 		for (var i = 0; i < Samples.Count; i++)
 		{
@@ -224,7 +223,7 @@ public class RankBoost : Ranker
 			_potential[i] = new double[Samples[i].Count];
 		}
 
-		if (NThreshold <= 0)
+		if (Parameters.NThreshold <= 0)
 		{
 			var count = 0;
 			for (var i = 0; i < Samples.Count; i++)
@@ -281,14 +280,14 @@ public class RankBoost : Ranker
 			_thresholds = new double[Features.Length][];
 			for (var i = 0; i < Features.Length; i++)
 			{
-				var step = (Math.Abs(fmax[i] - fmin[i])) / NThreshold;
-				_thresholds[i] = new double[NThreshold + 1];
+				var step = (Math.Abs(fmax[i] - fmin[i])) / Parameters.NThreshold;
+				_thresholds[i] = new double[Parameters.NThreshold + 1];
 				_thresholds[i][0] = fmax[i];
-				for (var j = 1; j < NThreshold; j++)
+				for (var j = 1; j < Parameters.NThreshold; j++)
 				{
 					_thresholds[i][j] = _thresholds[i][j - 1] - step;
 				}
-				_thresholds[i][NThreshold] = fmin[i] - 1.0E8;
+				_thresholds[i][Parameters.NThreshold] = fmin[i] - 1.0E8;
 			}
 		}
 
@@ -312,27 +311,33 @@ public class RankBoost : Ranker
 	public override void Learn()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 8, 9, 9, 9, 9 }, new[] { "#iter", "Sel. F.", "Threshold", "Error", Scorer.Name + "-T", Scorer.Name + "-V" });
+		PrintLogLn([7, 8, 9, 9, 9, 9], ["#iter", "Sel. F.", "Threshold", "Error", Scorer.Name + "-T", Scorer.Name + "-V"
+		]);
 
-		for (var t = 1; t <= NIteration; t++)
+		for (var t = 1; t <= Parameters.NIteration; t++)
 		{
 			UpdatePotential();
 			var wr = LearnWeakRanker();
 			if (wr == null)
 				break;
 
-			var alphaT = 0.5 * SimpleMath.Ln((_Z_t + _R_t) / (_Z_t - _R_t));
+			var alphaT = 0.5 * SimpleMath.Ln((_zT + _rT) / (_zT - _rT));
 
 			_wRankers.Add(wr);
 			_rWeight.Add(alphaT);
 
 			UpdateSampleWeights(alphaT);
 
-			PrintLog(new[] { 7, 8, 9, 9 }, new[] { t.ToString(), wr.GetFid().ToString(), SimpleMath.Round(wr.GetThreshold(), 4).ToString(), SimpleMath.Round(_R_t, 4).ToString() });
+			PrintLog([7, 8, 9, 9], [
+				t.ToString(),
+				wr.GetFid().ToString(),
+				SimpleMath.Round(wr.GetThreshold(), 4).ToString(CultureInfo.InvariantCulture),
+				SimpleMath.Round(_rT, 4).ToString(CultureInfo.InvariantCulture)
+			]);
 
 			if (t % 1 == 0)
 			{
-				PrintLog(new[] { 9 }, new[] { SimpleMath.Round(Scorer.Score(Rank(Samples)), 4).ToString() });
+				PrintLog([9], [SimpleMath.Round(Scorer.Score(Rank(Samples)), 4).ToString(CultureInfo.InvariantCulture)]);
 				if (ValidationSamples != null)
 				{
 					var score = Scorer.Score(Rank(ValidationSamples));
@@ -344,7 +349,7 @@ public class RankBoost : Ranker
 						_bestModelWeights.Clear();
 						_bestModelWeights.AddRange(_rWeight);
 					}
-					PrintLog(new[] { 9 }, new[] { SimpleMath.Round(score, 4).ToString() });
+					PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
 				}
 			}
 			FlushLog();
@@ -379,8 +384,6 @@ public class RankBoost : Ranker
 		return score;
 	}
 
-	public virtual Ranker CreateNew() => new RankBoost();
-
 	public override string ToString()
 	{
 		var output = new StringBuilder();
@@ -397,8 +400,8 @@ public class RankBoost : Ranker
 		{
 			var output = new StringBuilder();
 			output.Append($"## {Name}\n");
-			output.Append($"## Iteration = {NIteration}\n");
-			output.Append($"## No. of threshold candidates = {NThreshold}\n");
+			output.Append($"## Iteration = {Parameters.NIteration}\n");
+			output.Append($"## No. of threshold candidates = {Parameters.NThreshold}\n");
 			output.Append(ToString());
 			return output.ToString();
 		}
@@ -460,8 +463,8 @@ public class RankBoost : Ranker
 
 	public override void PrintParameters()
 	{
-		_logger.LogInformation("No. of rounds: {Rounds}", NIteration);
-		_logger.LogInformation("No. of threshold candidates: {Candidates}", NThreshold);
+		_logger.LogInformation("No. of rounds: {Rounds}", Parameters.NIteration);
+		_logger.LogInformation("No. of threshold candidates: {Candidates}", Parameters.NThreshold);
 	}
 
 	public override string Name => "RankBoost";

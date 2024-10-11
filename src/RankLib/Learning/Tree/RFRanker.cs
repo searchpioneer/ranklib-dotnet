@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
@@ -28,24 +29,11 @@ public class RFRanker : Ranker
 {
 	private readonly ILoggerFactory _loggerFactory;
 	private readonly ILogger<RFRanker> _logger;
-
-	// Parameters
-	// [a] general bagging parameters
-	public static int nBag = 300;
-	public static float subSamplingRate = 1.0f; // sampling of samples (*WITH* replacement)
-	public static float featureSamplingRate = 0.3f; // sampling of features (*WITHOUT* replacement)
-
-	// [b] what to do in each bag
-	public static RankerType rType = RankerType.MART; // which algorithm to bag
-	public static int nTrees = 1; // how many trees in each bag
-	public static int nTreeLeaves = 100;
-	public static float learningRate = 0.1F; // or shrinkage, only matters if nTrees > 1
-	public static int nThreshold = 256;
-	public static int minLeafSupport = 1;
-
-	// Variables
-	protected Ensemble[] ensembles = []; // bag of ensembles
 	private LambdaMARTParameters _lambdaMARTParameters;
+
+	public Ensemble[] Ensembles { get; private set; } = [];
+
+	public RFRankerParameters Parameters { get; set; } = new();
 
 	public RFRanker(ILoggerFactory? loggerFactory = null) : base((loggerFactory ?? NullLoggerFactory.Instance)
 		.CreateLogger<RFRanker>())
@@ -64,37 +52,36 @@ public class RFRanker : Ranker
 	public override void Init()
 	{
 		_logger.LogInformation("Initializing...");
-		ensembles = new Ensemble[nBag];
-
+		Ensembles = new Ensemble[Parameters.nBag];
 		_lambdaMARTParameters = new LambdaMARTParameters
 		{
-			nTrees = nTrees,
-			nTreeLeaves = nTreeLeaves,
-			learningRate = learningRate,
-			nThreshold = nThreshold,
-			minLeafSupport = minLeafSupport,
+			nTrees = Parameters.nTrees,
+			nTreeLeaves = Parameters.nTreeLeaves,
+			learningRate = Parameters.learningRate,
+			nThreshold = Parameters.nThreshold,
+			minLeafSupport = Parameters.minLeafSupport,
 			nRoundToStopEarly = -1, // no early stopping since we're doing bagging
 		};
 
 		// Turn on feature sampling
-		FeatureHistogram.samplingRate = featureSamplingRate;
+		FeatureHistogram.samplingRate = Parameters.featureSamplingRate;
 	}
 
 	public override void Learn()
 	{
 		var rankerFactory = new RankerFactory(_loggerFactory);
 		_logger.LogInformation("Training starts...");
-		PrintLogLn(new int[] { 9, 9, 11 }, new string[] { "bag", Scorer.Name + "-B", Scorer.Name + "-OOB" });
+		PrintLogLn([9, 9, 11], ["bag", Scorer.Name + "-B", Scorer.Name + "-OOB"]);
 
-		double[] impacts = null;
+		double[]? impacts = null;
 
 		// Start the bagging process
-		for (var i = 0; i < nBag; i++)
+		for (var i = 0; i < Parameters.nBag; i++)
 		{
 			var sp = new Sampler();
 			// Create a "bag" of samples by random sampling from the training set
-			var bag = sp.Sample(Samples, subSamplingRate, true);
-			var r = (LambdaMART)rankerFactory.CreateRanker(rType, bag, Features, Scorer);
+			var bag = sp.Sample(Samples, Parameters.subSamplingRate, true);
+			var r = (LambdaMART)rankerFactory.CreateRanker(Parameters.rType, bag, Features, Scorer);
 
 			r.Parameters = _lambdaMARTParameters;
 			r.Init();
@@ -112,8 +99,8 @@ public class RFRanker : Ranker
 					impacts[ftr] += r.impacts[ftr];
 				}
 			}
-			PrintLogLn(new int[] { 9, 9 }, new string[] { "b[" + (i + 1) + "]", SimpleMath.Round(r.GetScoreOnTrainingData(), 4).ToString() });
-			ensembles[i] = r.GetEnsemble();
+			PrintLogLn([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(r.GetScoreOnTrainingData(), 4).ToString(CultureInfo.InvariantCulture)]);
+			Ensembles[i] = r.GetEnsemble();
 		}
 
 		// Finishing up
@@ -142,11 +129,11 @@ public class RFRanker : Ranker
 	public override double Eval(DataPoint dp)
 	{
 		double s = 0;
-		foreach (var ensemble in ensembles)
+		foreach (var ensemble in Ensembles)
 		{
 			s += ensemble.Eval(dp);
 		}
-		return s / ensembles.Length;
+		return s / Ensembles.Length;
 	}
 
 	public virtual Ranker CreateNew() => new RFRanker(_loggerFactory);
@@ -154,9 +141,9 @@ public class RFRanker : Ranker
 	public override string ToString()
 	{
 		var builder = new StringBuilder();
-		for (var i = 0; i < nBag; i++)
+		for (var i = 0; i < Parameters.nBag; i++)
 		{
-			builder.Append(ensembles[i]).Append('\n');
+			builder.Append(Ensembles[i]).Append('\n');
 		}
 		return builder.ToString();
 	}
@@ -167,13 +154,13 @@ public class RFRanker : Ranker
 		{
 			var output = new StringBuilder();
 			output.Append("## " + Name + "\n");
-			output.Append("## No. of bags = " + nBag + "\n");
-			output.Append("## Sub-sampling = " + subSamplingRate + "\n");
-			output.Append("## Feature-sampling = " + featureSamplingRate + "\n");
-			output.Append("## No. of trees = " + nTrees + "\n");
-			output.Append("## No. of leaves = " + nTreeLeaves + "\n");
-			output.Append("## No. of threshold candidates = " + nThreshold + "\n");
-			output.Append("## Learning rate = " + learningRate + "\n\n");
+			output.Append("## No. of bags = " + Parameters.nBag + "\n");
+			output.Append("## Sub-sampling = " + Parameters.subSamplingRate + "\n");
+			output.Append("## Feature-sampling = " + Parameters.featureSamplingRate + "\n");
+			output.Append("## No. of trees = " + Parameters.nTrees + "\n");
+			output.Append("## No. of leaves = " + Parameters.nTreeLeaves + "\n");
+			output.Append("## No. of threshold candidates = " + Parameters.nThreshold + "\n");
+			output.Append("## Learning rate = " + Parameters.learningRate + "\n\n");
 			output.Append(ToString());
 			return output.ToString();
 		}
@@ -194,10 +181,10 @@ public class RFRanker : Ranker
 		});
 
 		var uniqueFeatures = new HashSet<int>();
-		ensembles = new Ensemble[ens.Count];
+		Ensembles = new Ensemble[ens.Count];
 		for (var i = 0; i < ens.Count; i++)
 		{
-			ensembles[i] = ens[i];
+			Ensembles[i] = ens[i];
 
 			// Obtain used features
 			var fids = ens[i].Features;
@@ -212,16 +199,14 @@ public class RFRanker : Ranker
 
 	public override void PrintParameters()
 	{
-		_logger.LogInformation("No. of bags: " + nBag);
-		_logger.LogInformation("Sub-sampling: " + subSamplingRate);
-		_logger.LogInformation("Feature-sampling: " + featureSamplingRate);
-		_logger.LogInformation("No. of trees: " + nTrees);
-		_logger.LogInformation("No. of leaves: " + nTreeLeaves);
-		_logger.LogInformation("No. of threshold candidates: " + nThreshold);
-		_logger.LogInformation("Learning rate: " + learningRate);
+		_logger.LogInformation("No. of bags: " + Parameters.nBag);
+		_logger.LogInformation("Sub-sampling: " + Parameters.subSamplingRate);
+		_logger.LogInformation("Feature-sampling: " + Parameters.featureSamplingRate);
+		_logger.LogInformation("No. of trees: " + Parameters.nTrees);
+		_logger.LogInformation("No. of leaves: " + Parameters.nTreeLeaves);
+		_logger.LogInformation("No. of threshold candidates: " + Parameters.nThreshold);
+		_logger.LogInformation("Learning rate: " + Parameters.learningRate);
 	}
 
 	public override string Name => "Random Forests";
-
-	public Ensemble[] Ensembles => ensembles;
 }

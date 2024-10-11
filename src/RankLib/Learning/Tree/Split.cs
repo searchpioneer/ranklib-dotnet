@@ -18,7 +18,7 @@ public class Split
 	private double deviance = 0F; // Mean squared error "S"
 	private int[][]? sortedSampleIDs = null;
 	public int[] samples = null;
-	public FeatureHistogram hist = null;
+	public FeatureHistogram? hist = null;
 
 	public Split() { }
 
@@ -93,14 +93,7 @@ public class Split
 		var n = this;
 		while (n.featureID != -1)
 		{
-			if (dp.GetFeatureValue(n.featureID) <= n.threshold)
-			{
-				n = n.left;
-			}
-			else
-			{
-				n = n.right;
-			}
+			n = dp.GetFeatureValue(n.featureID) <= n.threshold ? n.left : n.right;
 		}
 		return n.avgLabel;
 	}
@@ -116,7 +109,7 @@ public class Split
 		return buf.ToString();
 	}
 
-	public string GetString(string indent)
+	private string GetString(string indent)
 	{
 		var buf = new StringBuilder();
 		if (featureID == -1)
@@ -139,16 +132,9 @@ public class Split
 
 	// Internal functions (ONLY used during learning)
 	//*DO NOT* attempt to call them once the training is done
-	public bool split(double[] trainingLabels, int minLeafSupport) => hist.FindBestSplit(this, trainingLabels, minLeafSupport);
+	public bool TrySplit(double[] trainingLabels, int minLeafSupport) => hist.FindBestSplit(this, trainingLabels, minLeafSupport);
 
-	public int[] GetSamples()
-	{
-		if (sortedSampleIDs != null)
-		{
-			return sortedSampleIDs[0];
-		}
-		return samples;
-	}
+	public int[] GetSamples() => sortedSampleIDs != null ? sortedSampleIDs[0] : samples;
 
 	public int[][]? GetSampleSortedIndex() => sortedSampleIDs;
 
@@ -159,7 +145,7 @@ public class Split
 	public void ClearSamples()
 	{
 		sortedSampleIDs = null;
-		samples = null;
+		samples = [];
 		hist = null;
 	}
 
