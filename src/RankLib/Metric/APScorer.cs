@@ -9,7 +9,7 @@ namespace RankLib.Metric;
 /// MAP (Mean Average Precision) Scorer
 /// </summary>
 /// <remarks>
-/// Computes Mean Average Precision from the WHOLE ranked list- <see cref="MetricScorer.K"/> will be completely ignored.
+/// Computes Mean Average Precision from the WHOLE ranked list- <see cref="MetricScorer.K"/> is ignored.
 /// If you want MAP@10, you really should be using NDCG@10 or ERR@10 instead.
 /// </remarks>
 public class APScorer : MetricScorer

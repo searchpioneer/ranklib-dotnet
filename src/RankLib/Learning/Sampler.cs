@@ -4,15 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class Sampler
+public static class Sampler
 {
-	protected List<RankList> samples = null; // Bag data
-	protected List<RankList> remains = null; // Out-of-bag data
-
-	public List<RankList> Sample(List<RankList> samplingPool, float samplingRate, bool withReplacement)
+	public static (List<RankList> samples, List<RankList> remains) Sample(List<RankList> samplingPool, float samplingRate, bool withReplacement)
 	{
-		var r = new Random();
-		samples = new List<RankList>();
+		var samples = new List<RankList>();
+		var remains = new List<RankList>();
 		var size = (int)(samplingRate * samplingPool.Count);
 
 		if (withReplacement)
@@ -22,12 +19,11 @@ public class Sampler
 
 			for (var i = 0; i < size; i++)
 			{
-				var selected = r.Next(samplingPool.Count);
+				var selected = Random.Shared.Next(samplingPool.Count);
 				samples.Add(samplingPool[selected]);
 				used[selected] = 1;
 			}
 
-			remains = new List<RankList>();
 			for (var i = 0; i < samplingPool.Count; i++)
 			{
 				if (used[i] == 0)
@@ -41,22 +37,15 @@ public class Sampler
 			var indices = Enumerable.Range(0, samplingPool.Count).ToList();
 			for (var i = 0; i < size; i++)
 			{
-				var selected = r.Next(indices.Count);
+				var selected = Random.Shared.Next(indices.Count);
 				samples.Add(samplingPool[indices[selected]]);
 				indices.RemoveAt(selected);
 			}
 
-			remains = new List<RankList>();
 			for (var i = 0; i < indices.Count; i++)
-			{
 				remains.Add(samplingPool[indices[i]]);
-			}
 		}
 
-		return samples;
+		return (samples, remains);
 	}
-
-	public List<RankList> Samples => samples;
-
-	public List<RankList> Remains => remains;
 }

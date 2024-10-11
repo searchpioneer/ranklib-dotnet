@@ -12,7 +12,7 @@ public class LinearRegRank : Ranker
 	public static double lambda = 1E-10; // L2-norm regularization parameter
 
 	// Local variables
-	protected double[] weight = null;
+	protected double[] weight = [];
 
 	public LinearRegRank(ILogger<LinearRegRank>? logger = null) : base(logger) =>
 		_logger = logger ?? NullLogger<LinearRegRank>.Instance;

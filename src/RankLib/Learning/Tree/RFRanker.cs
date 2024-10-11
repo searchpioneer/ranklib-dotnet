@@ -78,9 +78,8 @@ public class RFRanker : Ranker
 		// Start the bagging process
 		for (var i = 0; i < Parameters.nBag; i++)
 		{
-			var sp = new Sampler();
 			// Create a "bag" of samples by random sampling from the training set
-			var bag = sp.Sample(Samples, Parameters.subSamplingRate, true);
+			var (bag, _) = Sampler.Sample(Samples, Parameters.subSamplingRate, true);
 			var r = (LambdaMART)rankerFactory.CreateRanker(Parameters.rType, bag, Features, Scorer);
 
 			r.Parameters = _lambdaMARTParameters;

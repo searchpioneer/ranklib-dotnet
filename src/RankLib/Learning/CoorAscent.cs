@@ -6,24 +6,27 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+public class CoorAscentParameters
+{
+	public int nRestart { get; set; } = 5;
+	public int nMaxIteration { get; set; }  = 25;
+	public double stepBase { get; set; }  = 0.05;
+	public double stepScale { get; set; }  = 2.0;
+	public double tolerance { get; set; }  = 0.001;
+	public bool regularized { get; set; }  = false;
+	public double slack { get; set; }  = 0.001;
+}
+
 public class CoorAscent : Ranker
 {
 	private readonly ILogger<CoorAscent> _logger;
 
-	// Parameters
-	public static int nRestart = 5;
-	public static int nMaxIteration = 25;
-	public static double stepBase = 0.05;
-	public static double stepScale = 2.0;
-	public static double tolerance = 0.001;
-	public static bool regularized = false;
-	public static double slack = 0.001;
-
 	// Local variables
-	public double[] weight = null;
+	public double[] Weight { get; set; } = [];
+	private int _currentFeature = -1; // Used only during learning
+	private double _weightChange = -1.0; // Used only during learning
 
-	protected int currentFeature = -1; // Used only during learning
-	protected double weightChange = -1.0; // Used only during learning
+	public CoorAscentParameters Parameters { get; set; } = new();
 
 	public CoorAscent(ILogger<CoorAscent>? logger = null) => _logger = logger ?? NullLogger<CoorAscent>.Instance;
 
@@ -34,42 +37,42 @@ public class CoorAscent : Ranker
 	public override void Init()
 	{
 		_logger.LogInformation("Initializing...");
-		weight = new double[Features.Length];
-		for (var i = 0; i < weight.Length; i++)
+		Weight = new double[Features.Length];
+		for (var i = 0; i < Weight.Length; i++)
 		{
-			weight[i] = 1.0 / Features.Length;
+			Weight[i] = 1.0 / Features.Length;
 		}
 	}
 
 	public override void Learn()
 	{
-		var regVector = new double[weight.Length];
-		Array.Copy(weight, regVector, weight.Length); // Uniform weight distribution
+		var regVector = new double[Weight.Length];
+		Array.Copy(Weight, regVector, Weight.Length); // Uniform weight distribution
 
 		double[]? bestModel = null;
 		var bestModelScore = 0.0;
-		var sign = new int[] { 1, -1, 0 };
+		int[] sign = [1, -1, 0];
 
 		_logger.LogInformation("Training starts...");
 
-		for (var r = 0; r < nRestart; r++)
+		for (var r = 0; r < Parameters.nRestart; r++)
 		{
-			_logger.LogInformation($"[+] Random restart #{r + 1}/{nRestart}...");
+			_logger.LogInformation($"[+] Random restart #{r + 1}/{Parameters.nRestart}...");
 			var consecutiveFails = 0;
 
-			for (var i = 0; i < weight.Length; i++)
+			for (var i = 0; i < Weight.Length; i++)
 			{
-				weight[i] = 1.0f / Features.Length;
+				Weight[i] = 1.0f / Features.Length;
 			}
 
-			currentFeature = -1;
+			_currentFeature = -1;
 			var startScore = Scorer.Score(Rank(Samples));
 
 			var bestScore = startScore;
-			var bestWeight = new double[weight.Length];
-			Array.Copy(weight, bestWeight, weight.Length);
+			var bestWeight = new double[Weight.Length];
+			Array.Copy(Weight, bestWeight, Weight.Length);
 
-			while ((weight.Length > 1 && consecutiveFails < weight.Length - 1) || (weight.Length == 1 && consecutiveFails == 0))
+			while ((Weight.Length > 1 && consecutiveFails < Weight.Length - 1) || (Weight.Length == 1 && consecutiveFails == 0))
 			{
 				_logger.LogInformation("Shuffling features' order...");
 				_logger.LogInformation("Optimizing weight vector... ");
@@ -79,8 +82,8 @@ public class CoorAscent : Ranker
 
 				for (var i = 0; i < shuffledFeatures.Length; i++)
 				{
-					currentFeature = shuffledFeatures[i];
-					var origWeight = weight[shuffledFeatures[i]];
+					_currentFeature = shuffledFeatures[i];
+					var origWeight = Weight[shuffledFeatures[i]];
 					double bestTotalStep = 0;
 					var succeeds = false;
 
@@ -90,22 +93,22 @@ public class CoorAscent : Ranker
 						var step = 0.001 * dir;
 						if (origWeight != 0.0 && Math.Abs(step) > 0.5 * Math.Abs(origWeight))
 						{
-							step = stepBase * Math.Abs(origWeight);
+							step = Parameters.stepBase * Math.Abs(origWeight);
 						}
 
 						var totalStep = step;
-						var numIter = dir == 0 ? 1 : nMaxIteration;
+						var numIter = dir == 0 ? 1 : Parameters.nMaxIteration;
 
 						for (var j = 0; j < numIter; j++)
 						{
 							var newWeight = origWeight + totalStep;
-							weightChange = step;
-							weight[shuffledFeatures[i]] = newWeight;
+							_weightChange = step;
+							Weight[shuffledFeatures[i]] = newWeight;
 
 							var score = Scorer.Score(Rank(Samples));
-							if (regularized)
+							if (Parameters.regularized)
 							{
-								var penalty = slack * GetDistance(weight, regVector);
+								var penalty = Parameters.slack * GetDistance(Weight, regVector);
 								score -= penalty;
 							}
 
@@ -114,13 +117,13 @@ public class CoorAscent : Ranker
 								bestScore = score;
 								bestTotalStep = totalStep;
 								succeeds = true;
-								var bw = weight[shuffledFeatures[i]] > 0 ? "+" : "";
-								PrintLogLn(new[] { 7, 8, 7 }, new[] { Features[shuffledFeatures[i]].ToString(), $"{bw}{Math.Round(weight[shuffledFeatures[i]], 4)}", Math.Round(bestScore, 4).ToString() });
+								var bw = Weight[shuffledFeatures[i]] > 0 ? "+" : "";
+								PrintLogLn(new[] { 7, 8, 7 }, new[] { Features[shuffledFeatures[i]].ToString(), $"{bw}{Math.Round(Weight[shuffledFeatures[i]], 4)}", Math.Round(bestScore, 4).ToString() });
 							}
 
-							if (j < nMaxIteration - 1)
+							if (j < Parameters.nMaxIteration - 1)
 							{
-								step *= stepScale;
+								step *= Parameters.stepScale;
 								totalStep += step;
 							}
 						}
@@ -130,39 +133,39 @@ public class CoorAscent : Ranker
 
 						if (s < sign.Length - 1)
 						{
-							weightChange = -totalStep;
+							_weightChange = -totalStep;
 							UpdateCached();
-							weight[shuffledFeatures[i]] = origWeight;
+							Weight[shuffledFeatures[i]] = origWeight;
 						}
 					}
 
 					if (succeeds)
 					{
-						weightChange = bestTotalStep - weight[shuffledFeatures[i]];
+						_weightChange = bestTotalStep - Weight[shuffledFeatures[i]];
 						UpdateCached();
-						weight[shuffledFeatures[i]] = origWeight + bestTotalStep;
+						Weight[shuffledFeatures[i]] = origWeight + bestTotalStep;
 						consecutiveFails = 0;
 
-						var sum = Normalize(weight);
+						var sum = Normalize(Weight);
 						ScaleCached(sum);
-						Array.Copy(weight, bestWeight, weight.Length);
+						Array.Copy(Weight, bestWeight, Weight.Length);
 					}
 					else
 					{
 						consecutiveFails++;
-						weightChange = -weight[shuffledFeatures[i]];
+						_weightChange = -Weight[shuffledFeatures[i]];
 						UpdateCached();
-						weight[shuffledFeatures[i]] = origWeight;
+						Weight[shuffledFeatures[i]] = origWeight;
 					}
 				}
 
-				if (bestScore - startScore < tolerance)
+				if (bestScore - startScore < Parameters.tolerance)
 					break;
 			}
 
 			if (ValidationSamples != null)
 			{
-				currentFeature = -1;
+				_currentFeature = -1;
 				bestScore = Scorer.Score(Rank(ValidationSamples));
 			}
 
@@ -174,8 +177,8 @@ public class CoorAscent : Ranker
 			}
 		}
 
-		Array.Copy(bestModel, weight, bestModel.Length);
-		currentFeature = -1;
+		Array.Copy(bestModel, Weight, bestModel.Length);
+		_currentFeature = -1;
 		ScoreOnTrainingData = Math.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
 		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
@@ -190,13 +193,13 @@ public class CoorAscent : Ranker
 	public override RankList Rank(RankList rankList)
 	{
 		var score = new double[rankList.Count];
-		if (currentFeature == -1)
+		if (_currentFeature == -1)
 		{
 			for (var i = 0; i < rankList.Count; i++)
 			{
 				for (var j = 0; j < Features.Length; j++)
 				{
-					score[i] += weight[j] * rankList[i].GetFeatureValue(Features[j]);
+					score[i] += Weight[j] * rankList[i].GetFeatureValue(Features[j]);
 				}
 				rankList[i].Cached = score[i];
 			}
@@ -205,7 +208,7 @@ public class CoorAscent : Ranker
 		{
 			for (var i = 0; i < rankList.Count; i++)
 			{
-				score[i] = rankList[i].Cached + weightChange * rankList[i].GetFeatureValue(Features[currentFeature]);
+				score[i] = rankList[i].Cached + _weightChange * rankList[i].GetFeatureValue(Features[_currentFeature]);
 				rankList[i].Cached = score[i];
 			}
 		}
@@ -219,7 +222,7 @@ public class CoorAscent : Ranker
 		var score = 0.0;
 		for (var i = 0; i < Features.Length; i++)
 		{
-			score += weight[i] * p.GetFeatureValue(Features[i]);
+			score += Weight[i] * p.GetFeatureValue(Features[i]);
 		}
 		return score;
 	}
@@ -229,9 +232,9 @@ public class CoorAscent : Ranker
 	public override string ToString()
 	{
 		var output = new StringBuilder();
-		for (var i = 0; i < weight.Length; i++)
+		for (var i = 0; i < Weight.Length; i++)
 		{
-			output.Append($"{Features[i]}:{weight[i]}{(i == weight.Length - 1 ? "" : " ")}");
+			output.Append($"{Features[i]}:{Weight[i]}{(i == Weight.Length - 1 ? "" : " ")}");
 		}
 		return output.ToString();
 	}
@@ -242,13 +245,13 @@ public class CoorAscent : Ranker
 		{
 			var output = new StringBuilder();
 			output.AppendLine($"## {Name}");
-			output.AppendLine($"## Restart = {nRestart}");
-			output.AppendLine($"## MaxIteration = {nMaxIteration}");
-			output.AppendLine($"## StepBase = {stepBase}");
-			output.AppendLine($"## StepScale = {stepScale}");
-			output.AppendLine($"## Tolerance = {tolerance}");
-			output.AppendLine($"## Regularized = {regularized}");
-			output.AppendLine($"## Slack = {slack}");
+			output.AppendLine($"## Restart = {Parameters.nRestart}");
+			output.AppendLine($"## MaxIteration = {Parameters.nMaxIteration}");
+			output.AppendLine($"## StepBase = {Parameters.stepBase}");
+			output.AppendLine($"## StepScale = {Parameters.stepScale}");
+			output.AppendLine($"## Tolerance = {Parameters.tolerance}");
+			output.AppendLine($"## Regularized = {Parameters.regularized}");
+			output.AppendLine($"## Slack = {Parameters.slack}");
 			output.AppendLine(ToString());
 			return output.ToString();
 		}
@@ -263,14 +266,14 @@ public class CoorAscent : Ranker
 				continue;
 
 			var kvp = new KeyValuePairs(line);
-			weight = new double[kvp.Count];
+			Weight = new double[kvp.Count];
 			Features = new int[kvp.Count];
 
 			for (var i = 0; i < kvp.Count; i++)
 			{
 				var kv = kvp[i];
 				Features[i] = int.Parse(kv.Key);
-				weight[i] = double.Parse(kv.Value);
+				Weight[i] = double.Parse(kv.Value);
 			}
 			break;
 		}
@@ -278,12 +281,12 @@ public class CoorAscent : Ranker
 
 	public override void PrintParameters()
 	{
-		_logger.LogInformation($"No. of random restarts: {nRestart}");
-		_logger.LogInformation($"No. of iterations to search in each direction: {nMaxIteration}");
-		_logger.LogInformation($"Tolerance: {tolerance}");
-		if (regularized)
+		_logger.LogInformation($"No. of random restarts: {Parameters.nRestart}");
+		_logger.LogInformation($"No. of iterations to search in each direction: {Parameters.nMaxIteration}");
+		_logger.LogInformation($"Tolerance: {Parameters.tolerance}");
+		if (Parameters.regularized)
 		{
-			_logger.LogInformation($"Reg. param: {slack}");
+			_logger.LogInformation($"Reg. param: {Parameters.slack}");
 		}
 		else
 		{
@@ -301,7 +304,7 @@ public class CoorAscent : Ranker
 			var rl = Samples[j];
 			for (var i = 0; i < rl.Count; i++)
 			{
-				var score = rl[i].Cached + weightChange * rl[i].GetFeatureValue(Features[currentFeature]);
+				var score = rl[i].Cached + _weightChange * rl[i].GetFeatureValue(Features[_currentFeature]);
 				rl[i].Cached = score;
 			}
 		}
@@ -362,14 +365,14 @@ public class CoorAscent : Ranker
 
 	public void CopyModel(CoorAscent ranker)
 	{
-		weight = new double[Features.Length];
-		if (ranker.weight.Length != weight.Length)
+		Weight = new double[Features.Length];
+		if (ranker.Weight.Length != Weight.Length)
 		{
 			throw RankLibException.Create("These two models use different feature set!!");
 		}
-		Array.Copy(ranker.weight, weight, ranker.weight.Length);
+		Array.Copy(ranker.Weight, Weight, ranker.Weight.Length);
 		_logger.LogInformation("Model loaded.");
 	}
 
-	public double Distance(CoorAscent ca) => GetDistance(weight, ca.weight);
+	public double Distance(CoorAscent ca) => GetDistance(Weight, ca.Weight);
 }

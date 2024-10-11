@@ -57,11 +57,11 @@ public class ProgramTests
 
 		Assert.IsType<CoorAscent>(model);
 		var cmodel = (CoorAscent)model;
-		_testOutputHelper.WriteLine(string.Join(",", cmodel.weight));
+		_testOutputHelper.WriteLine(string.Join(",", cmodel.Weight));
 
-		Assert.True(cmodel.weight[0] > cmodel.weight[1], $"Computed weight vector doesn't make sense with our fake data: {string.Join(",", cmodel.weight)}");
-		Assert.True(cmodel.weight[0] > 0.9, $"Computed weight vector doesn't make sense with our fake data: {string.Join(",", cmodel.weight)}");
-		Assert.True(cmodel.weight[1] < 0.1, $"Computed weight vector doesn't make sense with our fake data: {string.Join(",", cmodel.weight)}");
+		Assert.True(cmodel.Weight[0] > cmodel.Weight[1], $"Computed weight vector doesn't make sense with our fake data: {string.Join(",", cmodel.Weight)}");
+		Assert.True(cmodel.Weight[0] > 0.9, $"Computed weight vector doesn't make sense with our fake data: {string.Join(",", cmodel.Weight)}");
+		Assert.True(cmodel.Weight[1] < 0.1, $"Computed weight vector doesn't make sense with our fake data: {string.Join(",", cmodel.Weight)}");
 	}
 
 	private void WriteRandomData(TempFile dataFile)

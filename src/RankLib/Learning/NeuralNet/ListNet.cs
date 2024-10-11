@@ -9,16 +9,16 @@ namespace RankLib.Learning.NeuralNet;
 
 public class ListNetParameters
 {
-	public int nIteration { get; set; } = 1500;
-	public double learningRate { get; set; } = 0.00001;
-	public int nHiddenLayer { get; set; } = 0; // FIXED, it doesn't work with hidden layer
+	public int NIteration { get; set; } = 1500;
+	public double LearningRate { get; set; } = 0.00001;
+	public int NHiddenLayer { get; set; } = 0; // FIXED, it doesn't work with hidden layer
 }
 
 public class ListNet : RankNet
 {
 	private readonly ILogger<ListNet> _logger;
 
-	public ListNetParameters Parameters { get; set; } = new();
+	public new ListNetParameters Parameters { get; set; } = new();
 
 	public ListNet(ILogger<ListNet>? logger = null) : base(logger) =>
 		_logger = logger ?? NullLogger<ListNet>.Instance;
@@ -92,7 +92,7 @@ public class ListNet : RankNet
 			}
 		}
 
-		Neuron.LearningRate = Parameters.learningRate;
+		Neuron.LearningRate = Parameters.LearningRate;
 	}
 
 	public override void Learn()
@@ -100,7 +100,7 @@ public class ListNet : RankNet
 		_logger.LogInformation("Training starts...");
 		PrintLogLn([7, 14, 9, 9], ["#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V"]);
 
-		for (var i = 1; i <= Parameters.nIteration; i++)
+		for (var i = 1; i <= Parameters.NIteration; i++)
 		{
 			for (var j = 0; j < Samples.Count; j++)
 			{
@@ -153,7 +153,7 @@ public class ListNet : RankNet
 		{
 			var output = new StringBuilder();
 			output.Append($"## {Name}\n");
-			output.Append($"## Epochs = {Parameters.nIteration}\n");
+			output.Append($"## Epochs = {Parameters.NIteration}\n");
 			output.Append($"## No. of features = {Features.Length}\n");
 
 			// Print used features
@@ -237,8 +237,8 @@ public class ListNet : RankNet
 
 	public override void PrintParameters()
 	{
-		_logger.LogInformation($"No. of epochs: {Parameters.nIteration}");
-		_logger.LogInformation($"Learning rate: {Parameters.learningRate}");
+		_logger.LogInformation($"No. of epochs: {Parameters.NIteration}");
+		_logger.LogInformation($"Learning rate: {Parameters.LearningRate}");
 	}
 
 	public override string Name => "ListNet";

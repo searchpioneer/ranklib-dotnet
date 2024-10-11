@@ -149,6 +149,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private RankBoostParameters? _rankBoostParameters;
 	private RFRankerParameters? _rfRankerParameters;
 	private AdaRankParameters? _adaRankParameters;
+	private CoorAscentParameters? _coorAscentParameters;
 
 	public EvaluateCommandOptionsHandler(
 		ILoggerFactory loggerFactory,
@@ -167,6 +168,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private RankBoostParameters RankBoostParameters => _rankBoostParameters ??= new RankBoostParameters();
 	private RFRankerParameters RfRankerParameters => _rfRankerParameters ??= new RFRankerParameters();
 	private AdaRankParameters AdaRankParameters => _adaRankParameters ??= new AdaRankParameters();
+	private CoorAscentParameters CoorAscentParameters => _coorAscentParameters ??= new CoorAscentParameters();
 
 	public Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
@@ -210,7 +212,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.Epoch != null)
 		{
 			RankNetParameters.NIteration = options.Epoch.Value;
-			ListNetParameters.nIteration = options.Epoch.Value;
+			ListNetParameters.NIteration = options.Epoch.Value;
 		}
 
 		if (options.Layer != null)
@@ -226,7 +228,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.Lr != null)
 		{
 			RankNetParameters.LearningRate = options.Lr.Value;
-			ListNetParameters.learningRate = Neuron.LearningRate;
+			ListNetParameters.LearningRate = Neuron.LearningRate;
 		}
 
 		if (options.Tc != null)
@@ -247,12 +249,12 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.R != null)
 		{
-			CoorAscent.nRestart = options.R.Value;
+			CoorAscentParameters.nRestart = options.R.Value;
 		}
 
 		if (options.I != null)
 		{
-			CoorAscent.nMaxIteration = options.I.Value;
+			CoorAscentParameters.nMaxIteration = options.I.Value;
 		}
 
 		if (options.Round != null)
@@ -263,14 +265,14 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Reg != null)
 		{
-			CoorAscent.slack = options.Reg.Value;
-			CoorAscent.regularized = true;
+			CoorAscentParameters.slack = options.Reg.Value;
+			CoorAscentParameters.regularized = true;
 		}
 
 		if (options.Tolerance != null)
 		{
 			AdaRankParameters.Tolerance = options.Tolerance.Value;
-			CoorAscent.tolerance = options.Tolerance.Value;
+			CoorAscentParameters.tolerance = options.Tolerance.Value;
 		}
 
 		if (options.Tree != null)
