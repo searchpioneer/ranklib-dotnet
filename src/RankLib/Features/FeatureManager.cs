@@ -22,9 +22,9 @@ public class FeatureManager
 		try
 		{
 			using var reader = FileUtils.SmartReader(inputFile);
-			var lastId = "";
+			var lastId = string.Empty;
 			var hasRel = false;
-			var rl = new List<DataPoint>(10000);
+			var dataPoints = new List<DataPoint>(10000);
 
 			while (reader.ReadLine() is { } content)
 			{
@@ -40,33 +40,33 @@ public class FeatureManager
 					_logger.LogInformation("Reading feature file [{InputFile}]: {CountEntries}...", inputFile, countEntries);
 				}
 
-				DataPoint qp = useSparseRepresentation
+				DataPoint dataPoint = useSparseRepresentation
 					? new SparseDataPoint(contentSpan.ToString())
 					: new DenseDataPoint(contentSpan.ToString());
 
-				if (!string.IsNullOrEmpty(lastId) && !lastId.Equals(qp.Id, StringComparison.OrdinalIgnoreCase))
+				if (!string.IsNullOrEmpty(lastId) && !lastId.Equals(dataPoint.Id, StringComparison.OrdinalIgnoreCase))
 				{
 					if (!mustHaveRelDoc || hasRel)
 					{
-						samples.Add(new RankList(rl));
+						samples.Add(new RankList(dataPoints));
 					}
-					rl = new List<DataPoint>();
+					dataPoints = new List<DataPoint>();
 					hasRel = false;
 				}
 
-				if (qp.Label > 0)
+				if (dataPoint.Label > 0)
 				{
 					hasRel = true;
 				}
 
-				lastId = qp.Id;
-				rl.Add(qp);
+				lastId = dataPoint.Id;
+				dataPoints.Add(dataPoint);
 				countEntries++;
 			}
 
-			if (rl.Any() && (!mustHaveRelDoc || hasRel))
+			if (dataPoints.Count != 0 && (!mustHaveRelDoc || hasRel))
 			{
-				samples.Add(new RankList(rl));
+				samples.Add(new RankList(dataPoints));
 			}
 
 			_logger.LogInformation(
@@ -85,43 +85,45 @@ public class FeatureManager
 
 	public List<RankList> ReadInput(List<string> inputFiles)
 	{
-		var samples = new List<RankList>();
+		var rankLists = new List<RankList>();
 		foreach (var inputFile in inputFiles)
 		{
-			var s = ReadInput(inputFile, false, false);
-			samples.AddRange(s);
+			var rankList = ReadInput(inputFile, false, false);
+			rankLists.AddRange(rankList);
 		}
-		return samples;
+		return rankLists;
 	}
 
 	public int[] ReadFeature(string featureDefFile)
 	{
-		int[] features;
-		var fids = new List<string>();
-
+		var fids = new List<int>();
 		try
 		{
-			using (var inStream = FileUtils.SmartReader(featureDefFile))
+			using var reader = FileUtils.SmartReader(featureDefFile);
+			while (reader.ReadLine() is { } content)
 			{
-				while (inStream.ReadLine() is { } content)
+				var contentSpan = content.AsSpan().Trim();
+				if (contentSpan.IsEmpty || contentSpan[0] == '#')
 				{
-					content = content.Trim();
-					if (content.Length == 0 || content[0] == '#')
-					{
-						continue;
-					}
-					fids.Add(content.Split('\t')[0].Trim());
+					continue;
 				}
-			}
 
-			features = fids.Select(int.Parse).ToArray();
+				var firstTab = contentSpan.IndexOf('\t');
+				if (firstTab == -1)
+				{
+					throw new ArgumentException("featureDefFile is not a valid feature file.", nameof(featureDefFile));
+				}
+
+				var fid = contentSpan.Slice(0, firstTab).Trim();
+				fids.Add(int.Parse(fid));
+			}
 		}
 		catch (IOException ex)
 		{
 			throw RankLibException.Create("Error in FeatureManager::readFeature(): ", ex);
 		}
 
-		return features;
+		return fids.ToArray();
 	}
 
 	public int[] GetFeatureFromSampleVector(List<RankList> samples)
@@ -161,12 +163,13 @@ public class FeatureManager
 
 		while (total < samples.Count)
 		{
-			trainSamplesIdx.Last().Add(total++);
+			trainSamplesIdx[^1].Add(total++);
 		}
 
-		foreach (var indexes in trainSamplesIdx)
+		for (var idx = 0; idx < trainSamplesIdx.Count; idx++)
 		{
-			_logger.LogInformation($"Creating data for fold {trainSamplesIdx.IndexOf(indexes) + 1}/{nFold}...");
+			var indexes = trainSamplesIdx[idx];
+			_logger.LogInformation("Creating data for fold {TrainSamplesIdx}/{NFold}...", idx + 1, nFold);
 			var train = new List<RankList>();
 			var test = new List<RankList>();
 			var validation = new List<RankList>();
@@ -202,7 +205,7 @@ public class FeatureManager
 			}
 		}
 
-		_logger.LogInformation($"Creating data for {nFold} folds completed.");
+		_logger.LogInformation("Creating data for {NFold} folds completed.", nFold);
 		PrintQueriesForSplit("Train", trainingData);
 		PrintQueriesForSplit("Validate", validationData);
 		PrintQueriesForSplit("Test", testData);
@@ -228,6 +231,11 @@ public class FeatureManager
 
 	public void PrepareSplit(List<RankList> samples, double percentTrain, List<RankList> trainingData, List<RankList> testData)
 	{
+		if (percentTrain is < 0 or > 1)
+		{
+			throw new ArgumentException("percentTrain must be between 0 and 1.", nameof(percentTrain));
+		}
+
 		var size = (int)(samples.Count * percentTrain);
 
 		for (var i = 0; i < size; i++)
@@ -245,10 +253,10 @@ public class FeatureManager
 	{
 		try
 		{
-			using var outStream = new StreamWriter(outputFile);
+			using var writer = new StreamWriter(outputFile);
 			foreach (var sample in samples)
 			{
-				Save(sample, outStream);
+				Save(sample, writer);
 			}
 		}
 		catch (Exception ex)
@@ -257,12 +265,12 @@ public class FeatureManager
 		}
 	}
 
-	private static void Save(RankList rankList, StreamWriter outStream)
+	private static void Save(RankList rankList, StreamWriter writer)
 	{
 		for (var i = 0; i < rankList.Count; i++)
 		{
 			var dataPoint = rankList[i];
-			outStream.WriteLine(dataPoint.ToString());
+			writer.WriteLine(dataPoint.ToString());
 		}
 	}
 }

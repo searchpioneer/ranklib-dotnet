@@ -4,20 +4,18 @@ namespace RankLib.Features;
 
 public class ZScoreNormalizer : Normalizer
 {
-	public override void Normalize(RankList rl)
+	public override void Normalize(RankList rankList)
 	{
-		if (rl.Count == 0)
-		{
-			throw new InvalidOperationException("The input ranked list is empty");
-		}
+		if (rankList.Count == 0)
+			throw new ArgumentException("The rank list is empty", nameof(rankList));
 
-		var nFeature = rl.FeatureCount;
+		var nFeature = rankList.FeatureCount;
 		var means = new double[nFeature];
 		Array.Fill(means, 0);
 
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			var dp = rl[i];
+			var dp = rankList[i];
 			for (var j = 1; j <= nFeature; j++)
 			{
 				means[j - 1] += dp.GetFeatureValue(j);
@@ -26,23 +24,23 @@ public class ZScoreNormalizer : Normalizer
 
 		for (var j = 1; j <= nFeature; j++)
 		{
-			means[j - 1] /= rl.Count;
+			means[j - 1] /= rankList.Count;
 			double std = 0;
 
-			for (var i = 0; i < rl.Count; i++)
+			for (var i = 0; i < rankList.Count; i++)
 			{
-				var p = rl[i];
+				var p = rankList[i];
 				var x = p.GetFeatureValue(j) - means[j - 1];
 				std += x * x;
 			}
 
-			std = Math.Sqrt(std / (rl.Count - 1));
+			std = Math.Sqrt(std / (rankList.Count - 1));
 
 			if (std > 0)
 			{
-				for (var i = 0; i < rl.Count; i++)
+				for (var i = 0; i < rankList.Count; i++)
 				{
-					var p = rl[i];
+					var p = rankList[i];
 					var x = (p.GetFeatureValue(j) - means[j - 1]) / std; // standard normal (0, 1)
 					p.SetFeatureValue(j, Convert.ToSingle(x));
 				}
@@ -50,12 +48,10 @@ public class ZScoreNormalizer : Normalizer
 		}
 	}
 
-	public override void Normalize(RankList rl, int[] fids)
+	public override void Normalize(RankList rankList, int[] fids)
 	{
-		if (rl.Count == 0)
-		{
-			throw new InvalidOperationException("The input ranked list is empty");
-		}
+		if (rankList.Count == 0)
+			throw new ArgumentException("The rank list is empty", nameof(rankList));
 
 		// Remove duplicate features from the input fids to avoid normalizing the same features multiple times
 		fids = RemoveDuplicateFeatures(fids);
@@ -63,34 +59,34 @@ public class ZScoreNormalizer : Normalizer
 		var means = new double[fids.Length];
 		Array.Fill(means, 0);
 
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			var dp = rl[i];
+			var dataPoint = rankList[i];
 			for (var j = 0; j < fids.Length; j++)
 			{
-				means[j] += dp.GetFeatureValue(fids[j]);
+				means[j] += dataPoint.GetFeatureValue(fids[j]);
 			}
 		}
 
 		for (var j = 0; j < fids.Length; j++)
 		{
-			means[j] /= rl.Count;
+			means[j] /= rankList.Count;
 			double std = 0;
 
-			for (var i = 0; i < rl.Count; i++)
+			for (var i = 0; i < rankList.Count; i++)
 			{
-				var p = rl[i];
-				var x = p.GetFeatureValue(fids[j]) - means[j];
+				var dataPoint = rankList[i];
+				var x = dataPoint.GetFeatureValue(fids[j]) - means[j];
 				std += x * x;
 			}
 
-			std = Math.Sqrt(std / (rl.Count - 1));
+			std = Math.Sqrt(std / (rankList.Count - 1));
 
 			if (std > 0.0)
 			{
-				for (var i = 0; i < rl.Count; i++)
+				for (var i = 0; i < rankList.Count; i++)
 				{
-					var p = rl[i];
+					var p = rankList[i];
 					var x = (p.GetFeatureValue(fids[j]) - means[j]) / std; // standard normal (0, 1)
 					p.SetFeatureValue(fids[j], Convert.ToSingle(x));
 				}

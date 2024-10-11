@@ -1,15 +1,11 @@
-using System.Text.RegularExpressions;
 using MathNet.Numerics.Statistics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace RankLib.Features;
 
-public partial class FeatureStats
+public class FeatureStats
 {
-	[GeneratedRegex(@"<feature>(\d+)</feature>")]
-	private static partial Regex FeatureIdRegex();
-
 	private readonly ILogger<FeatureStats> _logger;
 
 	private readonly string _modelFileName;
@@ -33,16 +29,24 @@ public partial class FeatureStats
 		{
 			while (sr.ReadLine() is { } line)
 			{
-				line = line.Trim().ToLower();
-
-				if (string.IsNullOrWhiteSpace(line) || line.Contains("##"))
+				var lineSpan = line.AsSpan().Trim();
+				if (lineSpan.IsEmpty || lineSpan.IsWhiteSpace() || lineSpan.Contains("##", StringComparison.Ordinal))
 					continue;
 
-				var featureLines = line.Split(" ");
-				foreach (var featureLine in featureLines)
-				{
-					var featureId = int.Parse(featureLine.Split(":")[0]);
+				var ranges = new Span<Range>();
+				lineSpan.Split(ranges, ' ');
 
+				foreach (var range in ranges)
+				{
+					var feature = lineSpan[range];
+					var colonIndex = feature.IndexOf(':');
+
+					if (colonIndex != -1)
+					{
+						throw new ArgumentException("Invalid feature line: " + lineSpan.ToString());
+					}
+
+					var featureId = int.Parse(feature.Slice(0, colonIndex));
 					if (!featureFrequencies.TryAdd(featureId, 1))
 						featureFrequencies[featureId]++;
 				}
@@ -56,22 +60,24 @@ public partial class FeatureStats
 		return featureFrequencies;
 	}
 
-	private SortedDictionary<int, int> GetTreeFeatureFrequencies(StreamReader sr)
+	private SortedDictionary<int, int> GetTreeFeatureFrequencies(StreamReader reader)
 	{
 		var featureFrequencies = new SortedDictionary<int, int>();
 
 		try
 		{
-			while (sr.ReadLine() is { } line)
+			while (reader.ReadLine() is { } line)
 			{
-				line = line.Trim().ToLower();
-
-				if (string.IsNullOrWhiteSpace(line) || line.Contains("##"))
+				var lineSpan = line.AsSpan().Trim();
+				if (lineSpan.IsEmpty || lineSpan.IsWhiteSpace() || lineSpan.Contains("##", StringComparison.Ordinal))
 					continue;
 
-				if (line.Contains("<feature>"))
+				if (lineSpan.Contains("<feature>", StringComparison.InvariantCultureIgnoreCase))
 				{
-					var featureIdStr = FeatureIdRegex().Match(line).Groups[1].Value;
+					var quote1 = lineSpan.IndexOf('>');
+					var quote2 = lineSpan.Slice(quote1).IndexOf('<');
+
+					var featureIdStr = lineSpan.Slice(quote1 + 1, quote2 - 1);
 					var featureId = int.Parse(featureIdStr);
 
 					if (!featureFrequencies.TryAdd(featureId, 1))
@@ -94,25 +100,24 @@ public partial class FeatureStats
 
 		try
 		{
-			using var sr = new StreamReader(_file.FullName);
+			using var reader = new StreamReader(_file.FullName);
 
 			// Read model name from the file
-			var modelLine = sr.ReadLine()?.Trim();
-			var nameParts = modelLine?.Split(" ");
-			var len = nameParts?.Length ?? 0;
-			
-			if (len == 2)
+			var modelLine = reader.ReadLine().AsSpan().Trim();
+			var ranges = new Span<Range>();
+			var len = modelLine.Split(ranges, ' ');
+			modelName = len switch
 			{
-				modelName = nameParts![1].Trim();
-			}
-			else if (len == 3)
-			{
-				modelName = $"{nameParts![1].Trim()} {nameParts[2].Trim()}";
-			}
+				2 => modelLine[ranges[1]].Trim().ToString(),
+				3 => modelLine.Slice(ranges[1].Start.Value, ranges[2].End.Value - ranges[1].Start.Value)
+					.Trim()
+					.ToString(),
+				_ => null
+			};
 
 			if (string.IsNullOrEmpty(modelName))
 			{
-				throw new Exception("No model name defined. Quitting.");
+				throw new Exception($"Expected to find model name on first line, but found {modelLine}");
 			}
 
 			// Handle models that use all features
@@ -125,17 +130,17 @@ public partial class FeatureStats
 			// Feature:Weight models
 			if (FeatureWeightModels.Contains(modelName))
 			{
-				featureFrequencies = GetFeatureWeightFeatureFrequencies(sr);
+				featureFrequencies = GetFeatureWeightFeatureFrequencies(reader);
 			}
 			// Tree models
 			else if (TreeModels.Contains(modelName))
 			{
-				featureFrequencies = GetTreeFeatureFrequencies(sr);
+				featureFrequencies = GetTreeFeatureFrequencies(reader);
 			}
 		}
-		catch (IOException ioe)
+		catch (IOException exception)
 		{
-			throw new Exception($"IOException on file {_modelFileName}: {ioe.Message}", ioe);
+			throw new Exception($"IOException on file {_modelFileName}: {exception.Message}", exception);
 		}
 
 		if (featureFrequencies is null)
@@ -163,7 +168,7 @@ public partial class FeatureStats
 		var stats = new DescriptiveStatistics(data);
 
 		// Print out summary statistics
-		_logger.LogInformation($"Total Features Used: {featuresUsed}");
+		_logger.LogInformation("Total Features Used: {FeaturesUsed}", featuresUsed);
 		_logger.LogInformation($"Min frequency    : {stats.Minimum:0.00}");
 		_logger.LogInformation($"Max frequency    : {stats.Maximum:0.00}");
 		//logger.LogInformation($"Median frequency : {stats.Median:0.00}");
