@@ -12,16 +12,12 @@ public class Evaluator
 {
 	private readonly ILoggerFactory _loggerFactory;
 	private readonly ILogger<Evaluator> _logger;
-
-	// main settings
-	public static bool MustHaveRelDoc = false;
-	public static bool UseSparseRepresentation = false;
-	public static string ModelFile = "";
-
 	private readonly RankerFactory _rankerFactory;
 	private readonly MetricScorer _trainScorer;
 	private readonly MetricScorer _testScorer;
 	private readonly RankerTrainer _trainer;
+	private readonly bool _mustHaveRelDoc;
+	private readonly bool _useSparseRepresentation;
 	private readonly FeatureManager _featureManager;
 	private readonly RankerType _rankerType;
 	private readonly bool _normalize;
@@ -35,6 +31,8 @@ public class Evaluator
 		MetricScorer testScorer,
 		RankerTrainer trainer,
 		Normalizer? normalizer = null,
+		bool mustHaveRelDoc = false,
+		bool useSparseRepresentation = false,
 		ILoggerFactory? loggerFactory = null
 	)
 	{
@@ -44,6 +42,8 @@ public class Evaluator
 		_trainScorer = trainScorer;
 		_testScorer = testScorer;
 		_trainer = trainer;
+		_mustHaveRelDoc = mustHaveRelDoc;
+		_useSparseRepresentation = useSparseRepresentation;
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<Evaluator>();
 		_normalize = normalizer != null;
@@ -57,6 +57,8 @@ public class Evaluator
 		MetricScorer scorer,
 		RankerTrainer trainer,
 		Normalizer? normalizer = null,
+		bool mustHaveRelDoc = false,
+		bool useSparseRepresentation = false,
 		ILoggerFactory? loggerFactory = null
 	)
 	{
@@ -66,6 +68,8 @@ public class Evaluator
 		_trainScorer = scorer;
 		_testScorer = scorer;
 		_trainer = trainer;
+		_mustHaveRelDoc = mustHaveRelDoc;
+		_useSparseRepresentation = useSparseRepresentation;
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<Evaluator>();
 		_normalize = normalizer != null;
@@ -73,7 +77,7 @@ public class Evaluator
 	}
 
 	public List<RankList> ReadInput(string inputFile) =>
-		_featureManager.ReadInput(inputFile, MustHaveRelDoc, UseSparseRepresentation);
+		_featureManager.ReadInput(inputFile, _mustHaveRelDoc, _useSparseRepresentation);
 
 	public void Normalize(List<RankList> samples)
 	{
@@ -99,7 +103,7 @@ public class Evaluator
 		}
 	}
 
-	public int[]? ReadFeature(string featureDefFile)
+	public int[]? ReadFeature(string? featureDefFile)
 	{
 		if (string.IsNullOrEmpty(featureDefFile))
 		{
@@ -114,12 +118,11 @@ public class Evaluator
 		return _testScorer.Score(rankedList);
 	}
 
-	public void Evaluate(string trainFile, string? validationFile, string? testFile, string? featureDefFile)
+	public void Evaluate(string trainFile, string? validationFile, string? testFile, string? featureDefFile, string? modelFile = null)
 	{
 		var train = ReadInput(trainFile);
 		var validation = !string.IsNullOrEmpty(validationFile) ? ReadInput(validationFile) : null;
 		var test = !string.IsNullOrEmpty(testFile) ? ReadInput(testFile) : null;
-
 		var features = ReadFeature(featureDefFile) ?? _featureManager.GetFeatureFromSampleVector(train);
 
 		if (_normalize)
@@ -139,14 +142,14 @@ public class Evaluator
 			_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 		}
 
-		if (!string.IsNullOrEmpty(ModelFile))
+		if (!string.IsNullOrEmpty(modelFile))
 		{
-			ranker.Save(ModelFile);
-			_logger.LogInformation($"Model saved to: {ModelFile}");
+			ranker.Save(modelFile);
+			_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 		}
 	}
 
-	public void Evaluate(string sampleFile, string validationFile, string featureDefFile, double percentTrain)
+	public void Evaluate(string sampleFile, string? validationFile, string featureDefFile, double percentTrain, string? modelFile = null)
 	{
 		var trainingData = new List<RankList>();
 		var testData = new List<RankList>();
@@ -163,14 +166,14 @@ public class Evaluator
 		var rankScore = Evaluate(ranker, testData);
 		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
-		if (!string.IsNullOrEmpty(ModelFile))
+		if (!string.IsNullOrEmpty(modelFile))
 		{
-			ranker.Save(ModelFile);
-			_logger.LogInformation($"Model saved to: {ModelFile}");
+			ranker.Save(modelFile);
+			_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 		}
 	}
 
-	public void Evaluate(string trainFile, double percentTrain, string testFile, string featureDefFile)
+	public void Evaluate(string trainFile, double percentTrain, string testFile, string featureDefFile, string? modelFile = null)
 	{
 		var train = new List<RankList>();
 		var validation = new List<RankList>();
@@ -190,17 +193,17 @@ public class Evaluator
 			_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 		}
 
-		if (!string.IsNullOrEmpty(ModelFile))
+		if (!string.IsNullOrEmpty(modelFile))
 		{
-			ranker.Save(ModelFile);
-			_logger.LogInformation($"Model saved to: {ModelFile}");
+			ranker.Save(modelFile);
+			_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 		}
 	}
 
 	public void Evaluate(string sampleFile, string featureDefFile, int nFold, string modelDir, string modelFile) =>
 		Evaluate(sampleFile, featureDefFile, nFold, -1, modelDir, modelFile);
 
-	public void Evaluate(string sampleFile, string featureDefFile, int nFold, float tvs, string modelDir, string modelFile)
+	public void Evaluate(string sampleFile, string? featureDefFile, int nFold, float tvs, string modelDir, string modelFile)
 	{
 		var trainingData = new List<List<RankList>>();
 		var validationData = new List<List<RankList>>();

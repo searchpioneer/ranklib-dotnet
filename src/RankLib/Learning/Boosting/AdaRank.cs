@@ -285,7 +285,7 @@ public class AdaRank : Ranker
 		return score;
 	}
 
-	public override Ranker CreateNew() => new AdaRank();
+	public virtual Ranker CreateNew() => new AdaRank();
 
 	public override string ToString()
 	{

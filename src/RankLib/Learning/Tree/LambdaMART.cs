@@ -255,7 +255,7 @@ public class LambdaMART : Ranker
 
 	public override double Eval(DataPoint dp) => ensemble.Eval(dp);
 
-	public override Ranker CreateNew() => new LambdaMART(_logger);
+	public virtual Ranker CreateNew() => new LambdaMART(_logger);
 
 	public override string ToString() => ensemble.ToString();
 

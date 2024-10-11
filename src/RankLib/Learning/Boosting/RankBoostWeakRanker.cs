@@ -1,11 +1,11 @@
 namespace RankLib.Learning.Boosting;
 
-public class RBWeakRanker
+public class RankBoostWeakRanker
 {
-	private readonly int _fid = -1;
-	private readonly double _threshold = 0.0;
+	private readonly int _fid;
+	private readonly double _threshold;
 
-	public RBWeakRanker(int fid, double threshold)
+	public RankBoostWeakRanker(int fid, double threshold)
 	{
 		_fid = fid;
 		_threshold = threshold;

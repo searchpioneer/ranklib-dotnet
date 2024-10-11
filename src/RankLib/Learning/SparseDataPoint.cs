@@ -15,7 +15,7 @@ public class SparseDataPoint : DataPoint
 		RANDOM
 	}
 
-	private static readonly AccessPattern searchPattern = AccessPattern.RANDOM;
+	private static readonly AccessPattern SearchPattern = AccessPattern.RANDOM;
 
 	// The feature ids for known values
 	private int[] fIds;
@@ -42,7 +42,7 @@ public class SparseDataPoint : DataPoint
 
 	private int Locate(int fid)
 	{
-		if (searchPattern == AccessPattern.SEQUENTIAL)
+		if (SearchPattern == AccessPattern.SEQUENTIAL)
 		{
 			if (lastMinId > fid)
 			{
@@ -58,7 +58,7 @@ public class SparseDataPoint : DataPoint
 				return lastMinPos;
 			}
 		}
-		else if (searchPattern == AccessPattern.RANDOM)
+		else if (SearchPattern == AccessPattern.RANDOM)
 		{
 			var pos = Array.BinarySearch(fIds, fid);
 			if (pos >= 0)

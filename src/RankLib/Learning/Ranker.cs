@@ -11,7 +11,10 @@ public abstract class Ranker
 	private readonly ILogger<Ranker> _logger;
 	private readonly StringBuilder _logBuffer = new();
 
-	protected List<RankList> Samples = new(); // training samples
+	public List<RankList> Samples { get; set; } = []; // training samples
+
+	public List<RankList>? ValidationSamples { get; set; }
+
 	public int[] Features { get; set; } = [];
 
 	/// <summary>
@@ -21,7 +24,6 @@ public abstract class Ranker
 
 	protected double ScoreOnTrainingData = 0.0;
 	protected double BestScoreOnValidationData = 0.0;
-	protected List<RankList>? ValidationSamples;
 
 	protected Ranker(ILogger<Ranker>? logger = null) => _logger = logger ?? NullLogger<Ranker>.Instance;
 
@@ -34,24 +36,21 @@ public abstract class Ranker
 	}
 
 	// Utility functions
-	public void SetTrainingSet(List<RankList> samples) => Samples = samples;
-
-	public void SetValidationSet(List<RankList> validationSamples) => ValidationSamples = validationSamples;
 
 	public double GetScoreOnTrainingData() => ScoreOnTrainingData;
 
 	public double GetScoreOnValidationData() => BestScoreOnValidationData;
 
-	public virtual RankList Rank(RankList rl)
+	public virtual RankList Rank(RankList rankList)
 	{
-		var scores = new double[rl.Count];
-		for (var i = 0; i < rl.Count; i++)
+		var scores = new double[rankList.Count];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			scores[i] = Eval(rl[i]);
+			scores[i] = Eval(rankList[i]);
 		}
 
 		var idx = MergeSorter.Sort(scores, false);
-		return new RankList(rl, idx);
+		return new RankList(rankList, idx);
 	}
 
 	public List<RankList> Rank(List<RankList> rankLists)
@@ -64,7 +63,6 @@ public abstract class Ranker
 		return rankedRankLists;
 	}
 
-	// Create the model file directory to write models into if not already there
 	public void Save(string modelFile)
 	{
 		try
@@ -74,10 +72,11 @@ public abstract class Ranker
 		}
 		catch (Exception e)
 		{
-			throw RankLibException.Create($"Error creating kcv model file '{modelFile}'", e);
+			throw RankLibException.Create($"Error creating directory for model file '{modelFile}'", e);
 		}
 
 		FileUtils.Write(modelFile, Encoding.ASCII, Model);
+		_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 	}
 
 	protected void PrintLog(int[] len, string[] msgs)
@@ -128,14 +127,9 @@ public abstract class Ranker
 	public abstract void Init();
 	public abstract void Learn();
 	public abstract double Eval(DataPoint p);
-	public abstract Ranker CreateNew();
 	public abstract override string ToString();
 	public abstract string Model { get; }
 	public abstract void LoadFromString(string fullText);
-
-	/// <summary>
-	/// Gets the name of this ranker
-	/// </summary>
 	public abstract string Name { get; }
 	public abstract void PrintParameters();
 }

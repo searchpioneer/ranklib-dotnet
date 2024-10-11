@@ -25,19 +25,19 @@ public class RankerTrainer
 		ranker.Init();
 		ranker.Learn();
 		stopwatch.Stop();
-		TrainingTime = stopwatch.Elapsed.TotalMilliseconds * 1e6; // Convert to nanoseconds
+		TrainingTime = stopwatch.Elapsed.TotalNanoseconds;
 		return ranker;
 	}
 
 	public Ranker Train(RankerType type, List<RankList> train, List<RankList> validation, int[] features, MetricScorer scorer)
 	{
 		var ranker = _rankerFactory.CreateRanker(type, train, features, scorer);
-		ranker.SetValidationSet(validation);
+		ranker.ValidationSamples = validation;
 		var stopwatch = Stopwatch.StartNew();
 		ranker.Init();
 		ranker.Learn();
 		stopwatch.Stop();
-		TrainingTime = stopwatch.Elapsed.TotalMilliseconds * 1e6; // Convert to nanoseconds
+		TrainingTime = stopwatch.Elapsed.TotalNanoseconds;
 		return ranker;
 	}
 

@@ -100,7 +100,7 @@ public class LinearRegRank : Ranker
 		return score;
 	}
 
-	public override Ranker CreateNew() => new LinearRegRank();
+	public virtual Ranker CreateNew() => new LinearRegRank();
 
 	public override string ToString()
 	{

@@ -365,7 +365,7 @@ public class RankNet : Ranker
 		return _outputLayer[0].GetOutput();
 	}
 
-	public override Ranker CreateNew() => new RankNet();
+	public virtual Ranker CreateNew() => new RankNet();
 
 	public override string ToString()
 	{

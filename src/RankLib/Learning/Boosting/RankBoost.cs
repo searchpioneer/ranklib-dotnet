@@ -13,6 +13,17 @@ public class RankBoostParameters
 	public int NThreshold { get; set; } = 10;
 }
 
+/// <summary>
+/// RankBoost is an ensemble learning algorithm. It is an adaptation of the AdaBoost algorithm for the ranking domain.
+/// RankBoost is particularly useful when the goal is to combine the outputs of weak rankers
+/// (simpler models or features) to produce a stronger, more accurate ranking model.
+/// </summary>
+/// <remarks>
+/// <a href="https://www.jmlr.org/papers/volume4/freund03a/freund03a.pdf">
+/// Y. Freund, R. Iyer, R. Schapire, and Y. Singer. An efficient boosting algorithm for combining preferences.
+/// The Journal of Machine Learning Research, 4: 933-969, 2003.
+/// </a>
+/// </remarks>
 public class RankBoost : Ranker
 {
 	private readonly ILogger<RankBoost> _logger;
@@ -26,11 +37,11 @@ public class RankBoost : Ranker
 	private double[][] _thresholds = null; // Candidate values for weak rankers' threshold, selected from feature values
 	private int[][] _tSortedIdx = null; // Sorted (descend) index for @thresholds
 
-	private List<RBWeakRanker> _wRankers = null; // Best weak rankers at each round
+	private List<RankBoostWeakRanker> _wRankers = null; // Best weak rankers at each round
 	private List<double> _rWeight = null; // Alpha (weak rankers' weight)
 
 	// To store the best model on validation data (if specified)
-	private List<RBWeakRanker> _bestModelRankers = [];
+	private List<RankBoostWeakRanker> _bestModelRankers = [];
 	private List<double> _bestModelWeights = [];
 
 	private double _R_t = 0.0;
@@ -75,7 +86,7 @@ public class RankBoost : Ranker
 		}
 	}
 
-	private RBWeakRanker LearnWeakRanker()
+	private RankBoostWeakRanker? LearnWeakRanker()
 	{
 		var bestFid = -1;
 		double maxR = -10;
@@ -131,7 +142,7 @@ public class RankBoost : Ranker
 			return null;
 
 		_R_t = _Z_t * maxR; // Save it so we won't have to re-compute when we need it
-		return new RBWeakRanker(bestFid, bestThreshold);
+		return new RankBoostWeakRanker(bestFid, bestThreshold);
 	}
 
 	private void UpdateSampleWeights(double alphaT)
@@ -175,7 +186,7 @@ public class RankBoost : Ranker
 	{
 		_logger.LogInformation("Initializing...");
 
-		_wRankers = new List<RBWeakRanker>();
+		_wRankers = new List<RankBoostWeakRanker>();
 		_rWeight = new List<double>();
 
 		_totalCorrectPairs = 0;
@@ -310,12 +321,12 @@ public class RankBoost : Ranker
 			if (wr == null)
 				break;
 
-			var alpha_t = 0.5 * SimpleMath.Ln((_Z_t + _R_t) / (_Z_t - _R_t));
+			var alphaT = 0.5 * SimpleMath.Ln((_Z_t + _R_t) / (_Z_t - _R_t));
 
 			_wRankers.Add(wr);
-			_rWeight.Add(alpha_t);
+			_rWeight.Add(alphaT);
 
-			UpdateSampleWeights(alpha_t);
+			UpdateSampleWeights(alphaT);
 
 			PrintLog(new[] { 7, 8, 9, 9 }, new[] { t.ToString(), wr.GetFid().ToString(), SimpleMath.Round(wr.GetThreshold(), 4).ToString(), SimpleMath.Round(_R_t, 4).ToString() });
 
@@ -368,7 +379,7 @@ public class RankBoost : Ranker
 		return score;
 	}
 
-	public override Ranker CreateNew() => new RankBoost();
+	public virtual Ranker CreateNew() => new RankBoost();
 
 	public override string ToString()
 	{
@@ -413,7 +424,7 @@ public class RankBoost : Ranker
 				throw RankLibException.Create("Model name is not found.");
 
 			_rWeight = new List<double>();
-			_wRankers = new List<RBWeakRanker>();
+			_wRankers = new List<RankBoostWeakRanker>();
 
 			var idx = content.LastIndexOf('#');
 			if (idx != -1)
@@ -432,7 +443,7 @@ public class RankBoost : Ranker
 				var threshold = double.Parse(strs[1]);
 				var weight = double.Parse(strs[2]);
 				_rWeight.Add(weight);
-				_wRankers.Add(new RBWeakRanker(fid, threshold));
+				_wRankers.Add(new RankBoostWeakRanker(fid, threshold));
 			}
 
 			Features = new int[_rWeight.Count];
@@ -443,7 +454,7 @@ public class RankBoost : Ranker
 		}
 		catch (Exception ex)
 		{
-			throw RankLibException.Create("Error in RankBoost::load(): ", ex);
+			throw RankLibException.Create("Error loading RankBoost from string", ex);
 		}
 	}
 

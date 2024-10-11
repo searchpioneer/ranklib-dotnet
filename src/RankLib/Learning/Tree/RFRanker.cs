@@ -149,7 +149,7 @@ public class RFRanker : Ranker
 		return s / ensembles.Length;
 	}
 
-	public override Ranker CreateNew() => new RFRanker(_loggerFactory);
+	public virtual Ranker CreateNew() => new RFRanker(_loggerFactory);
 
 	public override string ToString()
 	{

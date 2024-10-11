@@ -31,6 +31,8 @@ public abstract class DataPoint
 	/// <returns>Dense array of feature values</returns>
 	protected float[] Parse(string text)
 	{
+		// TODO: convert to parsing from Span<T>
+
 		var maxFeature = 51;
 		var fval = new float[maxFeature];
 		Array.Fill(fval, Unknown);

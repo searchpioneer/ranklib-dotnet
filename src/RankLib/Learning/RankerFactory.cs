@@ -33,8 +33,6 @@ public class RankerFactory
 		_map[CreateRanker(RankerType.LINEAR_REGRESSION).Name.ToUpper()] = RankerType.LINEAR_REGRESSION.ToString();
 	}
 
-	public void Register(string name, string className) => _map[name] = className;
-
 	public Ranker CreateRanker(RankerType type) =>
 		type switch
 		{
@@ -54,7 +52,7 @@ public class RankerFactory
 	public Ranker CreateRanker(RankerType type, List<RankList> samples, int[] features, MetricScorer scorer)
 	{
 		var r = CreateRanker(type);
-		r.SetTrainingSet(samples);
+		r.Samples = samples;
 		r.Features = features;
 		r.Scorer = scorer;
 		return r;
@@ -96,7 +94,7 @@ public class RankerFactory
 	public Ranker CreateRanker(string typeName, List<RankList> samples, int[] features, MetricScorer scorer)
 	{
 		var r = CreateRanker(typeName);
-		r.SetTrainingSet(samples);
+		r.Samples = samples;
 		r.Features = features;
 		r.Scorer = scorer;
 		return r;

@@ -187,31 +187,31 @@ public class CoorAscent : Ranker
 		}
 	}
 
-	public override RankList Rank(RankList rl)
+	public override RankList Rank(RankList rankList)
 	{
-		var score = new double[rl.Count];
+		var score = new double[rankList.Count];
 		if (currentFeature == -1)
 		{
-			for (var i = 0; i < rl.Count; i++)
+			for (var i = 0; i < rankList.Count; i++)
 			{
 				for (var j = 0; j < Features.Length; j++)
 				{
-					score[i] += weight[j] * rl[i].GetFeatureValue(Features[j]);
+					score[i] += weight[j] * rankList[i].GetFeatureValue(Features[j]);
 				}
-				rl[i].Cached = score[i];
+				rankList[i].Cached = score[i];
 			}
 		}
 		else
 		{
-			for (var i = 0; i < rl.Count; i++)
+			for (var i = 0; i < rankList.Count; i++)
 			{
-				score[i] = rl[i].Cached + weightChange * rl[i].GetFeatureValue(Features[currentFeature]);
-				rl[i].Cached = score[i];
+				score[i] = rankList[i].Cached + weightChange * rankList[i].GetFeatureValue(Features[currentFeature]);
+				rankList[i].Cached = score[i];
 			}
 		}
 
 		var idx = MergeSorter.Sort(score, false);
-		return new RankList(rl, idx);
+		return new RankList(rankList, idx);
 	}
 
 	public override double Eval(DataPoint p)
@@ -224,7 +224,7 @@ public class CoorAscent : Ranker
 		return score;
 	}
 
-	public override Ranker CreateNew() => new CoorAscent(_logger);
+	public virtual Ranker CreateNew() => new CoorAscent(_logger);
 
 	public override string ToString()
 	{

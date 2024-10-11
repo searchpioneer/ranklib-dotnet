@@ -73,7 +73,7 @@ public class EvaluateCommandOptions : ICommandOptions
 	public float? FRate { get; set; }
 	public RankerType? RType { get; set; }
 	public double? L2 { get; set; }
-	public bool? Hr { get; set; }
+	public bool Hr { get; set; }
 }
 
 public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOptionsHandler>
@@ -144,6 +144,10 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private readonly EvaluatorFactory _evaluatorFactory;
 	private readonly RankerFactory _rankerFactory;
 	private LambdaMARTParameters? _lambdaMARTParameters;
+	private RankNetParameters? _rankNetParameters;
+	private ListNetParameters? _listNetParameters;
+	private RankBoostParameters? _rankBoostParameters;
+	private RFRankerParameters? _rfRankerParameters;
 
 	public EvaluateCommandOptionsHandler(
 		ILoggerFactory loggerFactory,
@@ -157,6 +161,10 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 	// TODO: this needs to be passed to any LambdaMART created
 	private LambdaMARTParameters LambdaMARTParameters => _lambdaMARTParameters ??= new LambdaMARTParameters();
+	private RankNetParameters RankNetParameters => _rankNetParameters ??= new RankNetParameters();
+	private ListNetParameters ListNetParameters => _listNetParameters ??= new ListNetParameters();
+	private RankBoostParameters RankBoostParameters => _rankBoostParameters ??= new RankBoostParameters();
+	private RFRankerParameters RfRankerParameters => _rfRankerParameters ??= new RFRankerParameters();
 
 	public Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
@@ -187,16 +195,6 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		var scoreFile = options.Score;
 
-		if (options.Save != null)
-		{
-			Evaluator.ModelFile = options.Save.FullName;
-		}
-
-		if (options.Sparse)
-		{
-			Evaluator.UseSparseRepresentation = true;
-		}
-
 		if (options.MissingZero)
 		{
 			DataPoint.MissingZero = true;
@@ -209,29 +207,29 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Epoch != null)
 		{
-			RankNet.NIteration = options.Epoch.Value;
-			ListNet.nIteration = options.Epoch.Value;
+			RankNetParameters.NIteration = options.Epoch.Value;
+			ListNetParameters.nIteration = options.Epoch.Value;
 		}
 
 		if (options.Layer != null)
 		{
-			RankNet.NHiddenLayer = options.Layer.Value;
+			RankNetParameters.NHiddenLayer = options.Layer.Value;
 		}
 
 		if (options.Node != null)
 		{
-			RankNet.NHiddenNodePerLayer = options.Node.Value;
+			RankNetParameters.NHiddenNodePerLayer = options.Node.Value;
 		}
 
 		if (options.Lr != null)
 		{
-			RankNet.LearningRate = options.Lr.Value;
-			ListNet.learningRate = Neuron.LearningRate;
+			RankNetParameters.LearningRate = options.Lr.Value;
+			ListNetParameters.learningRate = Neuron.LearningRate;
 		}
 
 		if (options.Tc != null)
 		{
-			RankBoost.NThreshold = options.Tc.Value;
+			RankBoostParameters.NThreshold = options.Tc.Value;
 			LambdaMARTParameters.nThreshold = options.Tc.Value;
 		}
 
@@ -257,7 +255,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Round != null)
 		{
-			RankBoost.NIteration = options.Round.Value;
+			RankBoostParameters.NIteration = options.Round.Value;
 			AdaRank.NIteration = options.Round.Value;
 		}
 
@@ -276,25 +274,25 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.Tree != null)
 		{
 			LambdaMARTParameters.nTrees = options.Tree.Value;
-			RFRanker.nTrees = LambdaMARTParameters.nTrees;
+			RfRankerParameters.nTrees = LambdaMARTParameters.nTrees;
 		}
 
 		if (options.Leaf != null)
 		{
 			LambdaMARTParameters.nTreeLeaves = options.Leaf.Value;
-			RFRanker.nTreeLeaves = LambdaMARTParameters.nTreeLeaves;
+			RfRankerParameters.nTreeLeaves = LambdaMARTParameters.nTreeLeaves;
 		}
 
 		if (options.Shrinkage != null)
 		{
 			LambdaMARTParameters.learningRate = options.Shrinkage.Value;
-			RFRanker.learningRate = LambdaMARTParameters.learningRate;
+			RfRankerParameters.learningRate = LambdaMARTParameters.learningRate;
 		}
 
 		if (options.Mls != null)
 		{
 			LambdaMARTParameters.minLeafSupport = options.Mls.Value;
-			RFRanker.minLeafSupport = LambdaMARTParameters.minLeafSupport;
+			RfRankerParameters.minLeafSupport = LambdaMARTParameters.minLeafSupport;
 		}
 
 		if (options.EStop != null)
@@ -304,17 +302,17 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Bag != null)
 		{
-			RFRanker.nBag = options.Bag.Value;
+			RfRankerParameters.nBag = options.Bag.Value;
 		}
 
 		if (options.SRate != null)
 		{
-			RFRanker.subSamplingRate = options.SRate.Value;
+			RfRankerParameters.subSamplingRate = options.SRate.Value;
 		}
 
 		if (options.FRate != null)
 		{
-			RFRanker.featureSamplingRate = options.FRate.Value;
+			RfRankerParameters.featureSamplingRate = options.FRate.Value;
 		}
 
 		if (options.RType != null)
@@ -324,17 +322,12 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				throw RankLibException.Create(options.RType + " cannot be bagged. Random Forests only supports MART/LambdaMART.");
 			}
 
-			RFRanker.rType = options.RType.Value;
+			RfRankerParameters.rType = options.RType.Value;
 		}
 
 		if (options.L2 != null)
 		{
 			LinearRegRank.lambda = options.L2.Value;
-		}
-
-		if (options.Hr != null)
-		{
-			Evaluator.MustHaveRelDoc = true;
 		}
 
 		if (options.Thread == -1)
@@ -365,9 +358,11 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			options.Metric2t,
 			options.Metric2T,
 			normalizer,
+			options.Hr,
+			options.Sparse,
 			options.QRel?.FullName);
 
-		if (options.Train != null)
+		if (trainFile != null)
 		{
 			logger.LogInformation("Training data: {TrainFile}", trainFile);
 
@@ -392,7 +387,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 					logger.LogInformation("Train-Validation split: {TrainValidationSplit}", tvSplit);
 			}
 
-			logger.LogInformation($"Feature vector representation: {(Evaluator.UseSparseRepresentation ? "Sparse" : "Dense")}.");
+			logger.LogInformation($"Feature vector representation: {(options.Sparse ? "Sparse" : "Dense")}.");
 			logger.LogInformation("Ranking method: {Ranker}", options.Ranker);
 
 			if (featureDescriptionFile != null)
@@ -422,9 +417,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				logger.LogInformation($"Models' name: {kcvModelFile}");
 			}
 
-			if (!string.IsNullOrEmpty(Evaluator.ModelFile))
+			if (options.Save != null)
 			{
-				logger.LogInformation($"Model file: {Evaluator.ModelFile}");
+				logger.LogInformation("Model file: {ModelFile}", options.Save.FullName);
 			}
 
 			logger.LogInformation($"[+] {options.Ranker}'s Parameters:");
@@ -448,21 +443,21 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 				//- models won't be saved if kcvModelDir=""   [OBSOLETE]
 				//- Models saved if EITHER kcvmd OR kcvmn defined.  Use default names for missing values.
-				evaluator.Evaluate(trainFile!.FullName, featureDescriptionFile?.FullName, foldCv, tvSplit, kcvModelDir!.FullName, kcvModelFile!);
+				evaluator.Evaluate(trainFile.FullName, featureDescriptionFile?.FullName, foldCv, tvSplit, kcvModelDir!.FullName, kcvModelFile!);
 			}
 			else
 			{
 				if (ttSplit > 0.0)
 				{
-					evaluator.Evaluate(trainFile.FullName, validationFile.FullName, featureDescriptionFile?.FullName, ttSplit);
+					evaluator.Evaluate(trainFile.FullName, validationFile.FullName, featureDescriptionFile?.FullName, ttSplit, options.Save?.FullName);
 				}
 				else if (tvSplit > 0.0)
 				{
-					evaluator.Evaluate(trainFile.FullName, tvSplit, testFile.FullName, featureDescriptionFile.FullName);
+					evaluator.Evaluate(trainFile.FullName, tvSplit, testFile.FullName, featureDescriptionFile.FullName, options.Save?.FullName);
 				}
 				else
 				{
-					evaluator.Evaluate(trainFile.FullName, validationFile?.FullName, testFile?.FullName, featureDescriptionFile?.FullName);
+					evaluator.Evaluate(trainFile.FullName, validationFile?.FullName, testFile?.FullName, featureDescriptionFile?.FullName, options.Save?.FullName);
 				}
 			}
 		}

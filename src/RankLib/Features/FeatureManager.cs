@@ -28,8 +28,9 @@ public class FeatureManager
 
 			while (reader.ReadLine() is { } content)
 			{
-				content = content.Trim();
-				if (content.Length == 0 || content[0] == '#')
+				var contentSpan = content.AsSpan().Trim();
+
+				if (contentSpan.IsEmpty || contentSpan[0] == '#')
 				{
 					continue;
 				}
@@ -40,8 +41,8 @@ public class FeatureManager
 				}
 
 				DataPoint qp = useSparseRepresentation
-					? new SparseDataPoint(content)
-					: new DenseDataPoint(content);
+					? new SparseDataPoint(contentSpan.ToString())
+					: new DenseDataPoint(contentSpan.ToString());
 
 				if (!string.IsNullOrEmpty(lastId) && !lastId.Equals(qp.Id, StringComparison.OrdinalIgnoreCase))
 				{
@@ -125,9 +126,9 @@ public class FeatureManager
 
 	public int[] GetFeatureFromSampleVector(List<RankList> samples)
 	{
-		if (!samples.Any())
+		if (samples.Count == 0)
 		{
-			throw RankLibException.Create("Error in FeatureManager::getFeatureFromSampleVector(): There are no training samples.");
+			throw RankLibException.Create("samples is empty");
 		}
 
 		var maxFeatureCount = samples.Max(rl => rl.FeatureCount);
