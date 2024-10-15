@@ -19,13 +19,11 @@ public class Evaluator
 	private readonly bool _mustHaveRelDoc;
 	private readonly bool _useSparseRepresentation;
 	private readonly FeatureManager _featureManager;
-	private readonly RankerType _rankerType;
 	private readonly bool _normalize;
 	private readonly Normalizer _normalizer;
 
 	public Evaluator(
 		RankerFactory rankerFactory,
-		RankerType rankerType,
 		FeatureManager featureManager,
 		MetricScorer trainScorer,
 		MetricScorer testScorer,
@@ -37,7 +35,6 @@ public class Evaluator
 	)
 	{
 		_rankerFactory = rankerFactory;
-		_rankerType = rankerType;
 		_featureManager = featureManager;
 		_trainScorer = trainScorer;
 		_testScorer = testScorer;
@@ -52,7 +49,6 @@ public class Evaluator
 
 	public Evaluator(
 		RankerFactory rankerFactory,
-		RankerType rankerType,
 		FeatureManager featureManager,
 		MetricScorer scorer,
 		RankerTrainer trainer,
@@ -63,7 +59,6 @@ public class Evaluator
 	)
 	{
 		_rankerFactory = rankerFactory;
-		_rankerType = rankerType;
 		_featureManager = featureManager;
 		_trainScorer = scorer;
 		_testScorer = scorer;
@@ -103,23 +98,27 @@ public class Evaluator
 		}
 	}
 
-	public int[]? ReadFeature(string? featureDefFile)
-	{
-		if (string.IsNullOrEmpty(featureDefFile))
-		{
-			return null;
-		}
-		return _featureManager.ReadFeature(featureDefFile);
-	}
+	public int[]? ReadFeature(string? featureDefFile) =>
+		string.IsNullOrEmpty(featureDefFile) ? null : _featureManager.ReadFeature(featureDefFile);
 
-	public double Evaluate(Ranker? ranker, List<RankList> rl)
+	public double Evaluate(IRanker? ranker, List<RankList> rankLists)
 	{
-		var rankedList = ranker != null ? ranker.Rank(rl) : rl;
+		var rankedList = ranker != null ? ranker.Rank(rankLists) : rankLists;
 		return _testScorer.Score(rankedList);
 	}
 
-	public void Evaluate(string trainFile, string? validationFile, string? testFile, string? featureDefFile, string? modelFile = null)
+	public void Evaluate(
+		Type rankerType,
+		string trainFile,
+		string? validationFile,
+		string? testFile,
+		string? featureDefFile,
+		string? modelFile = null,
+		IRankerParameters? parameters = default)
 	{
+		if (!typeof(IRanker).IsAssignableFrom(rankerType))
+			throw new ArgumentException($"Ranker type {rankerType} is not a ranker");
+
 		var train = ReadInput(trainFile);
 		var validation = !string.IsNullOrEmpty(validationFile) ? ReadInput(validationFile) : null;
 		var test = !string.IsNullOrEmpty(testFile) ? ReadInput(testFile) : null;
@@ -134,7 +133,7 @@ public class Evaluator
 				Normalize(test, features);
 		}
 
-		var ranker = _trainer.Train(_rankerType, train, validation, features, _trainScorer);
+		var (ranker, _) = _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
 
 		if (test != null)
 		{
@@ -149,11 +148,29 @@ public class Evaluator
 		}
 	}
 
-	public void Evaluate(string sampleFile, string? validationFile, string featureDefFile, double percentTrain, string? modelFile = null)
+	public void Evaluate<TRanker, TRankerParameters>(
+		string trainFile,
+		string? validationFile,
+		string? testFile,
+		string? featureDefFile,
+		string? modelFile = null,
+		TRankerParameters? parameters = default)
+		where TRanker : IRanker<TRankerParameters>
+		where TRankerParameters : IRankerParameters =>
+		Evaluate(typeof(TRanker), trainFile, validationFile, testFile, featureDefFile, modelFile, parameters);
+
+	public void Evaluate(
+		Type rankerType,
+		string sampleFile,
+		string? validationFile,
+		string featureDefFile,
+		double percentTrain,
+		string? modelFile = null,
+		IRankerParameters? parameters = default)
 	{
-		var trainingData = new List<RankList>();
-		var testData = new List<RankList>();
-		var features = PrepareSplit(sampleFile, featureDefFile, percentTrain, _normalize, trainingData, testData);
+		var train = new List<RankList>();
+		var test = new List<RankList>();
+		var features = PrepareSplit(sampleFile, featureDefFile, percentTrain, _normalize, train, test);
 		var validation = !string.IsNullOrEmpty(validationFile) ? ReadInput(validationFile) : null;
 
 		if (_normalize && validation != null)
@@ -161,9 +178,8 @@ public class Evaluator
 			Normalize(validation, features);
 		}
 
-		var ranker = _trainer.Train(_rankerType, trainingData, validation, features, _trainScorer);
-
-		var rankScore = Evaluate(ranker, testData);
+		var (ranker, _) = _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
+		var rankScore = Evaluate(ranker, test);
 		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
 		if (!string.IsNullOrEmpty(modelFile))
@@ -173,7 +189,25 @@ public class Evaluator
 		}
 	}
 
-	public void Evaluate(string trainFile, double percentTrain, string testFile, string featureDefFile, string? modelFile = null)
+	public void Evaluate<TRanker, TRankerParameters>(
+		string sampleFile,
+		string? validationFile,
+		string featureDefFile,
+		double percentTrain,
+		string? modelFile = null,
+		TRankerParameters? parameters = default)
+		where TRanker : IRanker<TRankerParameters>
+		where TRankerParameters : IRankerParameters =>
+		Evaluate(typeof(TRanker), sampleFile, validationFile, featureDefFile, percentTrain, modelFile, parameters);
+
+	public void Evaluate(
+		Type rankerType,
+		string trainFile,
+		double percentTrain,
+		string? testFile,
+		string featureDefFile,
+		string? modelFile = null,
+		IRankerParameters? parameters = default)
 	{
 		var train = new List<RankList>();
 		var validation = new List<RankList>();
@@ -185,7 +219,7 @@ public class Evaluator
 			Normalize(test, features);
 		}
 
-		var ranker = _trainer.Train(_rankerType, train, validation, features, _trainScorer);
+		var (ranker, _) = _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
 
 		if (test != null)
 		{
@@ -200,10 +234,37 @@ public class Evaluator
 		}
 	}
 
-	public void Evaluate(string sampleFile, string featureDefFile, int nFold, string modelDir, string modelFile) =>
-		Evaluate(sampleFile, featureDefFile, nFold, -1, modelDir, modelFile);
+	public void Evaluate<TRanker, TRankerParameters>(
+		string trainFile,
+		double percentTrain,
+		string? testFile,
+		string featureDefFile,
+		string? modelFile = null,
+		TRankerParameters? parameters = default)
+		where TRanker : IRanker<TRankerParameters>
+		where TRankerParameters : IRankerParameters =>
+		Evaluate(typeof(TRanker), trainFile, percentTrain, testFile, featureDefFile, modelFile, parameters);
 
-	public void Evaluate(string sampleFile, string? featureDefFile, int nFold, float tvs, string modelDir, string modelFile)
+	public void Evaluate<TRanker, TRankerParameters>(
+		string sampleFile,
+		string featureDefFile,
+		int nFold,
+		string modelDir,
+		string modelFile ,
+		TRankerParameters? parameters = default)
+		where TRanker : IRanker<TRankerParameters>
+		where TRankerParameters : IRankerParameters =>
+		Evaluate(typeof(TRanker), sampleFile, featureDefFile, nFold, -1, modelDir, modelFile, parameters);
+
+	public void Evaluate(
+		Type rankerType,
+		string sampleFile,
+		string? featureDefFile,
+		int nFold,
+		float tvs,
+		string modelDir,
+		string modelFile,
+		IRankerParameters? parameters = default)
 	{
 		var trainingData = new List<List<RankList>>();
 		var validationData = new List<List<RankList>>();
@@ -235,7 +296,7 @@ public class Evaluator
 			var validation = tvs > 0 ? validationData[i] : null;
 			var test = testData[i];
 
-			var ranker = _trainer.Train(_rankerType, train, validation, features, _trainScorer);
+			var (ranker, _) = _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
 
 			var testScore = Evaluate(ranker, test);
 			scoreOnTrain += ranker.GetScoreOnTrainingData();
@@ -248,8 +309,9 @@ public class Evaluator
 
 			if (!string.IsNullOrEmpty(modelDir))
 			{
-				ranker.Save(Path.Combine(modelDir, $"f{i + 1}.{modelFile}"));
-				_logger.LogInformation($"Fold-{i + 1} model saved to: {modelFile}");
+				var path = Path.Combine(modelDir, $"f{i + 1}.{modelFile}");
+				ranker.Save(path);
+				_logger.LogInformation($"Fold-{i + 1} model saved to: {path}");
 			}
 		}
 
@@ -265,6 +327,18 @@ public class Evaluator
 		_logger.LogInformation($"Total\t|   \t\t|  {Math.Round(totalScoreOnTest / totalTestSampleSize, 4)}\t");
 	}
 
+	public void Evaluate<TRanker, TRankerParameters>(
+		string sampleFile,
+		string? featureDefFile,
+		int nFold,
+		float tvs,
+		string modelDir,
+		string modelFile,
+		TRankerParameters? parameters = default)
+		where TRanker : IRanker<TRankerParameters>
+		where TRankerParameters : IRankerParameters =>
+		Evaluate(typeof(TRanker), sampleFile, featureDefFile, nFold, tvs, modelDir, modelFile, parameters);
+
 	public void Test(string testFile)
 	{
 		var test = ReadInput(testFile);
@@ -273,7 +347,7 @@ public class Evaluator
 			Math.Round(rankScore, 4));
 	}
 
-	public void Test(string testFile, string prpFile)
+	public void Test(string testFile, string? prpFile)
 	{
 		var test = ReadInput(testFile);
 		var rankScore = 0.0;
@@ -302,7 +376,7 @@ public class Evaluator
 		}
 	}
 
-	public void Test(string modelFile, string testFile, string prpFile)
+	public void Test(string modelFile, string testFile, string? prpFile)
 	{
 		var ranker = _rankerFactory.LoadRankerFromFile(modelFile);
 		var features = ranker.Features;
@@ -725,7 +799,7 @@ public class Evaluator
 		}
 	}
 
-	private int[] PrepareSplit(string sampleFile, string featureDefFile, double percentTrain, bool normalize, List<RankList> trainingData, List<RankList> testData)
+	private int[] PrepareSplit(string sampleFile, string? featureDefFile, double percentTrain, bool normalize, List<RankList> trainingData, List<RankList> testData)
 	{
 		var data = ReadInput(sampleFile);
 		var features = ReadFeature(featureDefFile) ?? _featureManager.GetFeatureFromSampleVector(data);

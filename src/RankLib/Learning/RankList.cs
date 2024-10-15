@@ -67,7 +67,7 @@ public class RankList
 	public int Count => _dataPoints.Length;
 
 	// Gets the feature count
-	public int FeatureCount { get; protected set; }
+	public int FeatureCount { get; private set; }
 
 	public DataPoint this[int index]
 	{

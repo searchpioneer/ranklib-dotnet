@@ -1,35 +1,39 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 
 namespace RankLib.Learning.NeuralNet;
 
 public class LambdaRank : RankNet
 {
-	private readonly ILogger<LambdaRank>? _logger;
+	internal new const string RankerName = "LambdaRank";
+
 	private float[][] _targetValue = [];
 
-	public LambdaRank(ILogger<LambdaRank>? logger = null) : base(logger) =>
-		_logger = logger ?? NullLogger<LambdaRank>.Instance;
+	public override string Name => RankerName;
+
+	public LambdaRank(ILogger<LambdaRank>? logger = null) : base(logger)
+	{
+	}
 
 	public LambdaRank(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaRank>? logger = null)
-		: base(samples, features, scorer, logger) =>
-		_logger = logger ?? NullLogger<LambdaRank>.Instance;
-
-	protected override int[][] BatchFeedForward(RankList rl)
+		: base(samples, features, scorer, logger)
 	{
-		var pairMap = new int[rl.Count][];
-		_targetValue = new float[rl.Count][];
+	}
 
-		for (var i = 0; i < rl.Count; i++)
+	protected override int[][] BatchFeedForward(RankList rankList)
+	{
+		var pairMap = new int[rankList.Count][];
+		_targetValue = new float[rankList.Count][];
+
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			AddInput(rl[i]);
+			AddInput(rankList[i]);
 			Propagate(i);
 
 			var count = 0;
-			for (var j = 0; j < rl.Count; j++)
+			for (var j = 0; j < rankList.Count; j++)
 			{
-				if (rl[i].Label > rl[j].Label || rl[i].Label < rl[j].Label)
+				if (rankList[i].Label > rankList[j].Label || rankList[i].Label < rankList[j].Label)
 				{
 					count++;
 				}
@@ -39,12 +43,12 @@ public class LambdaRank : RankNet
 			_targetValue[i] = new float[count];
 
 			var k = 0;
-			for (var j = 0; j < rl.Count; j++)
+			for (var j = 0; j < rankList.Count; j++)
 			{
-				if (rl[i].Label > rl[j].Label || rl[i].Label < rl[j].Label)
+				if (rankList[i].Label > rankList[j].Label || rankList[i].Label < rankList[j].Label)
 				{
 					pairMap[i][k] = j;
-					_targetValue[i][k] = rl[i].Label > rl[j].Label ? 1 : 0;
+					_targetValue[i][k] = rankList[i].Label > rankList[j].Label ? 1 : 0;
 					k++;
 				}
 			}
@@ -134,6 +138,4 @@ public class LambdaRank : RankNet
 
 		_lastError = _error;
 	}
-
-	public override string Name => "LambdaRank";
 }

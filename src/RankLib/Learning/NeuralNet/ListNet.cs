@@ -7,18 +7,22 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.NeuralNet;
 
-public class ListNetParameters
+public class ListNetParameters : RankNetParameters
 {
-	public int NIteration { get; set; } = 1500;
-	public double LearningRate { get; set; } = 0.00001;
-	public int NHiddenLayer { get; set; } = 0; // FIXED, it doesn't work with hidden layer
+	public ListNetParameters()
+	{
+		// FIXED, it doesn't work with hidden layer
+		NHiddenLayer = 0;
+	}
 }
 
 public class ListNet : RankNet
 {
+	internal new const string RankerName = "ListNet";
+
 	private readonly ILogger<ListNet> _logger;
 
-	public new ListNetParameters Parameters { get; set; } = new();
+	public override string Name => RankerName;
 
 	public ListNet(ILogger<ListNet>? logger = null) : base(logger) =>
 		_logger = logger ?? NullLogger<ListNet>.Instance;
@@ -234,12 +238,4 @@ public class ListNet : RankNet
 			throw RankLibException.Create("Error in ListNet::LoadFromString(): ", ex);
 		}
 	}
-
-	public override void PrintParameters()
-	{
-		_logger.LogInformation($"No. of epochs: {Parameters.NIteration}");
-		_logger.LogInformation($"Learning rate: {Parameters.LearningRate}");
-	}
-
-	public override string Name => "ListNet";
 }

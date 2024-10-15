@@ -8,7 +8,7 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
 
-public class RFRankerParameters
+public class RFRankerParameters : IRankerParameters
 {
 	// Parameters
 	// [a] general bagging parameters
@@ -23,17 +23,29 @@ public class RFRankerParameters
 	public float learningRate { get; set; } = 0.1F; // or shrinkage, only matters if nTrees > 1
 	public int nThreshold { get; set; } = 256;
 	public int minLeafSupport { get; set; } = 1;
+	public void Log(ILogger logger)
+	{
+		logger.LogInformation("No. of bags: " + nBag);
+		logger.LogInformation("Sub-sampling: " + subSamplingRate);
+		logger.LogInformation("Feature-sampling: " + featureSamplingRate);
+		logger.LogInformation("No. of trees: " + nTrees);
+		logger.LogInformation("No. of leaves: " + nTreeLeaves);
+		logger.LogInformation("No. of threshold candidates: " + nThreshold);
+		logger.LogInformation("Learning rate: " + learningRate);
+	}
 }
 
-public class RFRanker : Ranker
+public class RFRanker : Ranker<RFRankerParameters>
 {
+	internal const string RankerName = "Random Forests";
+
 	private readonly ILoggerFactory _loggerFactory;
 	private readonly ILogger<RFRanker> _logger;
 	private LambdaMARTParameters _lambdaMARTParameters;
 
 	public Ensemble[] Ensembles { get; private set; } = [];
 
-	public RFRankerParameters Parameters { get; set; } = new();
+	public override string Name => RankerName;
 
 	public RFRanker(ILoggerFactory? loggerFactory = null) : base((loggerFactory ?? NullLoggerFactory.Instance)
 		.CreateLogger<RFRanker>())
@@ -89,13 +101,13 @@ public class RFRanker : Ranker
 			// Accumulate impacts
 			if (impacts == null)
 			{
-				impacts = r.impacts;
+				impacts = r.Impacts;
 			}
 			else
 			{
 				for (var ftr = 0; ftr < impacts.Length; ftr++)
 				{
-					impacts[ftr] += r.impacts[ftr];
+					impacts[ftr] += r.Impacts[ftr];
 				}
 			}
 			PrintLogLn([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(r.GetScoreOnTrainingData(), 4).ToString(CultureInfo.InvariantCulture)]);
@@ -117,25 +129,23 @@ public class RFRanker : Ranker
 		_logger.LogInformation("-- FEATURE IMPACTS");
 		if (_logger.IsEnabled(LogLevel.Information))
 		{
-			var ftrsSorted = MergeSorter.Sort(impacts, false);
+			var ftrsSorted = MergeSorter.Sort(impacts!, false);
 			foreach (var ftr in ftrsSorted)
 			{
-				_logger.LogInformation(" Feature " + Features[ftr] + " reduced error " + impacts[ftr]);
+				_logger.LogInformation(" Feature " + Features[ftr] + " reduced error " + impacts![ftr]);
 			}
 		}
 	}
 
-	public override double Eval(DataPoint dp)
+	public override double Eval(DataPoint dataPoint)
 	{
 		double s = 0;
 		foreach (var ensemble in Ensembles)
 		{
-			s += ensemble.Eval(dp);
+			s += ensemble.Eval(dataPoint);
 		}
 		return s / Ensembles.Length;
 	}
-
-	public virtual Ranker CreateNew() => new RFRanker(_loggerFactory);
 
 	public override string ToString()
 	{
@@ -195,17 +205,4 @@ public class RFRanker : Ranker
 
 		Features = uniqueFeatures.ToArray();
 	}
-
-	public override void PrintParameters()
-	{
-		_logger.LogInformation("No. of bags: " + Parameters.nBag);
-		_logger.LogInformation("Sub-sampling: " + Parameters.subSamplingRate);
-		_logger.LogInformation("Feature-sampling: " + Parameters.featureSamplingRate);
-		_logger.LogInformation("No. of trees: " + Parameters.nTrees);
-		_logger.LogInformation("No. of leaves: " + Parameters.nTreeLeaves);
-		_logger.LogInformation("No. of threshold candidates: " + Parameters.nThreshold);
-		_logger.LogInformation("Learning rate: " + Parameters.learningRate);
-	}
-
-	public override string Name => "Random Forests";
 }

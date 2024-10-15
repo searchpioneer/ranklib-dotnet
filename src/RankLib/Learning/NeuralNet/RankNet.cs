@@ -7,19 +7,28 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.NeuralNet;
 
-public class RankNetParameters
+public class RankNetParameters : IRankerParameters
 {
 	public int NIteration { get; set; } = 100;
 	public int NHiddenLayer { get; set; } = 1;
 	public int NHiddenNodePerLayer { get; set; } = 10;
 	public double LearningRate { get; set; } = 0.00005;
+
+	public void Log(ILogger logger)
+	{
+		logger.LogInformation($"No. of epochs: {NIteration}");
+		logger.LogInformation($"No. of hidden layers: {NHiddenLayer}");
+		logger.LogInformation($"No. of hidden nodes per layer: {NHiddenNodePerLayer}");
+		logger.LogInformation($"Learning rate: {LearningRate}");
+	}
 }
 
-public class RankNet : Ranker
+public class RankNet : Ranker<RankNetParameters>
 {
+	internal const string RankerName = "RankNet";
 	private readonly ILogger<RankNet> _logger;
 
-	protected List<Layer> _layers = new();
+	protected readonly List<Layer> _layers = new();
 	protected Layer _inputLayer;
 	protected Layer _outputLayer;
 
@@ -30,7 +39,7 @@ public class RankNet : Ranker
 	protected double _lastError = double.MaxValue;
 	protected int _straightLoss = 0;
 
-	public RankNetParameters Parameters { get; set; } = new();
+	public override string Name => RankerName;
 
 	public RankNet(ILogger<RankNet>? logger = null) =>
 		_logger = logger ?? NullLogger<RankNet>.Instance;
@@ -114,18 +123,18 @@ public class RankNet : Ranker
 		}
 	}
 
-	protected virtual int[][] BatchFeedForward(RankList rl)
+	protected virtual int[][] BatchFeedForward(RankList rankList)
 	{
-		var pairMap = new int[rl.Count][];
-		for (var i = 0; i < rl.Count; i++)
+		var pairMap = new int[rankList.Count][];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			AddInput(rl[i]);
+			AddInput(rankList[i]);
 			Propagate(i);
 
 			var count = 0;
-			for (var j = 0; j < rl.Count; j++)
+			for (var j = 0; j < rankList.Count; j++)
 			{
-				if (rl[i].Label > rl[j].Label)
+				if (rankList[i].Label > rankList[j].Label)
 				{
 					count++;
 				}
@@ -133,9 +142,9 @@ public class RankNet : Ranker
 
 			pairMap[i] = new int[count];
 			var k = 0;
-			for (var j = 0; j < rl.Count; j++)
+			for (var j = 0; j < rankList.Count; j++)
 			{
-				if (rl[i].Label > rl[j].Label)
+				if (rankList[i].Label > rankList[j].Label)
 				{
 					pairMap[i][k++] = j;
 				}
@@ -345,11 +354,11 @@ public class RankNet : Ranker
 	}
 
 
-	public override double Eval(DataPoint p)
+	public override double Eval(DataPoint dataPoint)
 	{
 		for (var k = 0; k < _inputLayer.Count - 1; k++)
 		{
-			_inputLayer[k].SetOutput(p.GetFeatureValue(Features[k]));
+			_inputLayer[k].SetOutput(dataPoint.GetFeatureValue(Features[k]));
 		}
 
 		var k1 = _inputLayer.Count - 1;
@@ -451,14 +460,4 @@ public class RankNet : Ranker
 			}
 		}
 	}
-
-	public override void PrintParameters()
-	{
-		_logger.LogInformation($"No. of epochs: {Parameters.NIteration}");
-		_logger.LogInformation($"No. of hidden layers: {Parameters.NHiddenLayer}");
-		_logger.LogInformation($"No. of hidden nodes per layer: {Parameters.NHiddenNodePerLayer}");
-		_logger.LogInformation($"Learning rate: {Parameters.LearningRate}");
-	}
-
-	public override string Name => "RankNet";
 }

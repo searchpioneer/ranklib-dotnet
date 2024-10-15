@@ -32,7 +32,6 @@ public class EvaluatorFactory
 	}
 
 	public Evaluator CreateEvaluator(
-		RankerType rankerType,
 		Metric.Metric trainMetric,
 		Metric.Metric testMetric,
 		Normalizer? normalizer = null,
@@ -49,11 +48,10 @@ public class EvaluatorFactory
 			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
 		}
 
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(_rankerFactory, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
 	}
 
 	public Evaluator CreateEvaluator(
-		RankerType rankerType,
 		Metric.Metric trainMetric,
 		int trainK,
 		Metric.Metric testMetric,
@@ -72,11 +70,10 @@ public class EvaluatorFactory
 			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
 		}
 
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(_rankerFactory, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
 	}
 
 	public Evaluator CreateEvaluator(
-		RankerType rankerType,
 		Metric.Metric trainMetric,
 		Metric.Metric testMetric,
 		int k,
@@ -94,11 +91,10 @@ public class EvaluatorFactory
 			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
 		}
 
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(_rankerFactory, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
 	}
 
 	public Evaluator CreateEvaluator(
-		RankerType rankerType,
 		Metric.Metric metric,
 		int k,
 		Normalizer? normalizer = null,
@@ -113,11 +109,10 @@ public class EvaluatorFactory
 			scorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
 		}
 
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, scorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(_rankerFactory, _featureManager, scorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
 	}
 
 	public Evaluator CreateEvaluator(
-		RankerType rankerType,
 		string trainMetric,
 		string testMetric,
 		Normalizer? normalizer = null,
@@ -134,6 +129,6 @@ public class EvaluatorFactory
 			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
 		}
 
-		return new Evaluator(_rankerFactory, rankerType, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(_rankerFactory, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
 	}
 }

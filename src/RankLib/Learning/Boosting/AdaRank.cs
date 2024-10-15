@@ -7,16 +7,30 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Boosting;
 
-public class AdaRankParameters
+public class AdaRankParameters : IRankerParameters
 {
 	public int NIteration { get; set; } = 500;
 	public double Tolerance { get; set; } = 0.002;
 	public bool TrainWithEnqueue { get; set; } = true;
-	public int MaxSelCount { get; set; } = 5; // Max number of times a feature can be selected consecutively before being removed
+
+	/// <summary>
+	/// Max number of times a feature can be selected consecutively before being removed
+	/// </summary>
+	public int MaxSelCount { get; set; } = 5;
+
+	public void Log(ILogger logger)
+	{
+		logger.LogInformation("No. of rounds: {NIteration}", NIteration);
+		logger.LogInformation("Train with 'enqueue': {TrainWithEnqueue}", TrainWithEnqueue ? "Yes" : "No");
+		logger.LogInformation("Tolerance: {Tolerance}", Tolerance);
+		logger.LogInformation("Max Sel. Count: {MaxSelCount}", MaxSelCount);
+	}
 }
 
-public class AdaRank : Ranker
+public class AdaRank : Ranker<AdaRankParameters>
 {
+	internal const string RankerName = "AdaRank";
+
 	private readonly ILogger<AdaRank> _logger;
 	private readonly Dictionary<int, int> _usedFeatures = new();
 	private double[] _sweight = []; // Sample weight
@@ -34,7 +48,7 @@ public class AdaRank : Ranker
 	private double _backupTrainScore;
 	private double _lastTrainedScore = -1.0;
 
-	public AdaRankParameters Parameters { get; set; } = new();
+	public override string Name => RankerName;
 
 	public AdaRank(ILogger<AdaRank>? logger = null) => _logger = logger ?? NullLogger<AdaRank>.Instance;
 
@@ -231,7 +245,7 @@ public class AdaRank : Ranker
 	public override void Learn()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 8, 9, 9, 9 }, new[] { "#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status" });
+		PrintLogLn([7, 8, 9, 9, 9], ["#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status"]);
 
 		if (Parameters.TrainWithEnqueue)
 		{
@@ -256,7 +270,7 @@ public class AdaRank : Ranker
 		}
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
-		_logger.LogInformation($"Finished successfully.");
+		_logger.LogInformation("Finished successfully.");
 		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
 
 		if (ValidationSamples != null)
@@ -267,12 +281,12 @@ public class AdaRank : Ranker
 	}
 
 
-	public override double Eval(DataPoint p)
+	public override double Eval(DataPoint dataPoint)
 	{
 		var score = 0.0;
 		for (var j = 0; j < _rankers.Count; j++)
 		{
-			score += _rweight[j] * p.GetFeatureValue(_rankers[j].Fid);
+			score += _rweight[j] * dataPoint.GetFeatureValue(_rankers[j].Fid);
 		}
 		return score;
 	}
@@ -339,14 +353,4 @@ public class AdaRank : Ranker
 			throw new InvalidOperationException("Error loading AdaRank from string", ex);
 		}
 	}
-
-	public override void PrintParameters()
-	{
-		_logger.LogInformation("No. of rounds: {NIteration}", Parameters.NIteration);
-		_logger.LogInformation("Train with 'enqueue': {TrainWithEnqueue}", Parameters.TrainWithEnqueue ? "Yes" : "No");
-		_logger.LogInformation("Tolerance: {Tolerance}", Parameters.Tolerance);
-		_logger.LogInformation("Max Sel. Count: {MaxSelCount}", Parameters.MaxSelCount);
-	}
-
-	public override string Name => "AdaRank";
 }

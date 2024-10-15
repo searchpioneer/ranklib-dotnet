@@ -6,13 +6,25 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
-public class LinearRegRank : Ranker
+public class LinearRegRankParameters : IRankerParameters
 {
+	/// <summary>
+	/// L2-norm regularization parameter
+	/// </summary>
+	public double Lambda { get; set; } = 1E-10;
+
+	public void Log(ILogger logger) =>
+		logger.LogInformation("L2-norm regularization: lambda = {Lambda}", Lambda);
+}
+
+public class LinearRegRank : Ranker<LinearRegRankParameters>
+{
+	internal const string RankerName = "Linear Regression";
+
 	private readonly ILogger<LinearRegRank> _logger;
-	public static double lambda = 1E-10; // L2-norm regularization parameter
 
 	// Local variables
-	protected double[] weight = [];
+	private double[] _weight = [];
 
 	public LinearRegRank(ILogger<LinearRegRank>? logger = null) : base(logger) =>
 		_logger = logger ?? NullLogger<LinearRegRank>.Instance;
@@ -21,6 +33,8 @@ public class LinearRegRank : Ranker
 		ILogger<LinearRegRank>? logger = null)
 		: base(samples, features, scorer, logger) =>
 		_logger = logger ?? NullLogger<LinearRegRank>.Instance;
+
+	public override string Name => RankerName;
 
 	public override void Init() => _logger.LogInformation("Initializing...");
 
@@ -72,13 +86,13 @@ public class LinearRegRank : Ranker
 			}
 		}
 
-		if (lambda != 0.0)
+		if (Parameters.Lambda != 0.0)
 		{
 			for (var i = 0; i < xTx.Length; i++)
-				xTx[i][i] += lambda;
+				xTx[i][i] += Parameters.Lambda;
 		}
 
-		weight = Solve(xTx, xTy);
+		_weight = Solve(xTx, xTy);
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
@@ -91,25 +105,23 @@ public class LinearRegRank : Ranker
 		}
 	}
 
-	public override double Eval(DataPoint p)
+	public override double Eval(DataPoint dataPoint)
 	{
-		var score = weight[^1];
+		var score = _weight[^1];
 		for (var i = 0; i < Features.Length; i++)
-			score += weight[i] * p.GetFeatureValue(Features[i]);
+			score += _weight[i] * dataPoint.GetFeatureValue(Features[i]);
 
 		return score;
 	}
 
-	public virtual Ranker CreateNew() => new LinearRegRank();
-
 	public override string ToString()
 	{
 		var output = new StringBuilder();
-		output.Append($"0:{weight[0]} ");
+		output.Append($"0:{_weight[0]} ");
 		for (var i = 0; i < Features.Length; i++)
 		{
-			output.Append(Features[i] + ":" + weight[i]);
-			if (i != weight.Length - 1)
+			output.Append(Features[i] + ":" + _weight[i]);
+			if (i != _weight.Length - 1)
 				output.Append(' ');
 		}
 		return output.ToString();
@@ -121,7 +133,7 @@ public class LinearRegRank : Ranker
 		{
 			var output = new StringBuilder()
 				.AppendLine($"## {Name}")
-				.AppendLine($"## Lambda = {lambda}")
+				.AppendLine($"## Lambda = {Parameters.Lambda}")
 				.Append(ToString());
 			return output.ToString();
 		}
@@ -146,7 +158,7 @@ public class LinearRegRank : Ranker
 			if (kvp == null)
 				return;
 
-			weight = new double[kvp.Count];
+			_weight = new double[kvp.Count];
 			Features = new int[kvp.Count - 1];
 
 			var idx = 0;
@@ -158,12 +170,12 @@ public class LinearRegRank : Ranker
 				if (fid > 0)
 				{
 					Features[idx] = fid;
-					weight[idx] = double.Parse(kv.Value);
+					_weight[idx] = double.Parse(kv.Value);
 					idx++;
 				}
 				else
 				{
-					weight[^1] = double.Parse(kv.Value);
+					_weight[^1] = double.Parse(kv.Value);
 				}
 			}
 		}
@@ -172,10 +184,6 @@ public class LinearRegRank : Ranker
 			throw RankLibException.Create("Error in LinearRegRank::load(): ", ex);
 		}
 	}
-
-	public override void PrintParameters() => _logger.LogInformation("L2-norm regularization: lambda = {Lambda}", lambda);
-
-	public override string Name => "Linear Regression";
 
 	protected double[] Solve(double[][] a, double[] b)
 	{

@@ -4,11 +4,23 @@ namespace RankLib.Metric;
 
 public class ERRScorer : MetricScorer
 {
-	public static double MAX = 16; // By default, we assume the relevance scale of {0, 1, 2, 3, 4} => g_max = 4 => 2^g_max = 16
+	public const double DefaultMax = 16; // By default, we assume the relevance scale of {0, 1, 2, 3, 4} => g_max = 4 => 2^g_max = 16
+	public const int DefaultK = 10;
 
-	public ERRScorer() => K = 10;
+	private readonly double _max;
+	public ERRScorer() : this(DefaultK)
+	{
+	}
 
-	public ERRScorer(int k) => K = k;
+	public ERRScorer(int k) : this(k, DefaultMax)
+	{
+	}
+
+	public ERRScorer(int k, double max)
+	{
+		_max = max;
+		K = k;
+	}
 
 	/// <summary>
 	/// Compute ERR at k.
@@ -40,7 +52,7 @@ public class ERRScorer : MetricScorer
 
 	public override string Name => $"ERR@{K}";
 
-	private double R(int rel) => ((1 << rel) - 1) / MAX; // (2^rel - 1)/MAX
+	private double R(int rel) => ((1 << rel) - 1) / _max; // (2^rel - 1)/MAX
 
 	public override double[][] SwapChange(RankList rankList)
 	{

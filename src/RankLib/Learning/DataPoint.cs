@@ -5,9 +5,8 @@ namespace RankLib.Learning;
 public abstract class DataPoint
 {
 	public static bool MissingZero = false;
-	protected static readonly int FeatureIncrease = 10;
-
-	protected static readonly float Unknown = float.NaN;
+	protected const int FeatureIncrease = 10;
+	protected const float Unknown = float.NaN;
 
 	// attributes
 	protected float[] _fVals = null; // _fVals[0] is unused. Feature id MUST start from 1

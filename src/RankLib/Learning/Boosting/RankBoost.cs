@@ -8,10 +8,19 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Boosting;
 
-public class RankBoostParameters
+/// <summary>
+/// Parameters for <see cref="RankBoost"/> ranker.
+/// </summary>
+public class RankBoostParameters : IRankerParameters
 {
 	public int NIteration { get; set; } = 300; // Number of rounds
 	public int NThreshold { get; set; } = 10;
+
+	public void Log(ILogger logger)
+	{
+		logger.LogInformation("No. of rounds: {Rounds}", NIteration);
+		logger.LogInformation("No. of threshold candidates: {Candidates}", NThreshold);
+	}
 }
 
 /// <summary>
@@ -25,8 +34,9 @@ public class RankBoostParameters
 /// The Journal of Machine Learning Research, 4: 933-969, 2003.
 /// </a>
 /// </remarks>
-public class RankBoost : Ranker
+public class RankBoost : Ranker<RankBoostParameters>
 {
+	internal const string RankerName = "RankBoost";
 	private readonly ILogger<RankBoost> _logger;
 
 	private double[][][] _sweight = []; // Sample weight D(x_0, x_1) -- the weight of x_1 ranked above x_2
@@ -46,7 +56,7 @@ public class RankBoost : Ranker
 	private double _zT = 1.0;
 	private int _totalCorrectPairs; // Crucial pairs
 
-	public RankBoostParameters Parameters { get; set; } = new();
+	public override string Name => RankerName;
 
 	public RankBoost(ILogger<RankBoost>? logger = null) : base(logger) =>
 		_logger = logger ?? NullLogger<RankBoost>.Instance;
@@ -374,12 +384,12 @@ public class RankBoost : Ranker
 		}
 	}
 
-	public override double Eval(DataPoint p)
+	public override double Eval(DataPoint dataPoint)
 	{
 		var score = 0.0;
 		for (var j = 0; j < _wRankers.Count; j++)
 		{
-			score += _rWeight[j] * _wRankers[j].Score(p);
+			score += _rWeight[j] * _wRankers[j].Score(dataPoint);
 		}
 		return score;
 	}
@@ -460,12 +470,4 @@ public class RankBoost : Ranker
 			throw RankLibException.Create("Error loading RankBoost from string", ex);
 		}
 	}
-
-	public override void PrintParameters()
-	{
-		_logger.LogInformation("No. of rounds: {Rounds}", Parameters.NIteration);
-		_logger.LogInformation("No. of threshold candidates: {Candidates}", Parameters.NThreshold);
-	}
-
-	public override string Name => "RankBoost";
 }

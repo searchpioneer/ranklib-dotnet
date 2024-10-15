@@ -10,11 +10,11 @@ public class RegressionTree
 	protected Split? root = null;
 	protected List<Split> leaves = null;
 
-	protected DataPoint[] trainingSamples = null;
-	protected double[] trainingLabels = null;
-	protected int[] features = null;
-	protected float[][] thresholds = null;
-	protected int[] index = null;
+	protected DataPoint[] trainingSamples = [];
+	protected double[] trainingLabels = [];
+	protected int[] features = [];
+	protected float[][] thresholds = [];
+	protected int[] index = [];
 	protected FeatureHistogram hist = null;
 
 	public RegressionTree(Split root)

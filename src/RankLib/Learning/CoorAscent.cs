@@ -6,27 +6,40 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
-public class CoorAscentParameters
+public class CoorAscentParameters : IRankerParameters
 {
 	public int nRestart { get; set; } = 5;
 	public int nMaxIteration { get; set; }  = 25;
 	public double stepBase { get; set; }  = 0.05;
 	public double stepScale { get; set; }  = 2.0;
 	public double tolerance { get; set; }  = 0.001;
-	public bool regularized { get; set; }  = false;
+	public bool regularized { get; set; }
 	public double slack { get; set; }  = 0.001;
+
+	public void Log(ILogger logger)
+	{
+		logger.LogInformation("No. of random restarts: {Restart}", nRestart);
+		logger.LogInformation("No. of iterations to search in each direction: {NMaxIteration}", nMaxIteration);
+		logger.LogInformation("Tolerance: {Tolerance}", tolerance);
+		if (regularized)
+			logger.LogInformation("Reg. param: {Slack}", slack);
+		else
+			logger.LogInformation("Regularization: No");
+	}
 }
 
-public class CoorAscent : Ranker
+public class CoorAscent : Ranker<CoorAscentParameters>
 {
+	internal const string RankerName = "Coordinate Ascent";
+
 	private readonly ILogger<CoorAscent> _logger;
 
-	// Local variables
-	public double[] Weight { get; set; } = [];
-	private int _currentFeature = -1; // Used only during learning
-	private double _weightChange = -1.0; // Used only during learning
+	private int _currentFeature = -1;
+	private double _weightChange = -1.0;
 
-	public CoorAscentParameters Parameters { get; set; } = new();
+	public double[] Weight { get; private set; } = [];
+
+	public override string Name => RankerName;
 
 	public CoorAscent(ILogger<CoorAscent>? logger = null) => _logger = logger ?? NullLogger<CoorAscent>.Instance;
 
@@ -217,17 +230,15 @@ public class CoorAscent : Ranker
 		return new RankList(rankList, idx);
 	}
 
-	public override double Eval(DataPoint p)
+	public override double Eval(DataPoint dataPoint)
 	{
 		var score = 0.0;
 		for (var i = 0; i < Features.Length; i++)
 		{
-			score += Weight[i] * p.GetFeatureValue(Features[i]);
+			score += Weight[i] * dataPoint.GetFeatureValue(Features[i]);
 		}
 		return score;
 	}
-
-	public virtual Ranker CreateNew() => new CoorAscent(_logger);
 
 	public override string ToString()
 	{
@@ -278,23 +289,6 @@ public class CoorAscent : Ranker
 			break;
 		}
 	}
-
-	public override void PrintParameters()
-	{
-		_logger.LogInformation($"No. of random restarts: {Parameters.nRestart}");
-		_logger.LogInformation($"No. of iterations to search in each direction: {Parameters.nMaxIteration}");
-		_logger.LogInformation($"Tolerance: {Parameters.tolerance}");
-		if (Parameters.regularized)
-		{
-			_logger.LogInformation($"Reg. param: {Parameters.slack}");
-		}
-		else
-		{
-			_logger.LogInformation("Regularization: No");
-		}
-	}
-
-	public override string Name => "Coordinate Ascent";
 
 	// Private helper methods
 	private void UpdateCached()
