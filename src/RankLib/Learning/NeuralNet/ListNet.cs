@@ -80,7 +80,7 @@ public class ListNet : RankNet
 		_lastError = _error;
 	}
 
-	public override void Init()
+	public override Task Init()
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -97,9 +97,11 @@ public class ListNet : RankNet
 		}
 
 		Neuron.LearningRate = Parameters.LearningRate;
+
+		return Task.CompletedTask;
 	}
 
-	public override void Learn()
+	public override Task Learn()
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn([7, 14, 9, 9], ["#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V"]);
@@ -149,6 +151,8 @@ public class ListNet : RankNet
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
 			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
+
+		return Task.CompletedTask;
 	}
 
 	public override string Model

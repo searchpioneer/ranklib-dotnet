@@ -219,7 +219,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 		return t;
 	}
 
-	public override void Init()
+	public override Task Init()
 	{
 		_logger.LogInformation("Initializing...");
 		_usedFeatures.Clear();
@@ -240,9 +240,11 @@ public class AdaRank : Ranker<AdaRankParameters>
 		BestScoreOnValidationData = 0.0;
 		_bestModelRankers = new List<AdaRankWeakRanker>();
 		_bestModelWeights = new List<double>();
+
+		return Task.CompletedTask;
 	}
 
-	public override void Learn()
+	public override Task Learn()
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn([7, 8, 9, 9, 9], ["#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status"]);
@@ -278,6 +280,8 @@ public class AdaRank : Ranker<AdaRankParameters>
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
 			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
+
+		return Task.CompletedTask;
 	}
 
 

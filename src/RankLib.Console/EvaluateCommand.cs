@@ -170,7 +170,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private CoorAscentParameters CoorAscentParameters => _coorAscentParameters ??= new CoorAscentParameters();
 	private LinearRegRankParameters LinearRegRankParameters => _linearRegRankParameters ??= new LinearRegRankParameters();
 
-	public Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
+	public async Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
 		var logger = _loggerFactory.CreateLogger<Evaluator>();
 
@@ -459,21 +459,21 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 				//- models won't be saved if kcvModelDir=""   [OBSOLETE]
 				//- Models saved if EITHER kcvmd OR kcvmn defined.  Use default names for missing values.
-				evaluator.Evaluate(rankerType, trainFile.FullName, featureDescriptionFile?.FullName, foldCv, tvSplit, kcvModelDir!.FullName, kcvModelFile!, rankerParameters);
+				await evaluator.Evaluate(rankerType, trainFile.FullName, featureDescriptionFile?.FullName, foldCv, tvSplit, kcvModelDir!.FullName, kcvModelFile!, rankerParameters);
 			}
 			else
 			{
 				if (ttSplit > 0.0)
 				{
-					evaluator.Evaluate(rankerType, trainFile.FullName, validationFile.FullName, featureDescriptionFile?.FullName, ttSplit, options.Save?.FullName, rankerParameters);
+					await evaluator.Evaluate(rankerType, trainFile.FullName, validationFile?.FullName, featureDescriptionFile?.FullName, ttSplit, options.Save?.FullName, rankerParameters);
 				}
 				else if (tvSplit > 0.0)
 				{
-					evaluator.Evaluate(rankerType, trainFile.FullName, tvSplit, testFile.FullName, featureDescriptionFile.FullName, options.Save?.FullName, rankerParameters);
+					await evaluator.Evaluate(rankerType, trainFile.FullName, tvSplit, testFile?.FullName, featureDescriptionFile.FullName, options.Save?.FullName, rankerParameters);
 				}
 				else
 				{
-					evaluator.Evaluate(rankerType, trainFile.FullName, validationFile?.FullName, testFile?.FullName, featureDescriptionFile?.FullName, options.Save?.FullName, rankerParameters);
+					await evaluator.Evaluate(rankerType, trainFile.FullName, validationFile?.FullName, testFile?.FullName, featureDescriptionFile?.FullName, options.Save?.FullName, rankerParameters);
 				}
 			}
 		}
@@ -551,6 +551,6 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			}
 		}
 
-		return Task.FromResult(0);
+		return 0;
 	}
 }

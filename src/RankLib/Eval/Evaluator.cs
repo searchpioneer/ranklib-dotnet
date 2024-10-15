@@ -107,7 +107,7 @@ public class Evaluator
 		return _testScorer.Score(rankedList);
 	}
 
-	public void Evaluate(
+	public async Task Evaluate(
 		Type rankerType,
 		string trainFile,
 		string? validationFile,
@@ -133,7 +133,7 @@ public class Evaluator
 				Normalize(test, features);
 		}
 
-		var (ranker, _) = _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
+		var (ranker, _) = await _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
 
 		if (test != null)
 		{
@@ -148,7 +148,7 @@ public class Evaluator
 		}
 	}
 
-	public void Evaluate<TRanker, TRankerParameters>(
+	public Task Evaluate<TRanker, TRankerParameters>(
 		string trainFile,
 		string? validationFile,
 		string? testFile,
@@ -159,7 +159,7 @@ public class Evaluator
 		where TRankerParameters : IRankerParameters =>
 		Evaluate(typeof(TRanker), trainFile, validationFile, testFile, featureDefFile, modelFile, parameters);
 
-	public void Evaluate(
+	public async Task Evaluate(
 		Type rankerType,
 		string sampleFile,
 		string? validationFile,
@@ -178,7 +178,7 @@ public class Evaluator
 			Normalize(validation, features);
 		}
 
-		var (ranker, _) = _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
+		var (ranker, _) = await _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
 		var rankScore = Evaluate(ranker, test);
 		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
@@ -189,7 +189,7 @@ public class Evaluator
 		}
 	}
 
-	public void Evaluate<TRanker, TRankerParameters>(
+	public Task Evaluate<TRanker, TRankerParameters>(
 		string sampleFile,
 		string? validationFile,
 		string featureDefFile,
@@ -200,7 +200,7 @@ public class Evaluator
 		where TRankerParameters : IRankerParameters =>
 		Evaluate(typeof(TRanker), sampleFile, validationFile, featureDefFile, percentTrain, modelFile, parameters);
 
-	public void Evaluate(
+	public async Task Evaluate(
 		Type rankerType,
 		string trainFile,
 		double percentTrain,
@@ -219,7 +219,7 @@ public class Evaluator
 			Normalize(test, features);
 		}
 
-		var (ranker, _) = _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
+		var (ranker, _) = await _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
 
 		if (test != null)
 		{
@@ -234,7 +234,7 @@ public class Evaluator
 		}
 	}
 
-	public void Evaluate<TRanker, TRankerParameters>(
+	public Task Evaluate<TRanker, TRankerParameters>(
 		string trainFile,
 		double percentTrain,
 		string? testFile,
@@ -245,7 +245,7 @@ public class Evaluator
 		where TRankerParameters : IRankerParameters =>
 		Evaluate(typeof(TRanker), trainFile, percentTrain, testFile, featureDefFile, modelFile, parameters);
 
-	public void Evaluate<TRanker, TRankerParameters>(
+	public Task Evaluate<TRanker, TRankerParameters>(
 		string sampleFile,
 		string featureDefFile,
 		int nFold,
@@ -256,7 +256,7 @@ public class Evaluator
 		where TRankerParameters : IRankerParameters =>
 		Evaluate(typeof(TRanker), sampleFile, featureDefFile, nFold, -1, modelDir, modelFile, parameters);
 
-	public void Evaluate(
+	public async Task Evaluate(
 		Type rankerType,
 		string sampleFile,
 		string? featureDefFile,
@@ -296,7 +296,7 @@ public class Evaluator
 			var validation = tvs > 0 ? validationData[i] : null;
 			var test = testData[i];
 
-			var (ranker, _) = _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
+			var (ranker, _) = await _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
 
 			var testScore = Evaluate(ranker, test);
 			scoreOnTrain += ranker.GetScoreOnTrainingData();
@@ -327,7 +327,7 @@ public class Evaluator
 		_logger.LogInformation($"Total\t|   \t\t|  {Math.Round(totalScoreOnTest / totalTestSampleSize, 4)}\t");
 	}
 
-	public void Evaluate<TRanker, TRankerParameters>(
+	public Task Evaluate<TRanker, TRankerParameters>(
 		string sampleFile,
 		string? featureDefFile,
 		int nFold,

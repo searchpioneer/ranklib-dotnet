@@ -5,7 +5,7 @@ namespace RankLib.Learning.Tree;
 
 public class MART : LambdaMART
 {
-	internal const string RankerName = "MART";
+	internal new const string RankerName = "MART";
 
 	public MART(ILogger<MART>? logger = null) : base(logger)
 	{

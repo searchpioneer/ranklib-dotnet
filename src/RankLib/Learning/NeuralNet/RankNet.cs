@@ -262,7 +262,7 @@ public class RankNet : Ranker<RankNetParameters>
 		_lastError = _error;
 	}
 
-	public override void Init()
+	public override Task Init()
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -290,9 +290,10 @@ public class RankNet : Ranker<RankNetParameters>
 		}
 
 		Neuron.LearningRate = Parameters.LearningRate;
+		return Task.CompletedTask;
 	}
 
-	public override void Learn()
+	public override Task Learn()
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn(new[] { 7, 14, 9, 9 },
@@ -351,6 +352,8 @@ public class RankNet : Ranker<RankNetParameters>
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
 			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
 		}
+
+		return Task.CompletedTask;
 	}
 
 

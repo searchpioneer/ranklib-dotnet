@@ -369,9 +369,9 @@ public class FeatureHistogram
 		}
 
 		var lh = new FeatureHistogram();
-		lh.Construct(sp.hist, left, labels);
+		lh.Construct(sp.Histogram, left, labels);
 		var rh = new FeatureHistogram();
-		rh.Construct(sp.hist, lh, !sp.Root);
+		rh.Construct(sp.Histogram, lh, !sp.Root);
 
 		var var = sqSumResponse - sumResponse * sumResponse / idx.Length;
 		var varLeft = lh.sqSumResponse - lh.sumResponse * lh.sumResponse / left.Length;

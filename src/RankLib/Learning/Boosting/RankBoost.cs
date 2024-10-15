@@ -192,7 +192,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 		}
 	}
 
-	public override void Init()
+	public override Task Init()
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -316,9 +316,11 @@ public class RankBoost : Ranker<RankBoostParameters>
 			}
 			_sortedSamples.Add(idx);
 		}
+
+		return Task.CompletedTask;
 	}
 
-	public override void Learn()
+	public override Task Learn()
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn([7, 8, 9, 9, 9, 9], ["#iter", "Sel. F.", "Threshold", "Error", Scorer.Name + "-T", Scorer.Name + "-V"
@@ -382,6 +384,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
 			_logger.LogInformation("{ScorerName} on validation data: {Score}", Scorer.Name, SimpleMath.Round(BestScoreOnValidationData, 4));
 		}
+
+		return Task.CompletedTask;
 	}
 
 	public override double Eval(DataPoint dataPoint)

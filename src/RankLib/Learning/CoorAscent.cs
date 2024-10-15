@@ -47,7 +47,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 		: base(samples, features, scorer, logger) =>
 		_logger = logger ?? NullLogger<CoorAscent>.Instance;
 
-	public override void Init()
+	public override Task Init()
 	{
 		_logger.LogInformation("Initializing...");
 		Weight = new double[Features.Length];
@@ -55,9 +55,11 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 		{
 			Weight[i] = 1.0 / Features.Length;
 		}
+
+		return Task.CompletedTask;
 	}
 
-	public override void Learn()
+	public override Task Learn()
 	{
 		var regVector = new double[Weight.Length];
 		Array.Copy(Weight, regVector, Weight.Length); // Uniform weight distribution
@@ -190,7 +192,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 			}
 		}
 
-		Array.Copy(bestModel, Weight, bestModel.Length);
+		Array.Copy(bestModel!, Weight, bestModel!.Length);
 		_currentFeature = -1;
 		ScoreOnTrainingData = Math.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
@@ -201,6 +203,8 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
 			_logger.LogInformation($"{Scorer.Name} on validation data: {Math.Round(BestScoreOnValidationData, 4)}");
 		}
+
+		return Task.CompletedTask;
 	}
 
 	public override RankList Rank(RankList rankList)

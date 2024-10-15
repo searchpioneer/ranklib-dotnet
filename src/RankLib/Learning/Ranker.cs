@@ -147,8 +147,8 @@ public abstract class Ranker : IRanker
 		}
 	}
 
-	public abstract void Init();
-	public abstract void Learn();
+	public abstract Task Init();
+	public abstract Task Learn();
 	public abstract double Eval(DataPoint dataPoint);
 	public abstract override string ToString();
 	public abstract string Model { get; }

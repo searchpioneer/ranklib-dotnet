@@ -79,7 +79,7 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 	{
 	}
 
-	public override void Init()
+	public override Task Init()
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -176,9 +176,11 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		_hist = new FeatureHistogram();
 		_hist.Construct(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts);
 		_sortedIdx = [];
+
+		return Task.CompletedTask;
 	}
 
-	public override void Learn()
+	public override Task Learn()
 	{
 		_ensemble = new Ensemble();
 		_logger.LogInformation("Training starts...");
@@ -263,6 +265,8 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		{
 			_logger.LogInformation($"Feature {Features[ftr]} reduced error {Impacts[ftr]}");
 		}
+
+		return Task.CompletedTask;
 	}
 
 	public override double Eval(DataPoint dataPoint) => _ensemble.Eval(dataPoint);

@@ -13,12 +13,12 @@ public class Split
 	//*DO NOT* attempt to access them once the training is done
 	private readonly double _sumLabel;
 	private readonly double _sqSumLabel;
-	private Split _left = null;
-	private Split _right = null;
+	private Split _left;
+	private Split _right;
 	private double _deviance; // Mean squared error "S"
 	private int[][]? _sortedSampleIDs;
-	private int[] samples = null;
-	public FeatureHistogram? hist { get; private set; }
+	private int[] _samples = [];
+	public FeatureHistogram? Histogram { get; private set; }
 
 	public Split() { }
 
@@ -38,10 +38,10 @@ public class Split
 		_avgLabel = sumLabel / sortedSampleIDs[0].Length;
 	}
 
-	public Split(int[] samples, FeatureHistogram hist, double deviance, double sumLabel)
+	public Split(int[] samples, FeatureHistogram histogram, double deviance, double sumLabel)
 	{
-		this.samples = samples;
-		this.hist = hist;
+		_samples = samples;
+		Histogram = histogram;
 		_deviance = deviance;
 		_sumLabel = sumLabel;
 		_avgLabel = sumLabel / samples.Length;
@@ -134,13 +134,13 @@ public class Split
 	//*DO NOT* attempt to call them once the training is done
 	public bool TrySplit(double[] trainingLabels, int minLeafSupport)
 	{
-		if (hist is null)
+		if (Histogram is null)
 			throw new InvalidOperationException("Histogram is null");
 
-		return hist.FindBestSplit(this, trainingLabels, minLeafSupport);
+		return Histogram.FindBestSplit(this, trainingLabels, minLeafSupport);
 	}
 
-	public int[] GetSamples() => _sortedSampleIDs != null ? _sortedSampleIDs[0] : samples;
+	public int[] GetSamples() => _sortedSampleIDs != null ? _sortedSampleIDs[0] : _samples;
 
 	public int[][]? GetSampleSortedIndex() => _sortedSampleIDs;
 
@@ -151,8 +151,8 @@ public class Split
 	public void ClearSamples()
 	{
 		_sortedSampleIDs = null;
-		samples = [];
-		hist = null;
+		_samples = [];
+		Histogram = null;
 	}
 
 	public bool Root { get; set; }

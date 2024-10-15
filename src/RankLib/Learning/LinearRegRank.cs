@@ -36,9 +36,13 @@ public class LinearRegRank : Ranker<LinearRegRankParameters>
 
 	public override string Name => RankerName;
 
-	public override void Init() => _logger.LogInformation("Initializing...");
+	public override Task Init()
+	{
+		_logger.LogInformation("Initializing...");
+		return Task.CompletedTask;
+	}
 
-	public override void Learn()
+	public override Task Learn()
 	{
 		_logger.LogInformation("Training starts...");
 		_logger.LogInformation("Learning the least square model...");
@@ -103,6 +107,8 @@ public class LinearRegRank : Ranker<LinearRegRankParameters>
 			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
 			_logger.LogInformation("{ScorerName} on validation data: {BestScoreOnValidationData}", Scorer.Name, SimpleMath.Round(BestScoreOnValidationData, 4));
 		}
+
+		return Task.CompletedTask;
 	}
 
 	public override double Eval(DataPoint dataPoint)

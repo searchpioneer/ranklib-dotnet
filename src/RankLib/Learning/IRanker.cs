@@ -24,8 +24,8 @@ public interface IRanker
 
 	public MetricScorer Scorer { get; set; }
 
-	void Init();
-	void Learn();
+	Task Init();
+	Task Learn();
 	double Eval(DataPoint dataPoint);
 	string Model { get; }
 	void LoadFromString(string fullText);

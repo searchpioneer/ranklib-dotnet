@@ -61,7 +61,7 @@ public class RFRanker : Ranker<RFRankerParameters>
 		_logger = _loggerFactory.CreateLogger<RFRanker>();
 	}
 
-	public override void Init()
+	public override Task Init()
 	{
 		_logger.LogInformation("Initializing...");
 		Ensembles = new Ensemble[Parameters.nBag];
@@ -77,9 +77,11 @@ public class RFRanker : Ranker<RFRankerParameters>
 
 		// Turn on feature sampling
 		FeatureHistogram.samplingRate = Parameters.featureSamplingRate;
+
+		return Task.CompletedTask;
 	}
 
-	public override void Learn()
+	public override Task Learn()
 	{
 		var rankerFactory = new RankerFactory(_loggerFactory);
 		_logger.LogInformation("Training starts...");
@@ -135,6 +137,8 @@ public class RFRanker : Ranker<RFRankerParameters>
 				_logger.LogInformation(" Feature " + Features[ftr] + " reduced error " + impacts![ftr]);
 			}
 		}
+
+		return Task.CompletedTask;
 	}
 
 	public override double Eval(DataPoint dataPoint)
