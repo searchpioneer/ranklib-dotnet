@@ -1,6 +1,3 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-
 namespace RankLib.Console.Tests.Utilities;
 
 public class TempFile : IDisposable
