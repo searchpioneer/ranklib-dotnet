@@ -7,7 +7,7 @@ namespace RankLib.Features;
 /// </summary>
 public abstract class Normalizer
 {
-	public abstract void Normalize(RankList rl);
+	public abstract void Normalize(RankList rankList);
 
 	public void Normalize(List<RankList> samples)
 	{
@@ -17,7 +17,7 @@ public abstract class Normalizer
 		}
 	}
 
-	public abstract void Normalize(RankList rl, int[] fids);
+	public abstract void Normalize(RankList rankList, int[] fids);
 
 	public void Normalize(List<RankList> samples, int[] fids)
 	{

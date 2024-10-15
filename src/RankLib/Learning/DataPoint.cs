@@ -5,9 +5,8 @@ namespace RankLib.Learning;
 public abstract class DataPoint
 {
 	public static bool MissingZero = false;
-	protected static readonly int FeatureIncrease = 10;
-
-	protected static readonly float Unknown = float.NaN;
+	protected const int FeatureIncrease = 10;
+	protected const float Unknown = float.NaN;
 
 	// attributes
 	protected float[] _fVals = null; // _fVals[0] is unused. Feature id MUST start from 1
@@ -31,6 +30,8 @@ public abstract class DataPoint
 	/// <returns>Dense array of feature values</returns>
 	protected float[] Parse(string text)
 	{
+		// TODO: convert to parsing from Span<T>
+
 		var maxFeature = 51;
 		var fval = new float[maxFeature];
 		Array.Fill(fval, Unknown);

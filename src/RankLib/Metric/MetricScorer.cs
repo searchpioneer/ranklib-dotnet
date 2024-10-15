@@ -18,14 +18,13 @@ public abstract class MetricScorer
 	/// <param name="queryRelevanceFile">The file containing relevance judgments.</param>
 	public virtual void LoadExternalRelevanceJudgment(string queryRelevanceFile)
 	{
-		// Can be overridden if needed, currently no implementation.
 	}
 
 	/// <summary>
-	/// Scores a list of RankLists by averaging the score of each individual RankList.
+	/// Scores a list of <see cref="RankList"/> by averaging the score of each individual rank list.
 	/// </summary>
-	/// <param name="rankLists">The list of RankLists to score.</param>
-	/// <returns>The average score across the RankLists.</returns>
+	/// <param name="rankLists">The list of rank lists to score.</param>
+	/// <returns>The average score across the rank lists.</returns>
 	public double Score(List<RankList> rankLists)
 	{
 		var score = 0.0;
@@ -52,10 +51,10 @@ public abstract class MetricScorer
 	}
 
 	/// <summary>
-	/// Abstract method to score a RankList.
+	/// Score a <see cref="RankList"/>.
 	/// </summary>
-	/// <param name="rankList">The RankList to score.</param>
-	/// <returns>The score for the RankList.</returns>
+	/// <param name="rankList">The rank list to score.</param>
+	/// <returns>The score for the rank list.</returns>
 	public abstract double Score(RankList rankList);
 
 	/// <summary>

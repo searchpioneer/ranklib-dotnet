@@ -8,15 +8,16 @@ namespace RankLib.Metric;
 /// <summary>
 /// MAP (Mean Average Precision) Scorer
 /// </summary>
+/// <remarks>
+/// Computes Mean Average Precision from the WHOLE ranked list- <see cref="MetricScorer.K"/> is ignored.
+/// If you want MAP@10, you really should be using NDCG@10 or ERR@10 instead.
+/// </remarks>
 public class APScorer : MetricScorer
 {
 	private readonly ILogger<APScorer> _logger;
+	private Dictionary<string, int>? _relevantDocCount;
 
-	// This class computes MAP from the *WHOLE* ranked list. "K" will be completely ignored.
-	// The reason is, if you want MAP@10, you really should be using NDCG@10 or ERR@10 instead.
-	protected Dictionary<string, int>? relDocCount;
-
-	public APScorer(ILogger<APScorer>? logger)
+	public APScorer(ILogger<APScorer>? logger = null)
 	{
 		_logger = logger ?? NullLogger<APScorer>.Instance;
 
@@ -26,7 +27,7 @@ public class APScorer : MetricScorer
 
 	public override void LoadExternalRelevanceJudgment(string queryRelevanceFile)
 	{
-		relDocCount = new Dictionary<string, int>();
+		_relevantDocCount = new Dictionary<string, int>();
 		try
 		{
 			using (var reader = new StreamReader(queryRelevanceFile))
@@ -43,48 +44,41 @@ public class APScorer : MetricScorer
 
 					if (label > 0)
 					{
-						relDocCount.TryAdd(qid, 0);
-						relDocCount[qid] += 1;
+						_relevantDocCount.TryAdd(qid, 0);
+						_relevantDocCount[qid] += 1;
 					}
 				}
 			}
 
-			_logger.LogInformation("Relevance judgment file loaded. [#q={RelDocCount}]", relDocCount.Count);
+			_logger.LogInformation("Relevance judgment file loaded. [#q={RelDocCount}]", _relevantDocCount.Count);
 		}
 		catch (IOException ex)
 		{
-			throw RankLibException.Create("Error in APScorer::LoadExternalRelevanceJudgment(): ", ex);
+			_logger.LogError(ex, "Error while loading relevance judgment file");
+			throw RankLibException.Create("Error while loading relevance judgment file", ex);
 		}
 	}
 
 	/// <summary>
-	/// Compute Average Precision (AP) of the list.
+	/// Compute Average Precision of the list.
 	/// AP of a list is the average of precision evaluated at ranks where a relevant document is observed.
 	/// </summary>
 	public override double Score(RankList rankList)
 	{
 		var ap = 0.0;
 		var count = 0;
-
 		for (var i = 0; i < rankList.Count; i++)
 		{
-			if (rankList[i].Label > 0.0) // relevant
+			if (rankList[i].Label > 0) // relevant
 			{
 				count++;
-				ap += ((double)count) / (i + 1);
+				ap += (double)count / (i + 1);
 			}
 		}
 
-		var rdCount = 0;
-
-		if (relDocCount != null && relDocCount.TryGetValue(rankList.Id, out var relCount))
-		{
-			rdCount = relCount;
-		}
-		else
-		{
-			rdCount = count;
-		}
+		var rdCount = _relevantDocCount != null && _relevantDocCount.TryGetValue(rankList.Id, out var relCount)
+			? relCount
+			: count;
 
 		if (rdCount == 0)
 			return 0.0;
@@ -117,7 +111,7 @@ public class APScorer : MetricScorer
 
 		var rdCount = 0; // total number of relevant documents
 
-		if (relDocCount != null && relDocCount.TryGetValue(rankList.Id, out var relCountInList))
+		if (_relevantDocCount != null && _relevantDocCount.TryGetValue(rankList.Id, out var relCountInList))
 		{
 			rdCount = relCountInList;
 		}

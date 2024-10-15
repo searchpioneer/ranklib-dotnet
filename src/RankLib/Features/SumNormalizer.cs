@@ -6,70 +6,61 @@ public class SumNormalizer : Normalizer
 {
 	public static readonly SumNormalizer Instance = new();
 
-	public override void Normalize(RankList rl)
+	public override void Normalize(RankList rankList)
 	{
-		if (rl.Count == 0)
-		{
-			throw new InvalidOperationException("The input ranked list is empty");
-		}
+		if (rankList.Count == 0)
+			throw new ArgumentException("The rank list is empty", nameof(rankList));
 
-		var nFeature = rl.FeatureCount;
-		var norm = new double[nFeature];
+		var featureCount = rankList.FeatureCount;
+		var norm = new double[featureCount];
 		Array.Fill(norm, 0);
 
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			var dp = rl[i];
-			for (var j = 1; j <= nFeature; j++)
+			var dataPoint = rankList[i];
+			for (var j = 1; j <= featureCount; j++)
 			{
-				norm[j - 1] += Math.Abs(dp.GetFeatureValue(j));
+				norm[j - 1] += Math.Abs(dataPoint.GetFeatureValue(j));
 			}
 		}
 
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			var dp = rl[i];
-			for (var j = 1; j <= nFeature; j++)
+			var dataPoint = rankList[i];
+			for (var j = 1; j <= featureCount; j++)
 			{
 				if (norm[j - 1] > 0)
-				{
-					dp.SetFeatureValue(j, (float)(dp.GetFeatureValue(j) / norm[j - 1]));
-				}
+					dataPoint.SetFeatureValue(j, (float)(dataPoint.GetFeatureValue(j) / norm[j - 1]));
 			}
 		}
 	}
 
-	public override void Normalize(RankList rl, int[] fids)
+	public override void Normalize(RankList rankList, int[] fids)
 	{
-		if (rl.Count == 0)
-		{
-			throw new InvalidOperationException("The input ranked list is empty");
-		}
+		if (rankList.Count == 0)
+			throw new ArgumentException("The rank list is empty", nameof(rankList));
 
 		// Remove duplicate features from the input fids to avoid normalizing the same features multiple times
 		fids = RemoveDuplicateFeatures(fids);
-
 		var norm = new double[fids.Length];
 		Array.Fill(norm, 0);
 
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			var dp = rl[i];
+			var dataPoint = rankList[i];
 			for (var j = 0; j < fids.Length; j++)
 			{
-				norm[j] += Math.Abs(dp.GetFeatureValue(fids[j]));
+				norm[j] += Math.Abs(dataPoint.GetFeatureValue(fids[j]));
 			}
 		}
 
-		for (var i = 0; i < rl.Count; i++)
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			var dp = rl[i];
+			var dataPoint = rankList[i];
 			for (var j = 0; j < fids.Length; j++)
 			{
 				if (norm[j] > 0)
-				{
-					dp.SetFeatureValue(fids[j], Convert.ToSingle(dp.GetFeatureValue(fids[j]) / norm[j]));
-				}
+					dataPoint.SetFeatureValue(fids[j], Convert.ToSingle(dataPoint.GetFeatureValue(fids[j]) / norm[j]));
 			}
 		}
 	}

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Learning.Tree;
 using RankLib.Metric;
@@ -6,16 +7,28 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.NeuralNet;
 
-public class RankNet : Ranker
+public class RankNetParameters : IRankerParameters
 {
+	public int NIteration { get; set; } = 100;
+	public int NHiddenLayer { get; set; } = 1;
+	public int NHiddenNodePerLayer { get; set; } = 10;
+	public double LearningRate { get; set; } = 0.00005;
+
+	public void Log(ILogger logger)
+	{
+		logger.LogInformation($"No. of epochs: {NIteration}");
+		logger.LogInformation($"No. of hidden layers: {NHiddenLayer}");
+		logger.LogInformation($"No. of hidden nodes per layer: {NHiddenNodePerLayer}");
+		logger.LogInformation($"Learning rate: {LearningRate}");
+	}
+}
+
+public class RankNet : Ranker<RankNetParameters>
+{
+	internal const string RankerName = "RankNet";
 	private readonly ILogger<RankNet> _logger;
 
-	public static int NIteration { get; set; } = 100;
-	public static int NHiddenLayer { get; set; } = 1;
-	public static int NHiddenNodePerLayer { get; set; } = 10;
-	public static double LearningRate { get; set; } = 0.00005;
-
-	protected List<Layer> _layers = new();
+	protected readonly List<Layer> _layers = new();
 	protected Layer _inputLayer;
 	protected Layer _outputLayer;
 
@@ -25,6 +38,8 @@ public class RankNet : Ranker
 	protected double _error;
 	protected double _lastError = double.MaxValue;
 	protected int _straightLoss = 0;
+
+	public override string Name => RankerName;
 
 	public RankNet(ILogger<RankNet>? logger = null) =>
 		_logger = logger ?? NullLogger<RankNet>.Instance;
@@ -42,7 +57,7 @@ public class RankNet : Ranker
 		_layers.Add(_outputLayer);
 	}
 
-	protected void SetInputOutput(int nInput, int nOutput, int nType)
+	protected void SetInputOutput(int nInput, int nOutput, NeuronType nType)
 	{
 		_inputLayer = new Layer(nInput + 1, nType);
 		_outputLayer = new Layer(nOutput, nType);
@@ -86,7 +101,7 @@ public class RankNet : Ranker
 	protected void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron)
 	{
 		var tempQualifier = _layers[sourceLayer];
-		new Synapse(tempQualifier[sourceNeuron], _layers[targetLayer][targetNeuron]);
+		_ = new Synapse(tempQualifier[sourceNeuron], _layers[targetLayer][targetNeuron]);
 	}
 
 	protected void AddInput(DataPoint p)
@@ -108,18 +123,18 @@ public class RankNet : Ranker
 		}
 	}
 
-	protected virtual int[][] BatchFeedForward(RankList rl)
+	protected virtual int[][] BatchFeedForward(RankList rankList)
 	{
-		var pairMap = new int[rl.Count][];
-		for (var i = 0; i < rl.Count; i++)
+		var pairMap = new int[rankList.Count][];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			AddInput(rl[i]);
+			AddInput(rankList[i]);
 			Propagate(i);
 
 			var count = 0;
-			for (var j = 0; j < rl.Count; j++)
+			for (var j = 0; j < rankList.Count; j++)
 			{
-				if (rl[i].Label > rl[j].Label)
+				if (rankList[i].Label > rankList[j].Label)
 				{
 					count++;
 				}
@@ -127,9 +142,9 @@ public class RankNet : Ranker
 
 			pairMap[i] = new int[count];
 			var k = 0;
-			for (var j = 0; j < rl.Count; j++)
+			for (var j = 0; j < rankList.Count; j++)
 			{
-				if (rl[i].Label > rl[j].Label)
+				if (rankList[i].Label > rankList[j].Label)
 				{
 					pairMap[i][k++] = j;
 				}
@@ -164,8 +179,6 @@ public class RankNet : Ranker
 			layer.ClearOutputs();
 		}
 	}
-
-	// ----
 
 	protected virtual float[][]? ComputePairWeight(int[][] pairMap, RankList rl) => null;
 
@@ -213,7 +226,7 @@ public class RankNet : Ranker
 		}
 		catch (Exception ex)
 		{
-			throw RankLibException.Create("Error in NeuralNetwork.restoreBestModelOnValidation(): ", ex);
+			throw RankLibException.Create(ex);
 		}
 	}
 
@@ -254,9 +267,9 @@ public class RankNet : Ranker
 		_logger.LogInformation("Initializing...");
 
 		SetInputOutput(Features.Length, 1);
-		for (var i = 0; i < NHiddenLayer; i++)
+		for (var i = 0; i < Parameters.NHiddenLayer; i++)
 		{
-			AddHiddenLayer(NHiddenNodePerLayer);
+			AddHiddenLayer(Parameters.NHiddenNodePerLayer);
 		}
 		Wire();
 
@@ -276,7 +289,7 @@ public class RankNet : Ranker
 			}
 		}
 
-		Neuron.LearningRate = LearningRate;
+		Neuron.LearningRate = Parameters.LearningRate;
 	}
 
 	public override void Learn()
@@ -286,7 +299,7 @@ public class RankNet : Ranker
 			new[] { "#epoch", "% mis-ordered", Scorer.Name + "-T", Scorer.Name + "-V" });
 		PrintLogLn(new[] { 7, 14, 9, 9 }, new[] { " ", "  pairs", " ", " " });
 
-		for (var i = 1; i <= NIteration; i++)
+		for (var i = 1; i <= Parameters.NIteration; i++)
 		{
 			for (var j = 0; j < Samples.Count; j++)
 			{
@@ -341,11 +354,11 @@ public class RankNet : Ranker
 	}
 
 
-	public override double Eval(DataPoint p)
+	public override double Eval(DataPoint dataPoint)
 	{
 		for (var k = 0; k < _inputLayer.Count - 1; k++)
 		{
-			_inputLayer[k].SetOutput(p.GetFeatureValue(Features[k]));
+			_inputLayer[k].SetOutput(dataPoint.GetFeatureValue(Features[k]));
 		}
 
 		var k1 = _inputLayer.Count - 1;
@@ -359,11 +372,11 @@ public class RankNet : Ranker
 		return _outputLayer[0].GetOutput();
 	}
 
-	public override Ranker CreateNew() => new RankNet();
+	public virtual Ranker CreateNew() => new RankNet();
 
 	public override string ToString()
 	{
-		var output = new System.Text.StringBuilder();
+		var output = new StringBuilder();
 		for (var i = 0; i < _layers.Count - 1; i++)
 		{
 			for (var j = 0; j < _layers[i].Count; j++)
@@ -380,9 +393,9 @@ public class RankNet : Ranker
 	{
 		get
 		{
-			var output = new System.Text.StringBuilder();
+			var output = new StringBuilder();
 			output.AppendLine($"## {Name}");
-			output.AppendLine($"## Epochs = {NIteration}");
+			output.AppendLine($"## Epochs = {Parameters.NIteration}");
 			output.AppendLine($"## No. of features = {Features.Length}");
 			output.AppendLine($"## No. of hidden layers = {_layers.Count - 2}");
 			for (var i = 1; i < _layers.Count - 1; i++)
@@ -410,7 +423,7 @@ public class RankNet : Ranker
 
 	public override void LoadFromString(string fullText)
 	{
-		var lines = fullText.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+		var lines = fullText.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
 
 		var features = lines[0].Split(' ');
 		Features = new int[features.Length];
@@ -447,14 +460,4 @@ public class RankNet : Ranker
 			}
 		}
 	}
-
-	public override void PrintParameters()
-	{
-		_logger.LogInformation($"No. of epochs: {NIteration}");
-		_logger.LogInformation($"No. of hidden layers: {NHiddenLayer}");
-		_logger.LogInformation($"No. of hidden nodes per layer: {NHiddenNodePerLayer}");
-		_logger.LogInformation($"Learning rate: {LearningRate}");
-	}
-
-	public override string Name => "RankNet";
 }

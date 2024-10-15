@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using RankLib.Eval;
 using RankLib.Features;
@@ -73,7 +74,7 @@ public class EvaluateCommandOptions : ICommandOptions
 	public float? FRate { get; set; }
 	public RankerType? RType { get; set; }
 	public double? L2 { get; set; }
-	public bool? Hr { get; set; }
+	public bool Hr { get; set; }
 }
 
 public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOptionsHandler>
@@ -142,17 +143,32 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 {
 	private readonly ILoggerFactory _loggerFactory;
 	private readonly EvaluatorFactory _evaluatorFactory;
-	private readonly RankerFactory _rankerFactory;
+	private LambdaMARTParameters? _lambdaMARTParameters;
+	private RankNetParameters? _rankNetParameters;
+	private ListNetParameters? _listNetParameters;
+	private RankBoostParameters? _rankBoostParameters;
+	private RFRankerParameters? _rfRankerParameters;
+	private AdaRankParameters? _adaRankParameters;
+	private CoorAscentParameters? _coorAscentParameters;
+	private LinearRegRankParameters? _linearRegRankParameters;
 
 	public EvaluateCommandOptionsHandler(
 		ILoggerFactory loggerFactory,
-		EvaluatorFactory evaluatorFactory,
-		RankerFactory rankerFactory)
+		EvaluatorFactory evaluatorFactory)
 	{
 		_loggerFactory = loggerFactory;
 		_evaluatorFactory = evaluatorFactory;
-		_rankerFactory = rankerFactory;
 	}
+
+	// TODO: this needs to be passed to any LambdaMART created
+	private LambdaMARTParameters LambdaMARTParameters => _lambdaMARTParameters ??= new LambdaMARTParameters();
+	private RankNetParameters RankNetParameters => _rankNetParameters ??= new RankNetParameters();
+	private ListNetParameters ListNetParameters => _listNetParameters ??= new ListNetParameters();
+	private RankBoostParameters RankBoostParameters => _rankBoostParameters ??= new RankBoostParameters();
+	private RFRankerParameters RfRankerParameters => _rfRankerParameters ??= new RFRankerParameters();
+	private AdaRankParameters AdaRankParameters => _adaRankParameters ??= new AdaRankParameters();
+	private CoorAscentParameters CoorAscentParameters => _coorAscentParameters ??= new CoorAscentParameters();
+	private LinearRegRankParameters LinearRegRankParameters => _linearRegRankParameters ??= new LinearRegRankParameters();
 
 	public Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
@@ -160,7 +176,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		var trainFile = options.Train;
 		var foldCv = options.Kcv;
-		var testMetric = options.Metric2T;
+		var testMetric = !string.IsNullOrEmpty(options.Metric2T)
+			? options.Metric2T
+			: options.Metric2t;
 		var trainMetric = options.Metric2t;
 		var testFile = options.Test?.LastOrDefault();
 		var testFiles = options.Test;
@@ -169,8 +187,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		var tvSplit = options.Tvs;
 		var ttSplit = options.Tts;
 
-		var savedModelFiles = options.Load;
-		var savedModelFile = options.Load?.LastOrDefault();
+		var savedModelFiles = options.Load != null
+			? options.Load.Select(f => f.FullName).ToList()
+			: [];
 
 		var kcvModelDir = options.Kcvmd;
 		var kcvModelFile = options.Kcvmn;
@@ -183,16 +202,6 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		var scoreFile = options.Score;
 
-		if (options.Save != null)
-		{
-			Evaluator.ModelFile = options.Save.FullName;
-		}
-
-		if (options.Sparse)
-		{
-			Evaluator.UseSparseRepresentation = true;
-		}
-
 		if (options.MissingZero)
 		{
 			DataPoint.MissingZero = true;
@@ -200,117 +209,118 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.GMax != null)
 		{
-			ERRScorer.MAX = Math.Pow(2, options.GMax.Value);
+			// TODO: Find a way to expose default parameters on Scorer factory
+			// ERRScorer.DefaultMax = Math.Pow(2, options.GMax.Value);
 		}
 
 		if (options.Epoch != null)
 		{
-			RankNet.NIteration = options.Epoch.Value;
-			ListNet.nIteration = options.Epoch.Value;
+			RankNetParameters.NIteration = options.Epoch.Value;
+			ListNetParameters.NIteration = options.Epoch.Value;
 		}
 
 		if (options.Layer != null)
 		{
-			RankNet.NHiddenLayer = options.Layer.Value;
+			RankNetParameters.NHiddenLayer = options.Layer.Value;
 		}
 
 		if (options.Node != null)
 		{
-			RankNet.NHiddenNodePerLayer = options.Node.Value;
+			RankNetParameters.NHiddenNodePerLayer = options.Node.Value;
 		}
 
 		if (options.Lr != null)
 		{
-			RankNet.LearningRate = options.Lr.Value;
-			ListNet.learningRate = Neuron.LearningRate;
+			RankNetParameters.LearningRate = options.Lr.Value;
+			ListNetParameters.LearningRate = Neuron.LearningRate;
 		}
 
 		if (options.Tc != null)
 		{
-			RankBoost.NThreshold = options.Tc.Value;
-			LambdaMART.nThreshold = options.Tc.Value;
+			RankBoostParameters.NThreshold = options.Tc.Value;
+			LambdaMARTParameters.nThreshold = options.Tc.Value;
 		}
 
 		if (options.NoEq != null)
 		{
-			AdaRank.TrainWithEnqueue = false;
+			AdaRankParameters.TrainWithEnqueue = false;
 		}
 
 		if (options.Max != null)
 		{
-			AdaRank.MaxSelCount = options.Max.Value;
+			AdaRankParameters.MaxSelCount = options.Max.Value;
 		}
 
 		if (options.R != null)
 		{
-			CoorAscent.nRestart = options.R.Value;
+			CoorAscentParameters.nRestart = options.R.Value;
 		}
 
 		if (options.I != null)
 		{
-			CoorAscent.nMaxIteration = options.I.Value;
+			CoorAscentParameters.nMaxIteration = options.I.Value;
 		}
 
 		if (options.Round != null)
 		{
-			RankBoost.NIteration = options.Round.Value;
-			AdaRank.NIteration = options.Round.Value;
+			RankBoostParameters.NIteration = options.Round.Value;
+			AdaRankParameters.NIteration = options.Round.Value;
 		}
 
 		if (options.Reg != null)
 		{
-			CoorAscent.slack = options.Reg.Value;
-			CoorAscent.regularized = true;
+			CoorAscentParameters.slack = options.Reg.Value;
+			CoorAscentParameters.regularized = true;
 		}
 
 		if (options.Tolerance != null)
 		{
-			AdaRank.Tolerance = options.Tolerance.Value;
-			CoorAscent.tolerance = options.Tolerance.Value;
+			AdaRankParameters.Tolerance = options.Tolerance.Value;
+			CoorAscentParameters.tolerance = options.Tolerance.Value;
 		}
 
 		if (options.Tree != null)
 		{
-			LambdaMART.nTrees = options.Tree.Value;
-			RFRanker.nTrees = options.Tree.Value;
+			LambdaMARTParameters.nTrees = options.Tree.Value;
+			RfRankerParameters.nTrees = LambdaMARTParameters.nTrees;
 		}
 
 		if (options.Leaf != null)
 		{
-			LambdaMART.nTreeLeaves = options.Leaf.Value;
-			RFRanker.nTreeLeaves = options.Leaf.Value;
+			LambdaMARTParameters.nTreeLeaves = options.Leaf.Value;
+			RfRankerParameters.nTreeLeaves = LambdaMARTParameters.nTreeLeaves;
 		}
 
 		if (options.Shrinkage != null)
 		{
-			LambdaMART.learningRate = options.Shrinkage.Value;
-			RFRanker.learningRate = options.Shrinkage.Value;
+			LambdaMARTParameters.learningRate = options.Shrinkage.Value;
+			RfRankerParameters.learningRate = LambdaMARTParameters.learningRate;
 		}
 
 		if (options.Mls != null)
 		{
-			LambdaMART.minLeafSupport = options.Mls.Value;
-			RFRanker.minLeafSupport = LambdaMART.minLeafSupport;
+			LambdaMARTParameters.minLeafSupport = options.Mls.Value;
+			RfRankerParameters.minLeafSupport = LambdaMARTParameters.minLeafSupport;
 		}
 
 		if (options.EStop != null)
 		{
-			LambdaMART.nRoundToStopEarly = options.EStop.Value;
+			LambdaMARTParameters.nRoundToStopEarly = options.EStop.Value;
 		}
 
 		if (options.Bag != null)
 		{
-			RFRanker.nBag = options.Bag.Value;
+			RfRankerParameters.nBag = options.Bag.Value;
 		}
 
 		if (options.SRate != null)
 		{
-			RFRanker.subSamplingRate = options.SRate.Value;
+			RfRankerParameters.subSamplingRate = options.SRate.Value;
 		}
 
 		if (options.FRate != null)
 		{
-			RFRanker.featureSamplingRate = options.FRate.Value;
+			RfRankerParameters.featureSamplingRate = options.FRate.Value;
 		}
 
 		if (options.RType != null)
@@ -320,17 +330,12 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				throw RankLibException.Create(options.RType + " cannot be bagged. Random Forests only supports MART/LambdaMART.");
 			}
 
-			RFRanker.rType = options.RType.Value;
+			RfRankerParameters.rType = options.RType.Value;
 		}
 
 		if (options.L2 != null)
 		{
-			LinearRegRank.lambda = options.L2.Value;
-		}
-
-		if (options.Hr != null)
-		{
-			Evaluator.MustHaveRelDoc = true;
+			LinearRegRankParameters.Lambda = options.L2.Value;
 		}
 
 		if (options.Thread == -1)
@@ -338,11 +343,6 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			options.Thread = Environment.ProcessorCount;
 		}
 		MyThreadPool.Init(options.Thread);
-
-		if (string.IsNullOrEmpty(options.Metric2T))
-		{
-			options.Metric2T = options.Metric2t;
-		}
 
 		Normalizer? normalizer = null;
 		if (options.Norm != null)
@@ -356,14 +356,30 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			};
 		}
 
+		var (rankerType, rankerParameters) = options.Ranker switch
+		{
+			RankerType.MART => (typeof(MART), (IRankerParameters)LambdaMARTParameters),
+			RankerType.RANKBOOST => (typeof(RankBoost), RankBoostParameters),
+			RankerType.RANKNET => (typeof(RankNet), RankNetParameters),
+			RankerType.ADARANK => (typeof(AdaRank), AdaRankParameters),
+			RankerType.COOR_ASCENT => (typeof(CoorAscent), CoorAscentParameters),
+			RankerType.LAMBDARANK => (typeof(LambdaRank), RankNetParameters),
+			RankerType.LAMBDAMART => (typeof(LambdaMART), LambdaMARTParameters),
+			RankerType.LISTNET => (typeof(ListNet), ListNetParameters),
+			RankerType.RANDOM_FOREST => (typeof(RFRanker), RfRankerParameters),
+			RankerType.LINEAR_REGRESSION => (typeof(LinearRegRank), LinearRegRankParameters),
+			_ => throw new ArgumentOutOfRangeException()
+		};
+
 		var evaluator = _evaluatorFactory.CreateEvaluator(
-			options.Ranker,
-			options.Metric2t,
-			options.Metric2T,
+			trainMetric,
+			testMetric,
 			normalizer,
+			options.Hr,
+			options.Sparse,
 			options.QRel?.FullName);
 
-		if (options.Train != null)
+		if (trainFile != null)
 		{
 			logger.LogInformation("Training data: {TrainFile}", trainFile);
 
@@ -388,7 +404,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 					logger.LogInformation("Train-Validation split: {TrainValidationSplit}", tvSplit);
 			}
 
-			logger.LogInformation($"Feature vector representation: {(Evaluator.UseSparseRepresentation ? "Sparse" : "Dense")}.");
+			logger.LogInformation($"Feature vector representation: {(options.Sparse ? "Sparse" : "Dense")}.");
 			logger.LogInformation("Ranking method: {Ranker}", options.Ranker);
 
 			if (featureDescriptionFile != null)
@@ -399,8 +415,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			logger.LogInformation("Train metric: {TrainMetric}", trainMetric);
 			logger.LogInformation("Test metric: {TestMetric}", testMetric);
 
-			if (trainMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase) || testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
-				logger.LogInformation("Highest relevance label (to compute ERR): {HighRelevanceLabel}", (int)SimpleMath.LogBase2(ERRScorer.MAX));
+			if (trainMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase)
+			    || testMetric != null && testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
+				logger.LogInformation("Highest relevance label (to compute ERR): {HighRelevanceLabel}", (int)SimpleMath.LogBase2(ERRScorer.DefaultMax));
 
 			if (options.QRel != null)
 				logger.LogInformation("TREC-format relevance judgment (only affects MAP and NDCG scores): {QueryRelevanceJudgementFile}", options.QRel.FullName);
@@ -417,14 +434,13 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				logger.LogInformation($"Models' name: {kcvModelFile}");
 			}
 
-			if (!string.IsNullOrEmpty(Evaluator.ModelFile))
+			if (options.Save != null)
 			{
-				logger.LogInformation($"Model file: {Evaluator.ModelFile}");
+				logger.LogInformation("Model file: {ModelFile}", options.Save.FullName);
 			}
 
 			logger.LogInformation($"[+] {options.Ranker}'s Parameters:");
-
-			_rankerFactory.CreateRanker(options.Ranker).PrintParameters();
+			rankerParameters.Log(logger);
 
 			// starting to do some work
 			if (foldCv != -1)
@@ -443,55 +459,56 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 				//- models won't be saved if kcvModelDir=""   [OBSOLETE]
 				//- Models saved if EITHER kcvmd OR kcvmn defined.  Use default names for missing values.
-				evaluator.Evaluate(trainFile!.FullName, featureDescriptionFile?.FullName, foldCv, tvSplit, kcvModelDir!.FullName, kcvModelFile!);
+				evaluator.Evaluate(rankerType, trainFile.FullName, featureDescriptionFile?.FullName, foldCv, tvSplit, kcvModelDir!.FullName, kcvModelFile!, rankerParameters);
 			}
 			else
 			{
 				if (ttSplit > 0.0)
 				{
-					evaluator.Evaluate(trainFile.FullName, validationFile.FullName, featureDescriptionFile?.FullName, ttSplit);
+					evaluator.Evaluate(rankerType, trainFile.FullName, validationFile.FullName, featureDescriptionFile?.FullName, ttSplit, options.Save?.FullName, rankerParameters);
 				}
 				else if (tvSplit > 0.0)
 				{
-					evaluator.Evaluate(trainFile.FullName, tvSplit, testFile.FullName, featureDescriptionFile.FullName);
+					evaluator.Evaluate(rankerType, trainFile.FullName, tvSplit, testFile.FullName, featureDescriptionFile.FullName, options.Save?.FullName, rankerParameters);
 				}
 				else
 				{
-					evaluator.Evaluate(trainFile.FullName, validationFile?.FullName, testFile?.FullName, featureDescriptionFile?.FullName);
+					evaluator.Evaluate(rankerType, trainFile.FullName, validationFile?.FullName, testFile?.FullName, featureDescriptionFile?.FullName, options.Save?.FullName, rankerParameters);
 				}
 			}
 		}
 		else
 		{
-			logger.LogInformation($"Model file: {savedModelFile}");
+			logger.LogInformation("Model file: {SavedModelFile}", string.Join(",", savedModelFiles));
 			logger.LogInformation($"Feature normalization: {(normalizer != null ? normalizer.Name : "No")}");
 
 			if (rankFile != null)
 			{
 				if (scoreFile != null)
 				{
-					if (savedModelFiles.Count() > 1)
+					switch (savedModelFiles.Count)
 					{
-						evaluator.Score(savedModelFiles.Select(f => f.FullName).ToList(), rankFile.FullName, scoreFile.FullName);
-					}
-					else
-					{
-						evaluator.Score(savedModelFile.FullName, rankFile.FullName, scoreFile.FullName);
+						case > 1:
+							evaluator.Score(savedModelFiles, rankFile.FullName, scoreFile.FullName);
+							break;
+						case 1:
+							evaluator.Score(savedModelFiles[0], rankFile.FullName, scoreFile.FullName);
+							break;
 					}
 				}
 				else if (indriRankingFile != null)
 				{
-					if (savedModelFiles?.Count() > 1)
+					switch (savedModelFiles.Count)
 					{
-						evaluator.Rank(savedModelFiles.Select(f => f.FullName).ToList(), rankFile.FullName, indriRankingFile.FullName);
-					}
-					else if (savedModelFiles?.Count() == 1)
-					{
-						evaluator.Rank(savedModelFile.FullName, rankFile.FullName, indriRankingFile.FullName);
-					}
-					else
-					{
-						evaluator.Rank(rankFile.FullName, indriRankingFile.FullName);
+						case > 1:
+							evaluator.Rank(savedModelFiles, rankFile.FullName, indriRankingFile.FullName);
+							break;
+						case 1:
+							evaluator.Rank(savedModelFiles[0], rankFile.FullName, indriRankingFile.FullName);
+							break;
+						default:
+							evaluator.Rank(rankFile.FullName, indriRankingFile.FullName);
+							break;
 					}
 				}
 				else
@@ -505,23 +522,23 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				logger.LogInformation("Test metric: {TestMetric}", testMetric);
 				if (testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
 				{
-					logger.LogInformation($"Highest relevance label (to compute ERR): {(int)SimpleMath.LogBase2(ERRScorer.MAX)}");
+					logger.LogInformation($"Highest relevance label (to compute ERR): {(int)SimpleMath.LogBase2(ERRScorer.DefaultMax)}");
 				}
 
 				if (savedModelFiles.Count() > 1)
 				{
 					if (testFiles.Count() > 1)
 					{
-						evaluator.Test(savedModelFiles.Select(f => f.FullName).ToList(), testFiles.Select(f => f.FullName).ToList(), prpFile.FullName);
+						evaluator.Test(savedModelFiles, testFiles.Select(f => f.FullName).ToList(), prpFile.FullName);
 					}
 					else
 					{
-						evaluator.Test(savedModelFiles.Select(f => f.FullName).ToList(), testFile.FullName, prpFile.FullName);
+						evaluator.Test(savedModelFiles, testFile.FullName, prpFile.FullName);
 					}
 				}
-				else if (savedModelFiles.Count() == 1)
+				else if (savedModelFiles.Count == 1)
 				{
-					evaluator.Test(savedModelFile.FullName, testFile.FullName, prpFile.FullName);
+					evaluator.Test(savedModelFiles[0], testFile.FullName, prpFile?.FullName);
 				}
 				else if (scoreFile != null)
 				{
@@ -529,7 +546,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				}
 				else
 				{
-					evaluator.Test(testFile!.FullName, prpFile.FullName);
+					evaluator.Test(testFile!.FullName, prpFile?.FullName);
 				}
 			}
 		}

@@ -2,8 +2,8 @@ namespace RankLib.Learning.NeuralNet;
 
 public class ListNeuron : Neuron
 {
-	private double[] _d1;
-	private double[] _d2;
+	private double[] _d1 = [];
+	private double[] _d2 = [];
 
 	public override void ComputeDelta(PropParameter param)
 	{
@@ -30,10 +30,9 @@ public class ListNeuron : Neuron
 
 	public override void UpdateWeight(PropParameter param)
 	{
-		Synapse s;
 		for (var k = 0; k < InLinks.Count; k++)
 		{
-			s = InLinks[k];
+			var s = InLinks[k];
 			double dw = 0;
 
 			// Update weights based on the difference between d1 and d2
@@ -43,8 +42,7 @@ public class ListNeuron : Neuron
 			}
 
 			dw *= LearningRate;
-			s.WeightAdjustment = dw;
-			s.UpdateWeight();
+			s.UpdateWeight(dw);
 		}
 	}
 }

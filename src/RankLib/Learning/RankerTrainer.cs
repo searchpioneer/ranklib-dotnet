@@ -6,43 +6,47 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// Trains a ranker using the provided training samples, and validates training using the validation samples.
+/// </summary>
 public class RankerTrainer
 {
-	private readonly ILoggerFactory _loggerFactory;
-	private readonly ILogger<RankerTrainer> _logger;
+	private readonly RankerFactory _rankerFactory;
 
-	protected RankerFactory rf;
-	public double TrainingTime { get; protected set; }
+	public RankerTrainer(RankerFactory rankerFactory) => _rankerFactory = rankerFactory;
 
-	public RankerTrainer(ILoggerFactory? loggerFactory = null)
+	public (IRanker ranker, TimeSpan trainingTime) Train(
+		Type rankerType,
+		List<RankList> trainingSamples,
+		List<RankList>? validationSamples,
+		int[] features,
+		MetricScorer scorer,
+		IRankerParameters? parameters = default)
 	{
-		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = _loggerFactory.CreateLogger<RankerTrainer>();
-		rf = new RankerFactory(_loggerFactory);
-	}
-
-	public Ranker Train(RankerType type, List<RankList> train, int[] features, MetricScorer scorer)
-	{
-		var ranker = rf.CreateRanker(type, train, features, scorer);
+		var ranker = _rankerFactory.CreateRanker(rankerType, trainingSamples, features, scorer, parameters);
+		ranker.ValidationSamples = validationSamples;
 		var stopwatch = Stopwatch.StartNew();
 		ranker.Init();
 		ranker.Learn();
 		stopwatch.Stop();
-		TrainingTime = stopwatch.Elapsed.TotalMilliseconds * 1e6; // Convert to nanoseconds
-		return ranker;
+		return (ranker, stopwatch.Elapsed);
 	}
 
-	public Ranker Train(RankerType type, List<RankList> train, List<RankList> validation, int[] features, MetricScorer scorer)
+	public (TRanker ranker, TimeSpan trainingTime) Train<TRanker, TRankerParameters>(
+		List<RankList> trainingSamples,
+		List<RankList>? validationSamples,
+		int[] features,
+		MetricScorer scorer,
+		TRankerParameters? parameters = default)
+		where TRanker : IRanker<TRankerParameters>
+		where TRankerParameters : IRankerParameters
 	{
-		var ranker = rf.CreateRanker(type, train, features, scorer);
-		ranker.SetValidationSet(validation);
+		var ranker = _rankerFactory.CreateRanker<TRanker, TRankerParameters>(trainingSamples, features, scorer, parameters);
+		ranker.ValidationSamples = validationSamples;
 		var stopwatch = Stopwatch.StartNew();
 		ranker.Init();
 		ranker.Learn();
 		stopwatch.Stop();
-		TrainingTime = stopwatch.Elapsed.TotalMilliseconds * 1e6; // Convert to nanoseconds
-		return ranker;
+		return (ranker, stopwatch.Elapsed);
 	}
-
-	public void PrintTrainingTime() => _logger.LogInformation($"Training time: {SimpleMath.Round((TrainingTime) / 1e9, 2)} seconds");
 }

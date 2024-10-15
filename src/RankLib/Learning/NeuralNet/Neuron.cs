@@ -5,12 +5,12 @@ public class Neuron
 	public static double Momentum = 0.9;
 	public static double LearningRate = 0.001;
 
-	protected ITransferFunction _tfunc = new LogiFunction();
+	protected ITransferFunction _transferFunction = new LogiFunction();
 
 	protected double _output;
 	protected List<double> _outputs = new();
 	protected double _delta_i = 0.0;
-	protected double[] _deltas_j = null;
+	protected double[] _deltas_j = [];
 
 	public List<Synapse> InLinks { get; } = new();
 	public List<Synapse> OutLinks { get; } = new();
@@ -32,7 +32,7 @@ public class Neuron
 		{
 			wsum += synapse.Source.GetOutput() * synapse.Weight;
 		}
-		_output = _tfunc.Compute(wsum);
+		_output = _transferFunction.Compute(wsum);
 	}
 
 	public void ComputeOutput(int i)
@@ -42,7 +42,7 @@ public class Neuron
 		{
 			wsum += synapse.Source.GetOutput(i) * synapse.Weight;
 		}
-		_output = _tfunc.Compute(wsum);
+		_output = _transferFunction.Compute(wsum);
 		_outputs.Add(_output);
 	}
 
@@ -74,10 +74,10 @@ public class Neuron
 
 			var lambda = weight * pij;
 			_delta_i += lambda;
-			_deltas_j[k] = lambda * _tfunc.ComputeDerivative(_outputs[j]);
+			_deltas_j[k] = lambda * _transferFunction.ComputeDerivative(_outputs[j]);
 		}
 
-		_delta_i *= _tfunc.ComputeDerivative(_outputs[current]);
+		_delta_i *= _transferFunction.ComputeDerivative(_outputs[current]);
 	}
 
 	public void UpdateDelta(PropParameter param)
@@ -106,10 +106,10 @@ public class Neuron
 
 			if (k == 0)
 			{
-				_delta_i *= weight * _tfunc.ComputeDerivative(_outputs[current]);
+				_delta_i *= weight * _transferFunction.ComputeDerivative(_outputs[current]);
 			}
 
-			_deltas_j[k] = errorSum * weight * _tfunc.ComputeDerivative(_outputs[j]);
+			_deltas_j[k] = errorSum * weight * _transferFunction.ComputeDerivative(_outputs[j]);
 		}
 	}
 
@@ -117,15 +117,14 @@ public class Neuron
 	{
 		foreach (var synapse in InLinks)
 		{
-			var sum_j = 0.0;
+			var sumJ = 0.0;
 			for (var l = 0; l < _deltas_j.Length; l++)
 			{
-				sum_j += _deltas_j[l] * synapse.Source.GetOutput(param.PairMap[param.Current][l]);
+				sumJ += _deltas_j[l] * synapse.Source.GetOutput(param.PairMap[param.Current][l]);
 			}
 
-			var dw = LearningRate * (_delta_i * synapse.Source.GetOutput(param.Current) - sum_j);
-			synapse.WeightAdjustment = dw;
-			synapse.UpdateWeight();
+			var dw = LearningRate * (_delta_i * synapse.Source.GetOutput(param.Current) - sumJ);
+			synapse.UpdateWeight(dw);
 		}
 	}
 }

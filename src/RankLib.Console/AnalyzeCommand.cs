@@ -11,7 +11,7 @@ public class AnalyzeCommandOptions : ICommandOptions
 
 	public FileInfo Base { get; set; }
 
-	public int? Np { get; set; } = RandomPermutationTest.NPermutation;
+	public int? Np { get; set; }
 }
 
 public class AnalyzeCommand : Command<AnalyzeCommandOptions, AnalyzeCommandOptionsHandler>
@@ -19,9 +19,9 @@ public class AnalyzeCommand : Command<AnalyzeCommandOptions, AnalyzeCommandOptio
 	public AnalyzeCommand()
 	: base("analyze", "Analyze performance comparison of saved models against a baseline")
 	{
-		AddOption(new Option<DirectoryInfo>("--all", "Directory of performance files (one per system)"));
-		AddOption(new Option<FileInfo>("--base", "Performance file for the baseline (MUST be in the same directory)"));
-		AddOption(new Option<int?>("--np", () => RandomPermutationTest.NPermutation, "Number of permutation (Fisher randomization test)"));
+		AddOption(new Option<DirectoryInfo>("--all", "Directory of performance files (one per system)").ExistingOnly());
+		AddOption(new Option<FileInfo>("--base", "Performance file for the baseline (MUST be in the same directory)").ExistingOnly());
+		AddOption(new Option<int?>("--np", () => RandomPermutationTest.DefaultPermutationCount, "Number of permutation (Fisher randomization test)"));
 	}
 }
 
@@ -33,12 +33,11 @@ public class AnalyzeCommandOptionsHandler : ICommandOptionsHandler<AnalyzeComman
 
 	public Task<int> HandleAsync(AnalyzeCommandOptions options, CancellationToken cancellationToken)
 	{
-		if (options.Np != null)
-		{
-			RandomPermutationTest.NPermutation = options.Np.Value;
-		}
+		var test = options.Np != null
+			? new RandomPermutationTest(options.Np.Value)
+			: new RandomPermutationTest();
 
-		var analyzer = new Analyzer(_loggerFactory.CreateLogger<Analyzer>());
+		var analyzer = new Analyzer(test, _loggerFactory.CreateLogger<Analyzer>());
 		analyzer.Compare(options.All.FullName, options.Base.FullName);
 		return Task.FromResult(0);
 	}

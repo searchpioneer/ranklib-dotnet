@@ -11,18 +11,18 @@ public class SparseDataPoint : DataPoint
 	// Access pattern of the feature values
 	private enum AccessPattern
 	{
-		SEQUENTIAL,
-		RANDOM
+		Sequential,
+		Random
 	}
 
-	private static readonly AccessPattern searchPattern = AccessPattern.RANDOM;
+	private static readonly AccessPattern SearchPattern = AccessPattern.Random;
 
 	// The feature ids for known values
-	private int[] fIds;
+	private int[] _fIds;
 
 	// Internal search optimizers. Currently unused.
-	private int lastMinId = -1;
-	private int lastMinPos = -1;
+	private int _lastMinId = -1;
+	private int _lastMinPos = -1;
 
 	public SparseDataPoint(string text) : base(text)
 	{
@@ -34,33 +34,33 @@ public class SparseDataPoint : DataPoint
 		Id = dp.Id;
 		Description = dp.Description;
 		Cached = dp.Cached;
-		fIds = new int[dp.fIds.Length];
+		_fIds = new int[dp._fIds.Length];
 		_fVals = new float[dp._fVals.Length];
-		Array.Copy(dp.fIds, 0, fIds, 0, dp.fIds.Length);
+		Array.Copy(dp._fIds, 0, _fIds, 0, dp._fIds.Length);
 		Array.Copy(dp._fVals, 0, _fVals, 0, dp._fVals.Length);
 	}
 
 	private int Locate(int fid)
 	{
-		if (searchPattern == AccessPattern.SEQUENTIAL)
+		if (SearchPattern == AccessPattern.Sequential)
 		{
-			if (lastMinId > fid)
+			if (_lastMinId > fid)
 			{
-				lastMinId = -1;
-				lastMinPos = -1;
+				_lastMinId = -1;
+				_lastMinPos = -1;
 			}
-			while (lastMinPos < _knownFeatures && lastMinId < fid)
+			while (_lastMinPos < _knownFeatures && _lastMinId < fid)
 			{
-				lastMinId = fIds[++lastMinPos];
+				_lastMinId = _fIds[++_lastMinPos];
 			}
-			if (lastMinId == fid)
+			if (_lastMinId == fid)
 			{
-				return lastMinPos;
+				return _lastMinPos;
 			}
 		}
-		else if (searchPattern == AccessPattern.RANDOM)
+		else if (SearchPattern == AccessPattern.Random)
 		{
-			var pos = Array.BinarySearch(fIds, fid);
+			var pos = Array.BinarySearch(_fIds, fid);
 			if (pos >= 0)
 			{
 				return pos;
@@ -116,14 +116,14 @@ public class SparseDataPoint : DataPoint
 
 	public override void SetFeatureVector(float[] dfVals)
 	{
-		fIds = new int[_knownFeatures];
+		_fIds = new int[_knownFeatures];
 		_fVals = new float[_knownFeatures];
 		var pos = 0;
 		for (var i = 1; i < dfVals.Length; i++)
 		{
 			if (!IsUnknown(dfVals[i]))
 			{
-				fIds[pos] = i;
+				_fIds[pos] = i;
 				_fVals[pos] = dfVals[i];
 				pos++;
 			}
@@ -136,11 +136,11 @@ public class SparseDataPoint : DataPoint
 
 	public override float[] GetFeatureVector()
 	{
-		var dfVals = new float[fIds[_knownFeatures - 1] + 1]; // Adjust for array length
+		var dfVals = new float[_fIds[_knownFeatures - 1] + 1]; // Adjust for array length
 		Array.Fill(dfVals, Unknown);
 		for (var i = 0; i < _knownFeatures; i++)
 		{
-			dfVals[fIds[i]] = _fVals[i];
+			dfVals[_fIds[i]] = _fVals[i];
 		}
 		return dfVals;
 	}

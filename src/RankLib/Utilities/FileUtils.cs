@@ -36,12 +36,11 @@ public static class FileUtils
 	{
 		try
 		{
-			using var writer = new StreamWriter(new FileStream(filename, FileMode.Create), encoding);
-			writer.Write(content);
+			File.WriteAllText(filename, content, encoding);
 		}
 		catch (Exception e)
 		{
-			throw new InvalidOperationException("Error writing to file", e);
+			throw RankLibException.Create("Error writing to file", e);
 		}
 	}
 

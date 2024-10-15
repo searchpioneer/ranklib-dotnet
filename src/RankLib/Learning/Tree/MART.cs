@@ -1,46 +1,41 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 
 namespace RankLib.Learning.Tree;
 
 public class MART : LambdaMART
 {
-	private readonly ILogger<MART> _logger;
+	internal const string RankerName = "MART";
 
 	public MART(ILogger<MART>? logger = null) : base(logger)
 	{
-		_logger = logger ?? NullLogger<MART>.Instance;
 	}
 
 	public MART(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<MART>? logger = null)
 		: base(samples, features, scorer, logger)
 	{
-		_logger = logger ?? NullLogger<MART>.Instance;
 	}
 
-	public override Ranker CreateNew() => new MART(_logger);
-
-	public override string Name => "MART";
+	public override string Name => RankerName;
 
 	protected override void ComputePseudoResponses()
 	{
-		for (var i = 0; i < martSamples.Length; i++)
+		for (var i = 0; i < MARTSamples.Length; i++)
 		{
-			pseudoResponses[i] = martSamples[i].Label - modelScores[i];
+			PseudoResponses[i] = MARTSamples[i].Label - ModelScores[i];
 		}
 	}
 
-	protected override void UpdateTreeOutput(RegressionTree rt)
+	protected override void UpdateTreeOutput(RegressionTree tree)
 	{
-		var leaves = rt.Leaves;
+		var leaves = tree.Leaves;
 		foreach (var s in leaves)
 		{
 			var s1 = 0.0F;
 			var idx = s.GetSamples();
 			foreach (var k in idx)
 			{
-				s1 += Convert.ToSingle(pseudoResponses[k]);
+				s1 += Convert.ToSingle(PseudoResponses[k]);
 			}
 			s.SetOutput(s1 / idx.Length);
 		}

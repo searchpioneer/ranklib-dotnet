@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
@@ -6,32 +7,48 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Boosting;
 
-public class AdaRank : Ranker
+public class AdaRankParameters : IRankerParameters
 {
+	public int NIteration { get; set; } = 500;
+	public double Tolerance { get; set; } = 0.002;
+	public bool TrainWithEnqueue { get; set; } = true;
+
+	/// <summary>
+	/// Max number of times a feature can be selected consecutively before being removed
+	/// </summary>
+	public int MaxSelCount { get; set; } = 5;
+
+	public void Log(ILogger logger)
+	{
+		logger.LogInformation("No. of rounds: {NIteration}", NIteration);
+		logger.LogInformation("Train with 'enqueue': {TrainWithEnqueue}", TrainWithEnqueue ? "Yes" : "No");
+		logger.LogInformation("Tolerance: {Tolerance}", Tolerance);
+		logger.LogInformation("Max Sel. Count: {MaxSelCount}", MaxSelCount);
+	}
+}
+
+public class AdaRank : Ranker<AdaRankParameters>
+{
+	internal const string RankerName = "AdaRank";
+
 	private readonly ILogger<AdaRank> _logger;
-
-	// Parameters
-	public static int NIteration = 500;
-	public static double Tolerance = 0.002;
-	public static bool TrainWithEnqueue = true;
-	public static int MaxSelCount = 5; // Max number of times a feature can be selected consecutively before being removed
-
-	protected Dictionary<int, int> _usedFeatures = new();
-	protected double[]? _sweight = null; // Sample weight
-	protected List<WeakRanker>? _rankers = null; // Alpha
-	protected List<double>? _rweight = null; // Weak rankers' weight
-
-	protected List<WeakRanker>? _bestModelRankers = null;
-	protected List<double>? _bestModelWeights = null;
+	private readonly Dictionary<int, int> _usedFeatures = new();
+	private double[] _sweight = []; // Sample weight
+	private List<AdaRankWeakRanker> _rankers = []; // Alpha
+	private List<double> _rweight = []; // Weak rankers' weight
+	private List<AdaRankWeakRanker> _bestModelRankers = [];
+	private List<double> _bestModelWeights = [];
 
 	// For the implementation of tricks
 	private int _lastFeature = -1;
-	private int _lastFeatureConsecutiveCount = 0;
-	private bool _performanceChanged = false;
-	private List<int> _featureQueue = null;
-	protected double[] _backupSampleWeight = null;
-	protected double _backupTrainScore = 0.0;
-	protected double _lastTrainedScore = -1.0;
+	private int _lastFeatureConsecutiveCount;
+	private bool _performanceChanged;
+	private List<int> _featureQueue = [];
+	private double[] _backupSampleWeight = [];
+	private double _backupTrainScore;
+	private double _lastTrainedScore = -1.0;
+
+	public override string Name => RankerName;
 
 	public AdaRank(ILogger<AdaRank>? logger = null) => _logger = logger ?? NullLogger<AdaRank>.Instance;
 
@@ -47,17 +64,17 @@ public class AdaRank : Ranker
 		_bestModelWeights.AddRange(_rweight);
 	}
 
-	private WeakRanker? LearnWeakRanker()
+	private AdaRankWeakRanker? LearnWeakRanker()
 	{
 		var bestScore = -1.0;
-		WeakRanker? bestWeakRanker = null;
+		AdaRankWeakRanker? bestWeakRanker = null;
 
 		foreach (var i in Features)
 		{
 			if (_featureQueue.Contains(i) || _usedFeatures.ContainsKey(i))
 				continue;
 
-			var wr = new WeakRanker(i);
+			var wr = new AdaRankWeakRanker(i);
 			var s = 0.0;
 			for (var j = 0; j < Samples.Count; j++)
 			{
@@ -79,7 +96,7 @@ public class AdaRank : Ranker
 	{
 		var t = startIteration;
 
-		for (; t <= NIteration; t++)
+		for (; t <= Parameters.NIteration; t++)
 		{
 			PrintLog([7], [t.ToString()]);
 
@@ -89,7 +106,7 @@ public class AdaRank : Ranker
 
 			if (withEnqueue)
 			{
-				if (bestWeakRanker.GetFID() == _lastFeature)
+				if (bestWeakRanker.Fid == _lastFeature)
 				{
 					_featureQueue.Add(_lastFeature);
 					_rankers.RemoveAt(_rankers.Count - 1);
@@ -97,15 +114,13 @@ public class AdaRank : Ranker
 					Array.Copy(_backupSampleWeight, _sweight, _sweight.Length);
 					BestScoreOnValidationData = 0.0;
 					_lastTrainedScore = _backupTrainScore;
-					PrintLogLn([8, 9, 9, 9], [bestWeakRanker.GetFID().ToString(), "", "", "ROLLBACK"]);
+					PrintLogLn([8, 9, 9, 9], [bestWeakRanker.Fid.ToString(), "", "", "ROLLBACK"]);
 					continue;
 				}
-				else
-				{
-					_lastFeature = bestWeakRanker.GetFID();
-					Array.Copy(_sweight, _backupSampleWeight, _sweight.Length);
-					_backupTrainScore = _lastTrainedScore;
-				}
+
+				_lastFeature = bestWeakRanker.Fid;
+				Array.Copy(_sweight, _backupSampleWeight, _sweight.Length);
+				_backupTrainScore = _lastTrainedScore;
 			}
 
 			var num = 0.0;
@@ -132,7 +147,7 @@ public class AdaRank : Ranker
 			}
 
 			trainedScore /= Samples.Count;
-			var delta = trainedScore + Tolerance - _lastTrainedScore;
+			var delta = trainedScore + Parameters.Tolerance - _lastTrainedScore;
 			var status = delta > 0 ? "OK" : "DAMN";
 
 			if (!withEnqueue)
@@ -146,10 +161,10 @@ public class AdaRank : Ranker
 				else
 				{
 					_performanceChanged = false;
-					if (_lastFeature == bestWeakRanker.GetFID())
+					if (_lastFeature == bestWeakRanker.Fid)
 					{
 						_lastFeatureConsecutiveCount++;
-						if (_lastFeatureConsecutiveCount == MaxSelCount)
+						if (_lastFeatureConsecutiveCount == Parameters.MaxSelCount)
 						{
 							status = "F. REM.";
 							_lastFeatureConsecutiveCount = 0;
@@ -163,10 +178,10 @@ public class AdaRank : Ranker
 					}
 				}
 
-				_lastFeature = bestWeakRanker.GetFID();
+				_lastFeature = bestWeakRanker.Fid;
 			}
 
-			PrintLog(new[] { 8, 9 }, new[] { bestWeakRanker.GetFID().ToString(), SimpleMath.Round(trainedScore, 4).ToString() });
+			PrintLog([8, 9], [bestWeakRanker.Fid.ToString(), SimpleMath.Round(trainedScore, 4).ToString(CultureInfo.InvariantCulture)]);
 			if (t % 1 == 0 && ValidationSamples != null)
 			{
 				var scoreOnValidation = Scorer.Score(Rank(ValidationSamples));
@@ -176,11 +191,12 @@ public class AdaRank : Ranker
 					UpdateBestModelOnValidation();
 				}
 
-				PrintLog(new[] { 9, 9 }, new[] { SimpleMath.Round(scoreOnValidation, 4).ToString(), status });
+				PrintLog([9, 9], [SimpleMath.Round(scoreOnValidation, 4).ToString(CultureInfo.InvariantCulture), status
+				]);
 			}
 			else
 			{
-				PrintLog(new[] { 9, 9 }, new[] { "", status });
+				PrintLog([9, 9], ["", status]);
 			}
 
 			FlushLog();
@@ -216,24 +232,22 @@ public class AdaRank : Ranker
 
 		_backupSampleWeight = new double[_sweight.Length];
 		Array.Copy(_sweight, _backupSampleWeight, _sweight.Length);
+
 		_lastTrainedScore = -1.0;
-
-		_rankers = new List<WeakRanker>();
+		_rankers = new List<AdaRankWeakRanker>();
 		_rweight = new List<double>();
-
 		_featureQueue = new List<int>();
-
 		BestScoreOnValidationData = 0.0;
-		_bestModelRankers = new List<WeakRanker>();
+		_bestModelRankers = new List<AdaRankWeakRanker>();
 		_bestModelWeights = new List<double>();
 	}
 
 	public override void Learn()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 8, 9, 9, 9 }, new[] { "#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status" });
+		PrintLogLn([7, 8, 9, 9, 9], ["#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status"]);
 
-		if (TrainWithEnqueue)
+		if (Parameters.TrainWithEnqueue)
 		{
 			var t = Learn(1, true);
 			for (var i = _featureQueue.Count - 1; i >= 0; i--)
@@ -256,7 +270,7 @@ public class AdaRank : Ranker
 		}
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
-		_logger.LogInformation($"Finished successfully.");
+		_logger.LogInformation("Finished successfully.");
 		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
 
 		if (ValidationSamples != null)
@@ -267,25 +281,21 @@ public class AdaRank : Ranker
 	}
 
 
-	public override double Eval(DataPoint p)
+	public override double Eval(DataPoint dataPoint)
 	{
 		var score = 0.0;
 		for (var j = 0; j < _rankers.Count; j++)
 		{
-			score += _rweight[j] * p.GetFeatureValue(_rankers[j].GetFID());
+			score += _rweight[j] * dataPoint.GetFeatureValue(_rankers[j].Fid);
 		}
 		return score;
 	}
-
-	public override Ranker CreateNew() => new AdaRank();
 
 	public override string ToString()
 	{
 		var output = new StringBuilder();
 		for (var i = 0; i < _rankers.Count; i++)
-		{
-			output.Append(_rankers[i].GetFID() + ":" + _rweight[i] + (i == _rankers.Count - 1 ? "" : " "));
-		}
+			output.Append(_rankers[i].Fid + ":" + _rweight[i] + (i == _rankers.Count - 1 ? "" : " "));
 		return output.ToString();
 	}
 
@@ -294,11 +304,11 @@ public class AdaRank : Ranker
 		get
 		{
 			var output = new StringBuilder();
-			output.Append("## " + Name + "\n");
-			output.Append("## Iteration = " + NIteration + "\n");
-			output.Append("## Train with enqueue: " + (TrainWithEnqueue ? "Yes" : "No") + "\n");
-			output.Append("## Tolerance = " + Tolerance + "\n");
-			output.Append("## Max consecutive selection count = " + MaxSelCount + "\n");
+			output.Append($"## {Name}\n");
+			output.Append($"## Iteration = {Parameters.NIteration}\n");
+			output.Append($"## Train with enqueue: {(Parameters.TrainWithEnqueue ? "Yes" : "No")}\n");
+			output.Append($"## Tolerance = {Parameters.Tolerance}\n");
+			output.Append($"## Max consecutive selection count = {Parameters.MaxSelCount}\n");
 			output.Append(ToString());
 			return output.ToString();
 		}
@@ -326,32 +336,21 @@ public class AdaRank : Ranker
 				throw new InvalidOperationException("Error in AdaRank::LoadFromString: Unable to load model");
 			}
 
-			var keys = kvp.Keys;
-			var values = kvp.Values;
 			_rweight = new List<double>();
-			_rankers = new List<WeakRanker>();
-			Features = new int[keys.Count];
+			_rankers = new List<AdaRankWeakRanker>();
+			Features = new int[kvp.Count];
 
-			for (var i = 0; i < keys.Count; i++)
+			for (var i = 0; i < kvp.Count; i++)
 			{
-				Features[i] = int.Parse(keys[i]);
-				_rankers.Add(new WeakRanker(Features[i]));
-				_rweight.Add(double.Parse(values[i]));
+				var kv = kvp[i];
+				Features[i] = int.Parse(kv.Key);
+				_rankers.Add(new AdaRankWeakRanker(Features[i]));
+				_rweight.Add(double.Parse(kv.Key));
 			}
 		}
 		catch (Exception ex)
 		{
-			throw new InvalidOperationException("Error in AdaRank::LoadFromString: ", ex);
+			throw new InvalidOperationException("Error loading AdaRank from string", ex);
 		}
 	}
-
-	public override void PrintParameters()
-	{
-		_logger.LogInformation("No. of rounds: {NIteration}", NIteration);
-		_logger.LogInformation("Train with 'enqueue': {TrainWithEnqueue}", TrainWithEnqueue ? "Yes" : "No");
-		_logger.LogInformation("Tolerance: {Tolerance}", Tolerance);
-		_logger.LogInformation("Max Sel. Count: {MaxSelCount}", MaxSelCount);
-	}
-
-	public override string Name => "AdaRank";
 }

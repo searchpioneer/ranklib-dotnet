@@ -2,30 +2,25 @@ namespace RankLib.Learning.NeuralNet;
 
 public class Layer
 {
-	protected List<Neuron> _neurons;
+	private readonly List<Neuron> _neurons;
 
-	public Layer(int size)
+	public Layer(int count)
 	{
-		_neurons = new List<Neuron>();
-		for (var i = 0; i < size; i++)
+		_neurons = new List<Neuron>(count);
+		for (var i = 0; i < count; i++)
 		{
 			_neurons.Add(new Neuron());
 		}
 	}
 
-	public Layer(int size, int nType)
+	public Layer(int count, NeuronType neuronType)
 	{
-		_neurons = new List<Neuron>();
-		for (var i = 0; i < size; i++)
+		_neurons = new List<Neuron>(count);
+		for (var i = 0; i < count; i++)
 		{
-			if (nType == 0)
-			{
-				_neurons.Add(new Neuron());
-			}
-			else
-			{
-				_neurons.Add(new ListNeuron());
-			}
+			_neurons.Add(neuronType == NeuronType.Single
+				? new Neuron()
+				: new ListNeuron());
 		}
 	}
 

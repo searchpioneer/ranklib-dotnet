@@ -7,16 +7,13 @@ namespace RankLib.Console;
 
 internal static class DependencyInjectionMiddleware
 {
-	public static CommandLineBuilder UseDependencyInjection(this CommandLineBuilder builder, Action<ServiceCollection> configureServices)
-	{
-		return UseDependencyInjection(builder, (_, services) => configureServices(services));
-	}
+	public static CommandLineBuilder UseDependencyInjection(this CommandLineBuilder builder, Action<ServiceCollection> configureServices) =>
+		UseDependencyInjection(builder, (_, services) => configureServices(services));
 
 	// This overload allows you to conditionally register services based on the command line invocation context
 	// in order to improve startup time when you have a lot of services to register.
-	public static CommandLineBuilder UseDependencyInjection(this CommandLineBuilder builder, Action<InvocationContext, ServiceCollection> configureServices)
-	{
-		return builder.AddMiddleware(async (context, next) =>
+	public static CommandLineBuilder UseDependencyInjection(this CommandLineBuilder builder, Action<InvocationContext, ServiceCollection> configureServices) =>
+		builder.AddMiddleware(async (context, next) =>
 		{
 			// Register our services in the modern Microsoft dependency injection container
 			var services = new ServiceCollection();
@@ -43,5 +40,4 @@ internal static class DependencyInjectionMiddleware
 
 			await next(context);
 		});
-	}
 }

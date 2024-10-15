@@ -5,68 +5,68 @@ namespace RankLib.Learning.Tree;
 public class Split
 {
 	// Key attributes of a split (tree node)
-	private int featureID = -1;
-	private float threshold = 0F;
-	private double avgLabel = 0.0F;
+	private int _featureId = -1;
+	private float _threshold;
+	private double _avgLabel;
 
 	// Intermediate variables (ONLY used during learning)
 	//*DO NOT* attempt to access them once the training is done
-	private readonly double sumLabel = 0.0;
-	private readonly double sqSumLabel = 0.0;
-	private Split left = null;
-	private Split right = null;
-	private double deviance = 0F; // Mean squared error "S"
-	private int[][]? sortedSampleIDs = null;
-	public int[] samples = null;
-	public FeatureHistogram hist = null;
+	private readonly double _sumLabel;
+	private readonly double _sqSumLabel;
+	private Split _left = null;
+	private Split _right = null;
+	private double _deviance; // Mean squared error "S"
+	private int[][]? _sortedSampleIDs;
+	private int[] samples = null;
+	public FeatureHistogram? hist { get; private set; }
 
 	public Split() { }
 
-	public Split(int featureID, float threshold, double deviance)
+	public Split(int featureId, float threshold, double deviance)
 	{
-		this.featureID = featureID;
-		this.threshold = threshold;
-		this.deviance = deviance;
+		_featureId = featureId;
+		_threshold = threshold;
+		_deviance = deviance;
 	}
 
 	public Split(int[][] sortedSampleIDs, double deviance, double sumLabel, double sqSumLabel)
 	{
-		this.sortedSampleIDs = sortedSampleIDs;
-		this.deviance = deviance;
-		this.sumLabel = sumLabel;
-		this.sqSumLabel = sqSumLabel;
-		avgLabel = sumLabel / sortedSampleIDs[0].Length;
+		_sortedSampleIDs = sortedSampleIDs;
+		_deviance = deviance;
+		_sumLabel = sumLabel;
+		_sqSumLabel = sqSumLabel;
+		_avgLabel = sumLabel / sortedSampleIDs[0].Length;
 	}
 
 	public Split(int[] samples, FeatureHistogram hist, double deviance, double sumLabel)
 	{
 		this.samples = samples;
 		this.hist = hist;
-		this.deviance = deviance;
-		this.sumLabel = sumLabel;
-		avgLabel = sumLabel / samples.Length;
+		_deviance = deviance;
+		_sumLabel = sumLabel;
+		_avgLabel = sumLabel / samples.Length;
 	}
 
-	public void Set(int featureID, float threshold, double deviance)
+	public void Set(int featureId, float threshold, double deviance)
 	{
-		this.featureID = featureID;
-		this.threshold = threshold;
-		this.deviance = deviance;
+		_featureId = featureId;
+		_threshold = threshold;
+		_deviance = deviance;
 	}
 
-	public void SetLeft(Split s) => left = s;
+	public void SetLeft(Split s) => _left = s;
 
-	public void SetRight(Split s) => right = s;
+	public void SetRight(Split s) => _right = s;
 
-	public void SetOutput(float output) => avgLabel = output;
+	public void SetOutput(float output) => _avgLabel = output;
 
-	public Split GetLeft() => left;
+	public Split GetLeft() => _left;
 
-	public Split GetRight() => right;
+	public Split GetRight() => _right;
 
-	public double GetDeviance() => deviance;
+	public double GetDeviance() => _deviance;
 
-	public double GetOutput() => avgLabel;
+	public double GetOutput() => _avgLabel;
 
 	public List<Split> Leaves()
 	{
@@ -77,32 +77,25 @@ public class Split
 
 	private void Leaves(List<Split> leaves)
 	{
-		if (featureID == -1)
+		if (_featureId == -1)
 		{
 			leaves.Add(this);
 		}
 		else
 		{
-			left.Leaves(leaves);
-			right.Leaves(leaves);
+			_left.Leaves(leaves);
+			_right.Leaves(leaves);
 		}
 	}
 
 	public double Eval(DataPoint dp)
 	{
 		var n = this;
-		while (n.featureID != -1)
+		while (n._featureId != -1)
 		{
-			if (dp.GetFeatureValue(n.featureID) <= n.threshold)
-			{
-				n = n.left;
-			}
-			else
-			{
-				n = n.right;
-			}
+			n = dp.GetFeatureValue(n._featureId) <= n._threshold ? n._left : n._right;
 		}
-		return n.avgLabel;
+		return n._avgLabel;
 	}
 
 	public override string ToString() => ToString("");
@@ -116,22 +109,22 @@ public class Split
 		return buf.ToString();
 	}
 
-	public string GetString(string indent)
+	private string GetString(string indent)
 	{
 		var buf = new StringBuilder();
-		if (featureID == -1)
+		if (_featureId == -1)
 		{
-			buf.Append(indent).Append("<output>").Append(avgLabel).Append(" </output>\n");
+			buf.Append(indent).Append("<output>").Append(_avgLabel).Append("</output>\n");
 		}
 		else
 		{
-			buf.Append(indent).Append("<feature>").Append(featureID).Append(" </feature>\n");
-			buf.Append(indent).Append("<threshold> ").Append(threshold).Append(" </threshold>\n");
+			buf.Append(indent).Append("<feature>").Append(_featureId).Append("</feature>\n");
+			buf.Append(indent).Append("<threshold> ").Append(_threshold).Append("</threshold>\n");
 			buf.Append(indent).Append("<split pos=\"left\">\n");
-			buf.Append(left.GetString(indent + "\t"));
+			buf.Append(_left.GetString(indent + "\t"));
 			buf.Append(indent).Append("</split>\n");
 			buf.Append(indent).Append("<split pos=\"right\">\n");
-			buf.Append(right.GetString(indent + "\t"));
+			buf.Append(_right.GetString(indent + "\t"));
 			buf.Append(indent).Append("</split>\n");
 		}
 		return buf.ToString();
@@ -139,27 +132,26 @@ public class Split
 
 	// Internal functions (ONLY used during learning)
 	//*DO NOT* attempt to call them once the training is done
-	public bool split(double[] trainingLabels, int minLeafSupport) => hist.FindBestSplit(this, trainingLabels, minLeafSupport);
-
-	public int[] GetSamples()
+	public bool TrySplit(double[] trainingLabels, int minLeafSupport)
 	{
-		if (sortedSampleIDs != null)
-		{
-			return sortedSampleIDs[0];
-		}
-		return samples;
+		if (hist is null)
+			throw new InvalidOperationException("Histogram is null");
+
+		return hist.FindBestSplit(this, trainingLabels, minLeafSupport);
 	}
 
-	public int[][]? GetSampleSortedIndex() => sortedSampleIDs;
+	public int[] GetSamples() => _sortedSampleIDs != null ? _sortedSampleIDs[0] : samples;
 
-	public double SumLabel => sumLabel;
+	public int[][]? GetSampleSortedIndex() => _sortedSampleIDs;
 
-	public double SqSumLabel => sqSumLabel;
+	public double SumLabel => _sumLabel;
+
+	public double SqSumLabel => _sqSumLabel;
 
 	public void ClearSamples()
 	{
-		sortedSampleIDs = null;
-		samples = null;
+		_sortedSampleIDs = null;
+		samples = [];
 		hist = null;
 	}
 

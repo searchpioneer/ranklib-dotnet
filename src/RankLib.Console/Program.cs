@@ -3,14 +3,16 @@ using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using RankLib.Console;
 using RankLib.Eval;
 using RankLib.Features;
 using RankLib.Learning;
 using RankLib.Metric;
 
+namespace RankLib.Console;
+
 internal class Program
 {
+	// allows unit tests to inject a logger to capture output in the test
 	internal static Action<ILoggingBuilder>? ConfigureLogging { get; set; }
 
 	public static int Main(string[] args)
@@ -38,6 +40,7 @@ internal class Program
 				services.AddSingleton<RankerFactory>();
 				services.AddSingleton<MetricScorerFactory>();
 				services.AddSingleton<FeatureManager>();
+				services.AddSingleton<RankerTrainer>();
 			});
 
 		return builder.Build().Invoke(args);

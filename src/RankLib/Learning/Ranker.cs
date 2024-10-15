@@ -6,22 +6,55 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
-public abstract class Ranker
+public abstract class Ranker<TRankerParameters> : Ranker, IRanker<TRankerParameters>
+	where TRankerParameters : IRankerParameters, new()
+{
+	protected Ranker(ILogger<Ranker<TRankerParameters>>? logger = null) : base(logger)
+	{
+	}
+
+	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<Ranker>? logger = null)
+	: base(samples, features, scorer, logger)
+	{
+	}
+
+	public TRankerParameters Parameters { get; set; } = new();
+
+	IRankerParameters IRanker.Parameters
+	{
+		get => Parameters;
+		set => Parameters = (TRankerParameters)value;
+	}
+}
+
+public abstract class Ranker : IRanker
 {
 	private readonly ILogger<Ranker> _logger;
 	private readonly StringBuilder _logBuffer = new();
+	private MetricScorer? _scorer;
 
-	protected List<RankList> Samples = new(); // training samples
-	public int[]? Features { get; set; }
+	public List<RankList> Samples { get; set; } = []; // training samples
+
+	public List<RankList>? ValidationSamples { get; set; }
+
+	public int[] Features { get; set; } = [];
 
 	/// <summary>
 	/// Gets or sets the scorer
 	/// </summary>
-	public MetricScorer? Scorer { get; set; }
+	/// <remarks>
+	/// If no scorer is assigned, a new instance of <see cref="APScorer"/> is instantiated on first get
+	/// </remarks>
+	public MetricScorer Scorer
+	{
+		get => _scorer ?? new APScorer();
+		set => _scorer = value;
+	}
+
+	IRankerParameters IRanker.Parameters { get; set; } = default!;
 
 	protected double ScoreOnTrainingData = 0.0;
 	protected double BestScoreOnValidationData = 0.0;
-	protected List<RankList>? ValidationSamples;
 
 	protected Ranker(ILogger<Ranker>? logger = null) => _logger = logger ?? NullLogger<Ranker>.Instance;
 
@@ -29,29 +62,26 @@ public abstract class Ranker
 	{
 		Samples = samples;
 		Features = features;
-		Scorer = scorer;
+		_scorer = scorer;
 		_logger = logger ?? NullLogger<Ranker>.Instance;
 	}
 
 	// Utility functions
-	public void SetTrainingSet(List<RankList> samples) => Samples = samples;
-
-	public void SetValidationSet(List<RankList> validationSamples) => ValidationSamples = validationSamples;
 
 	public double GetScoreOnTrainingData() => ScoreOnTrainingData;
 
 	public double GetScoreOnValidationData() => BestScoreOnValidationData;
 
-	public virtual RankList Rank(RankList rl)
+	public virtual RankList Rank(RankList rankList)
 	{
-		var scores = new double[rl.Count];
-		for (var i = 0; i < rl.Count; i++)
+		var scores = new double[rankList.Count];
+		for (var i = 0; i < rankList.Count; i++)
 		{
-			scores[i] = Eval(rl[i]);
+			scores[i] = Eval(rankList[i]);
 		}
 
 		var idx = MergeSorter.Sort(scores, false);
-		return new RankList(rl, idx);
+		return new RankList(rankList, idx);
 	}
 
 	public List<RankList> Rank(List<RankList> rankLists)
@@ -64,7 +94,6 @@ public abstract class Ranker
 		return rankedRankLists;
 	}
 
-	// Create the model file directory to write models into if not already there
 	public void Save(string modelFile)
 	{
 		try
@@ -74,41 +103,34 @@ public abstract class Ranker
 		}
 		catch (Exception e)
 		{
-			throw RankLibException.Create($"Error creating kcv model file '{modelFile}'", e);
+			throw RankLibException.Create($"Error creating directory for model file '{modelFile}'", e);
 		}
 
 		FileUtils.Write(modelFile, Encoding.ASCII, Model);
+		_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 	}
 
-	protected void PrintLog(int[] len, string[] msgs)
+	protected void PrintLog(int[] len, string[] messages)
 	{
 		if (_logger.IsEnabled(LogLevel.Information))
 		{
-			for (var i = 0; i < msgs.Length; i++)
+			for (var i = 0; i < messages.Length; i++)
 			{
-				var msg = msgs[i];
+				var msg = messages[i];
 				if (msg.Length > len[i])
-				{
 					_logBuffer.Append(msg.AsSpan(0, len[i]));
-				}
 				else
-				{
-					_logBuffer.Append(msg);
-					for (var j = len[i] - msg.Length; j > 0; j--)
-					{
-						_logBuffer.Append(' ');
-					}
-				}
+					_logBuffer.Append(msg.PadRight(len[i], ' '));
 				_logBuffer.Append(" | ");
 			}
 		}
 	}
 
-	protected void PrintLogLn(int[] len, string[] msgs)
+	protected void PrintLogLn(int[] len, string[] messages)
 	{
 		if (_logger.IsEnabled(LogLevel.Information))
 		{
-			PrintLog(len, msgs);
+			PrintLog(len, messages);
 			FlushLog();
 		}
 	}
@@ -127,15 +149,9 @@ public abstract class Ranker
 
 	public abstract void Init();
 	public abstract void Learn();
-	public abstract double Eval(DataPoint p);
-	public abstract Ranker CreateNew();
+	public abstract double Eval(DataPoint dataPoint);
 	public abstract override string ToString();
 	public abstract string Model { get; }
 	public abstract void LoadFromString(string fullText);
-
-	/// <summary>
-	/// Gets the name of this ranker
-	/// </summary>
 	public abstract string Name { get; }
-	public abstract void PrintParameters();
 }

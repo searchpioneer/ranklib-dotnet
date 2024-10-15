@@ -4,6 +4,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Metric;
 
+/// <summary>
+/// Factory for creating <see cref="MetricScorer"/>
+/// </summary>
 public class MetricScorerFactory
 {
 	private static readonly Dictionary<string, Metric> MetricNames = new(StringComparer.OrdinalIgnoreCase)

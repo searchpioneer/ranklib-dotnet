@@ -10,11 +10,11 @@ public class RegressionTree
 	protected Split? root = null;
 	protected List<Split> leaves = null;
 
-	protected DataPoint[] trainingSamples = null;
-	protected double[] trainingLabels = null;
-	protected int[] features = null;
-	protected float[][] thresholds = null;
-	protected int[] index = null;
+	protected DataPoint[] trainingSamples = [];
+	protected double[] trainingLabels = [];
+	protected int[] features = [];
+	protected float[][] thresholds = [];
+	protected int[] index = [];
 	protected FeatureHistogram hist = null;
 
 	public RegressionTree(Split root)
@@ -49,7 +49,7 @@ public class RegressionTree
 		};
 
 		// Ensure inserts occur only after successful splits
-		if (root.split(trainingLabels, minLeafSupport))
+		if (root.TrySplit(trainingLabels, minLeafSupport))
 		{
 			Insert(queue, root.GetLeft());
 			Insert(queue, root.GetRight());
@@ -67,7 +67,7 @@ public class RegressionTree
 				continue;
 			}
 
-			if (!leaf.split(trainingLabels, minLeafSupport))
+			if (!leaf.TrySplit(trainingLabels, minLeafSupport))
 			{
 				taken++;
 			}

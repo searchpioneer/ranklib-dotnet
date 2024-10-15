@@ -1,3 +1,4 @@
+using System.Globalization;
 using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
@@ -10,25 +11,25 @@ using System.Xml;
 
 public class Ensemble
 {
-	protected List<RegressionTree> trees = new();
-	protected List<float> weights = new();
-	protected int[] features = null;
+	private readonly List<RegressionTree> _trees = [];
+	private readonly List<float> _weights = [];
+	private readonly int[] _features = [];
 
 	public Ensemble() { }
 
 	public Ensemble(Ensemble e)
 	{
-		trees.AddRange(e.trees);
-		weights.AddRange(e.weights);
+		_trees.AddRange(e._trees);
+		_weights.AddRange(e._weights);
 	}
 
 	public Ensemble(string xml)
 	{
 		try
 		{
-			using var inStream = new MemoryStream(Encoding.UTF8.GetBytes(xml));
+			using var stream = new MemoryStream(Encoding.UTF8.GetBytes(xml));
 			var doc = new XmlDocument();
-			doc.Load(inStream);
+			doc.Load(stream);
 			var treeNodes = doc.GetElementsByTagName("tree");
 			var fids = new Dictionary<int, int>();
 			foreach (XmlNode n in treeNodes)
@@ -38,15 +39,15 @@ public class Ensemble
 				// Get the weight for this tree
 				var weight = float.Parse(n.Attributes["weight"].Value);
 				// Add it to the ensemble
-				trees.Add(new RegressionTree(root));
-				weights.Add(weight);
+				_trees.Add(new RegressionTree(root));
+				_weights.Add(weight);
 			}
 
-			features = new int[fids.Keys.Count];
+			_features = new int[fids.Keys.Count];
 			var i = 0;
 			foreach (var fid in fids.Keys)
 			{
-				features[i++] = fid;
+				_features[i++] = fid;
 			}
 		}
 		catch (Exception ex)
@@ -57,40 +58,40 @@ public class Ensemble
 
 	public void Add(RegressionTree tree, float weight)
 	{
-		trees.Add(tree);
-		weights.Add(weight);
+		_trees.Add(tree);
+		_weights.Add(weight);
 	}
 
-	public RegressionTree GetTree(int k) => trees[k];
+	public IReadOnlyList<RegressionTree> Trees => _trees;
 
-	public float GetWeight(int k) => weights[k];
+	public IReadOnlyList<float> Weights => _weights;
 
 	public double Variance()
 	{
-		double var = 0;
-		foreach (var tree in trees)
+		double variance = 0;
+		foreach (var tree in _trees)
 		{
-			var += tree.Variance();
+			variance += tree.Variance();
 		}
-		return var;
+		return variance;
 	}
 
 	public void Remove(int k)
 	{
-		trees.RemoveAt(k);
-		weights.RemoveAt(k);
+		_trees.RemoveAt(k);
+		_weights.RemoveAt(k);
 	}
 
-	public int TreeCount => trees.Count;
+	public int TreeCount => _trees.Count;
 
-	public int[] Features => features;
+	public int[] Features => _features;
 
 	public int LeafCount
 	{
 		get
 		{
 			var count = 0;
-			foreach (var tree in trees)
+			foreach (var tree in _trees)
 				count += tree.Leaves.Count;
 
 			return count;
@@ -100,48 +101,54 @@ public class Ensemble
 	public float Eval(DataPoint dp)
 	{
 		float s = 0;
-		for (var i = 0; i < trees.Count; i++)
+		for (var i = 0; i < _trees.Count; i++)
 		{
-			s += Convert.ToSingle(trees[i].Eval(dp) * weights[i]);
+			s += Convert.ToSingle(_trees[i].Eval(dp) * _weights[i]);
 		}
 		return s;
 	}
 
 	public override string ToString()
 	{
-		var buf = new StringBuilder(1000);
-		buf.Append("<ensemble>\n");
-		for (var i = 0; i < trees.Count; i++)
+		var builder = new StringBuilder();
+		builder.Append("<ensemble>\n");
+		for (var i = 0; i < _trees.Count; i++)
 		{
-			buf.Append("\t<tree id=\"").Append(i + 1).Append("\" weight=\"").Append(weights[i].ToString()).Append("\">\n");
-			buf.Append(trees[i].ToString("\t\t"));
-			buf.Append("\t</tree>\n");
+			builder.Append("\t<tree id=\"").Append(i + 1).Append("\" weight=\"").Append(_weights[i].ToString(CultureInfo.InvariantCulture)).Append("\">\n");
+			builder.Append(_trees[i].ToString("\t\t"));
+			builder.Append("\t</tree>\n");
 		}
-		buf.Append("</ensemble>\n");
-		return buf.ToString();
+		builder.Append("</ensemble>\n");
+		return builder.ToString();
 	}
 
-	/**
-     * Each input node @n corresponds to a <split> tag in the model file.
-     * @param n
-     * @return
-     */
-	private Split Create(XmlNode n, Dictionary<int, int> fids)
+	private Split Create(XmlNode node, Dictionary<int, int> fids)
 	{
-		Split s = null;
-		if (n.FirstChild.Name.Equals("feature", StringComparison.OrdinalIgnoreCase)) // this is a split
+		Split s;
+		if (node.FirstChild is null)
 		{
-			var nl = n.ChildNodes;
-			var fid = int.Parse(nl[0].FirstChild.Value.Trim()); // <feature>
+			throw new InvalidOperationException("Node does not have a first child.");
+		}
+
+		if (node.FirstChild.Name.Equals("feature", StringComparison.OrdinalIgnoreCase)) // this is a split
+		{
+			var childNodes = node.ChildNodes;
+
+			if (childNodes.Count != 4)
+			{
+				throw new InvalidDataException("Invalid feature");
+			}
+
+			var fid = int.Parse(childNodes[0].FirstChild.Value.Trim()); // <feature>
 			fids[fid] = 0;
-			var threshold = float.Parse(nl[1].FirstChild.Value.Trim()); // <threshold>
+			var threshold = float.Parse(childNodes[1].FirstChild.Value.Trim()); // <threshold>
 			s = new Split(fid, threshold, 0);
-			s.SetLeft(Create(nl[2], fids));
-			s.SetRight(Create(nl[3], fids));
+			s.SetLeft(Create(childNodes[2], fids));
+			s.SetRight(Create(childNodes[3], fids));
 		}
 		else // this is a stump
 		{
-			var output = float.Parse(n.FirstChild.FirstChild.Value.Trim());
+			var output = float.Parse(node.FirstChild.FirstChild.Value.Trim());
 			s = new Split();
 			s.SetOutput(output);
 		}
