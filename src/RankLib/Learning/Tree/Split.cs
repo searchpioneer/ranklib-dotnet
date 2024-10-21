@@ -132,12 +132,12 @@ public class Split
 
 	// Internal functions (ONLY used during learning)
 	//*DO NOT* attempt to call them once the training is done
-	public bool TrySplit(double[] trainingLabels, int minLeafSupport)
+	public async Task<bool> TrySplit(double[] trainingLabels, int minLeafSupport)
 	{
 		if (Histogram is null)
 			throw new InvalidOperationException("Histogram is null");
 
-		return Histogram.FindBestSplit(this, trainingLabels, minLeafSupport);
+		return await Histogram.FindBestSplit(this, trainingLabels, minLeafSupport);
 	}
 
 	public int[] GetSamples() => _sortedSampleIDs != null ? _sortedSampleIDs[0] : _samples;

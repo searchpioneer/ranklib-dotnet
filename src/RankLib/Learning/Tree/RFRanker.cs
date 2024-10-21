@@ -81,7 +81,7 @@ public class RFRanker : Ranker<RFRankerParameters>
 		return Task.CompletedTask;
 	}
 
-	public override Task Learn()
+	public override async Task Learn()
 	{
 		var rankerFactory = new RankerFactory(_loggerFactory);
 		_logger.LogInformation("Training starts...");
@@ -97,8 +97,8 @@ public class RFRanker : Ranker<RFRankerParameters>
 			var r = (LambdaMART)rankerFactory.CreateRanker(Parameters.rType, bag, Features, Scorer);
 
 			r.Parameters = _lambdaMARTParameters;
-			r.Init();
-			r.Learn();
+			await r.Init();
+			await r.Learn();
 
 			// Accumulate impacts
 			if (impacts == null)
@@ -137,8 +137,6 @@ public class RFRanker : Ranker<RFRankerParameters>
 				_logger.LogInformation(" Feature " + Features[ftr] + " reduced error " + impacts![ftr]);
 			}
 		}
-
-		return Task.CompletedTask;
 	}
 
 	public override double Eval(DataPoint dataPoint)

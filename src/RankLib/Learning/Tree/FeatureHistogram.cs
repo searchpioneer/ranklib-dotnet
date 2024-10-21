@@ -2,6 +2,84 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
 
+public static class ParallelExecutor
+{
+	public static async Task<TWorker[]> ExecuteAsync<TWorker>(TWorker worker, int nTasks, int maxDegreeOfParallelism = -1, CancellationToken cancellationToken = default)
+		where TWorker : WorkerThread
+	{
+		if (maxDegreeOfParallelism <= 0)
+		{
+			maxDegreeOfParallelism = Environment.ProcessorCount;
+		}
+
+		var partition = Partition(nTasks, maxDegreeOfParallelism);
+		var workers = new TWorker[partition.Length - 1];
+
+		await Parallel.ForEachAsync(Enumerable.Range(0, partition.Length - 1),
+			new ParallelOptions
+			{
+				MaxDegreeOfParallelism = maxDegreeOfParallelism,
+				CancellationToken = cancellationToken
+			},
+			async (i, ct) =>
+			{
+				var w = (TWorker)worker.Clone();
+				w.Set(partition[i], partition[i + 1] - 1);
+				workers[i] = w;
+				await w.RunAsync().ConfigureAwait(false);
+			});
+
+		return workers;
+	}
+
+	public static async Task ExecuteAsync(IEnumerable<RunnableTask> tasks, int maxDegreeOfParallelism = -1, CancellationToken cancellationToken = default)
+	{
+		if (maxDegreeOfParallelism <= 0)
+			maxDegreeOfParallelism = Environment.ProcessorCount;
+
+		await Parallel.ForEachAsync(tasks,
+			new ParallelOptions
+			{
+				MaxDegreeOfParallelism = maxDegreeOfParallelism,
+				CancellationToken = cancellationToken
+			},
+			async (task, ct) =>
+			{
+				await task.RunAsync().ConfigureAwait(false);
+			});
+	}
+
+	public static IEnumerable<Range> PartitionEnumerable(int listSize, int nChunks)
+	{
+		nChunks = Math.Min(listSize, nChunks);
+		var chunkSize = listSize / nChunks;
+		var mod = listSize % nChunks;
+		var current = 0;
+
+		for (var i = 0; i < nChunks; i++)
+		{
+			var size = chunkSize + (i < mod ? 1 : 0);
+			var end = current + size;
+			yield return new Range(current, end - 1);
+			current = end;
+		}
+	}
+
+	public static int[] Partition(int listSize, int nChunks)
+	{
+		nChunks = Math.Min(listSize, nChunks);
+		var chunkSize = listSize / nChunks;
+		var mod = listSize % nChunks;
+		var partition = new int[nChunks + 1];
+		partition[0] = 0;
+		for (var i = 1; i <= nChunks; i++)
+		{
+			partition[i] = partition[i - 1] + chunkSize + (i <= mod ? 1 : 0);
+		}
+		return partition;
+	}
+}
+
 public class FeatureHistogram
 {
 	public class Config
@@ -17,30 +95,28 @@ public class FeatureHistogram
 
 	// Variables
 	public float[] accumFeatureImpact = null;
-	public int[] features = null;
-	public float[][] thresholds = null;
-	public double[][] sum = null;
-	public double sumResponse = 0;
-	public double sqSumResponse = 0;
-	public int[][] count = null;
-	public int[][] sampleToThresholdMap = null;
-	public double[] impacts;
+	private int[] _features = null;
+	private float[][] _thresholds = null;
+	private double[][] _sum = null;
+	private double _sumResponse = 0;
+	private double _sqSumResponse = 0;
+	private int[][] _count = null;
+	private int[][] _sampleToThresholdMap = null;
+	private double[] _impacts;
 
 	// Reuse of parent resources
 	private bool reuseParent = false;
 
-	public void Construct(DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, int[] features, float[][] thresholds, double[] impacts)
+	public async Task Construct(DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, int[] features, float[][] thresholds, double[] impacts)
 	{
-		this.features = features;
-		this.thresholds = thresholds;
-		this.impacts = impacts;
-
-		sumResponse = 0;
-		sqSumResponse = 0;
-
-		sum = new double[features.Length][];
-		count = new int[features.Length][];
-		sampleToThresholdMap = new int[features.Length][];
+		_features = features;
+		_thresholds = thresholds;
+		_impacts = impacts;
+		_sumResponse = 0;
+		_sqSumResponse = 0;
+		_sum = new double[features.Length][];
+		_count = new int[features.Length][];
+		_sampleToThresholdMap = new int[features.Length][];
 
 		var threadPool = MyThreadPool.Instance;
 		if (threadPool.Size() == 1)
@@ -49,7 +125,10 @@ public class FeatureHistogram
 		}
 		else
 		{
-			threadPool.Execute(new Worker(this, samples, labels, sampleSortedIdx, thresholds), features.Length);
+			await ParallelExecutor.ExecuteAsync(
+				new Worker(this, samples, labels, sampleSortedIdx, thresholds),
+				features.Length,
+				threadPool.Size());
 		}
 	}
 
@@ -57,7 +136,7 @@ public class FeatureHistogram
 	{
 		for (var i = start; i <= end; i++)
 		{
-			var fid = features[i];
+			var fid = _features[i];
 			var idx = sampleSortedIdx[i];
 
 			double sumLeft = 0;
@@ -79,8 +158,8 @@ public class FeatureHistogram
 					sumLeft += labels[k];
 					if (i == 0)
 					{
-						sumResponse += labels[k];
-						sqSumResponse += labels[k] * labels[k];
+						_sumResponse += labels[k];
+						_sqSumResponse += labels[k] * labels[k];
 					}
 					stMap[k] = t;
 				}
@@ -88,25 +167,28 @@ public class FeatureHistogram
 				sumLabel[t] = sumLeft;
 				c[t] = last + 1;
 			}
-			sampleToThresholdMap[i] = stMap;
-			sum[i] = sumLabel;
-			count[i] = c;
+			_sampleToThresholdMap[i] = stMap;
+			_sum[i] = sumLabel;
+			_count[i] = c;
 		}
 	}
 
-	protected internal void Update(double[] labels)
+	protected internal async Task Update(double[] labels)
 	{
-		sumResponse = 0;
-		sqSumResponse = 0;
+		_sumResponse = 0;
+		_sqSumResponse = 0;
 
 		var threadPool = MyThreadPool.Instance;
 		if (threadPool.Size() == 1)
 		{
-			Update(labels, 0, features.Length - 1);
+			Update(labels, 0, _features.Length - 1);
 		}
 		else
 		{
-			threadPool.Execute(new Worker(this, labels), features.Length);
+			await ParallelExecutor.ExecuteAsync(
+				new Worker(this, labels),
+				_features.Length,
+				threadPool.Size());
 		}
 	}
 
@@ -114,49 +196,52 @@ public class FeatureHistogram
 	{
 		for (var f = start; f <= end; f++)
 		{
-			Array.Fill(sum[f], 0);
+			Array.Fill(_sum[f], 0);
 		}
 		for (var k = 0; k < labels.Length; k++)
 		{
 			for (var f = start; f <= end; f++)
 			{
-				var t = sampleToThresholdMap[f][k];
-				sum[f][t] += labels[k];
+				var t = _sampleToThresholdMap[f][k];
+				_sum[f][t] += labels[k];
 				if (f == 0)
 				{
-					sumResponse += labels[k];
-					sqSumResponse += labels[k] * labels[k];
+					_sumResponse += labels[k];
+					_sqSumResponse += labels[k] * labels[k];
 				}
 			}
 		}
 		for (var f = start; f <= end; f++)
 		{
-			for (var t = 1; t < thresholds[f].Length; t++)
+			for (var t = 1; t < _thresholds[f].Length; t++)
 			{
-				sum[f][t] += sum[f][t - 1];
+				_sum[f][t] += _sum[f][t - 1];
 			}
 		}
 	}
 
-	public void Construct(FeatureHistogram parent, int[] soi, double[] labels)
+	public async Task Construct(FeatureHistogram parent, int[] soi, double[] labels)
 	{
-		features = parent.features;
-		thresholds = parent.thresholds;
-		impacts = parent.impacts;
-		sumResponse = 0;
-		sqSumResponse = 0;
-		sum = new double[features.Length][];
-		count = new int[features.Length][];
-		sampleToThresholdMap = parent.sampleToThresholdMap;
+		_features = parent._features;
+		_thresholds = parent._thresholds;
+		_impacts = parent._impacts;
+		_sumResponse = 0;
+		_sqSumResponse = 0;
+		_sum = new double[_features.Length][];
+		_count = new int[_features.Length][];
+		_sampleToThresholdMap = parent._sampleToThresholdMap;
 
 		var threadPool = MyThreadPool.Instance;
 		if (threadPool.Size() == 1)
 		{
-			Construct(parent, soi, labels, 0, features.Length - 1);
+			Construct(parent, soi, labels, 0, _features.Length - 1);
 		}
 		else
 		{
-			threadPool.Execute(new Worker(this, parent, soi, labels), features.Length);
+			await ParallelExecutor.ExecuteAsync(
+				new Worker(this, parent, soi, labels),
+				_features.Length,
+				threadPool.Size());
 		}
 	}
 
@@ -164,67 +249,70 @@ public class FeatureHistogram
 	{
 		for (var i = start; i <= end; i++)
 		{
-			var threshold = thresholds[i];
-			sum[i] = new double[threshold.Length];
-			count[i] = new int[threshold.Length];
-			Array.Fill(sum[i], 0);
-			Array.Fill(count[i], 0);
+			var threshold = _thresholds[i];
+			_sum[i] = new double[threshold.Length];
+			_count[i] = new int[threshold.Length];
+			Array.Fill(_sum[i], 0);
+			Array.Fill(_count[i], 0);
 		}
 
 		foreach (var k in soi)
 		{
 			for (var f = start; f <= end; f++)
 			{
-				var t = sampleToThresholdMap[f][k];
-				sum[f][t] += labels[k];
-				count[f][t]++;
+				var t = _sampleToThresholdMap[f][k];
+				_sum[f][t] += labels[k];
+				_count[f][t]++;
 				if (f == 0)
 				{
-					sumResponse += labels[k];
-					sqSumResponse += labels[k] * labels[k];
+					_sumResponse += labels[k];
+					_sqSumResponse += labels[k] * labels[k];
 				}
 			}
 		}
 
 		for (var f = start; f <= end; f++)
 		{
-			for (var t = 1; t < thresholds[f].Length; t++)
+			for (var t = 1; t < _thresholds[f].Length; t++)
 			{
-				sum[f][t] += sum[f][t - 1];
-				count[f][t] += count[f][t - 1];
+				_sum[f][t] += _sum[f][t - 1];
+				_count[f][t] += _count[f][t - 1];
 			}
 		}
 	}
 
-	public void Construct(FeatureHistogram parent, FeatureHistogram leftSibling, bool reuseParent)
+	public async Task Construct(FeatureHistogram parent, FeatureHistogram leftSibling, bool reuseParent)
 	{
 		this.reuseParent = reuseParent;
-		features = parent.features;
-		thresholds = parent.thresholds;
-		impacts = parent.impacts;
-		sumResponse = parent.sumResponse - leftSibling.sumResponse;
-		sqSumResponse = parent.sqSumResponse - leftSibling.sqSumResponse;
+		_features = parent._features;
+		_thresholds = parent._thresholds;
+		_impacts = parent._impacts;
+		_sumResponse = parent._sumResponse - leftSibling._sumResponse;
+		_sqSumResponse = parent._sqSumResponse - leftSibling._sqSumResponse;
 
 		if (reuseParent)
 		{
-			sum = parent.sum;
-			count = parent.count;
+			_sum = parent._sum;
+			_count = parent._count;
 		}
 		else
 		{
-			sum = new double[features.Length][];
-			count = new int[features.Length][];
+			_sum = new double[_features.Length][];
+			_count = new int[_features.Length][];
 		}
-		sampleToThresholdMap = parent.sampleToThresholdMap;
+		_sampleToThresholdMap = parent._sampleToThresholdMap;
 
 		var p = MyThreadPool.Instance;
 		if (p.Size() == 1)
 		{
-			Construct(parent, leftSibling, 0, features.Length - 1);
+			Construct(parent, leftSibling, 0, _features.Length - 1);
 		}
 		else
 		{
-			p.Execute(new Worker(this, parent, leftSibling), features.Length);
+			await ParallelExecutor.ExecuteAsync(
+				new Worker(this, parent, leftSibling),
+				_features.Length,
+				p.Size());
 		}
 	}
 
@@ -232,16 +320,16 @@ public class FeatureHistogram
 	{
 		for (var f = start; f <= end; f++)
 		{
-			var threshold = thresholds[f];
+			var threshold = _thresholds[f];
 			if (!reuseParent)
 			{
-				sum[f] = new double[threshold.Length];
-				count[f] = new int[threshold.Length];
+				_sum[f] = new double[threshold.Length];
+				_count[f] = new int[threshold.Length];
 			}
 			for (var t = 0; t < threshold.Length; t++)
 			{
-				sum[f][t] = parent.sum[f][t] - leftSibling.sum[f][t];
-				count[f][t] = parent.count[f][t] - leftSibling.count[f][t];
+				_sum[f][t] = parent._sum[f][t] - leftSibling._sum[f][t];
+				_count[f][t] = parent._count[f][t] - leftSibling._count[f][t];
 			}
 		}
 	}
@@ -249,26 +337,26 @@ public class FeatureHistogram
 	public Config FindBestSplit(int[] usedFeatures, int minLeafSupport, int start, int end)
 	{
 		var cfg = new Config();
-		var totalCount = count[start][count[start].Length - 1];
+		var totalCount = _count[start][_count[start].Length - 1];
 		for (var f = start; f <= end; f++)
 		{
 			var i = usedFeatures[f];
-			var threshold = thresholds[i];
+			var threshold = _thresholds[i];
 
 			for (var t = 0; t < threshold.Length; t++)
 			{
-				var countLeft = count[i][t];
+				var countLeft = _count[i][t];
 				var countRight = totalCount - countLeft;
 				if (countLeft < minLeafSupport || countRight < minLeafSupport)
 				{
 					continue;
 				}
 
-				var sumLeft = sum[i][t];
-				var sumRight = sumResponse - sumLeft;
+				var sumLeft = _sum[i][t];
+				var sumRight = _sumResponse - sumLeft;
 
 				var S = sumLeft * sumLeft / countLeft + sumRight * sumRight / countRight;
-				var errST = (sqSumResponse / totalCount) * (S / totalCount);
+				var errST = (_sqSumResponse / totalCount) * (S / totalCount);
 				if (cfg.S < S)
 				{
 					cfg.S = S;
@@ -281,7 +369,7 @@ public class FeatureHistogram
 		return cfg;
 	}
 
-	public bool FindBestSplit(Split sp, double[] labels, int minLeafSupport)
+	public async Task<bool> FindBestSplit(Split sp, double[] labels, int minLeafSupport)
 	{
 		if (sp.GetDeviance() >= 0.0 && sp.GetDeviance() <= 0.0)
 		{
@@ -291,10 +379,10 @@ public class FeatureHistogram
 		int[] usedFeatures;
 		if (samplingRate < 1) // Subsampling (feature sampling)
 		{
-			var size = (int)(samplingRate * features.Length);
+			var size = (int)(samplingRate * _features.Length);
 			usedFeatures = new int[size];
 			var featurePool = new List<int>();
-			for (var i = 0; i < features.Length; i++)
+			for (var i = 0; i < _features.Length; i++)
 			{
 				featurePool.Add(i);
 			}
@@ -309,7 +397,7 @@ public class FeatureHistogram
 		}
 		else // No subsampling, use all features
 		{
-			usedFeatures = Enumerable.Range(0, features.Length).ToArray();
+			usedFeatures = Enumerable.Range(0, _features.Length).ToArray();
 		}
 
 		var best = new Config();
@@ -320,14 +408,12 @@ public class FeatureHistogram
 		}
 		else
 		{
-			var workers = threadPool.Execute(new Worker(this, usedFeatures, minLeafSupport), usedFeatures.Length);
+			var workers = await ParallelExecutor.ExecuteAsync(new Worker(this, usedFeatures, minLeafSupport), usedFeatures.Length,
+				threadPool.Size());
 			foreach (var worker in workers)
 			{
-				var wk = (Worker)worker;
-				if (best.S < wk.cfg.S)
-				{
-					best = wk.cfg;
-				}
+				if (best.S < worker.cfg.S)
+					best = worker.cfg;
 			}
 		}
 
@@ -337,8 +423,8 @@ public class FeatureHistogram
 		}
 
 		// bestFeaturesHist is the best features
-		var bestFeaturesHist = sum[best.featureIdx];
-		var sampleCount = count[best.featureIdx];
+		var bestFeaturesHist = _sum[best.featureIdx];
+		var sampleCount = _count[best.featureIdx];
 
 		var s = bestFeaturesHist[bestFeaturesHist.Length - 1];
 		var c = sampleCount[bestFeaturesHist.Length - 1];
@@ -358,7 +444,7 @@ public class FeatureHistogram
 		foreach (var element in idx)
 		{
 			k = element;
-			if (sampleToThresholdMap[best.featureIdx][k] <= best.thresholdIdx)
+			if (_sampleToThresholdMap[best.featureIdx][k] <= best.thresholdIdx)
 			{
 				left[l++] = k;
 			}
@@ -369,15 +455,15 @@ public class FeatureHistogram
 		}
 
 		var lh = new FeatureHistogram();
-		lh.Construct(sp.Histogram, left, labels);
+		await lh.Construct(sp.Histogram, left, labels);
 		var rh = new FeatureHistogram();
-		rh.Construct(sp.Histogram, lh, !sp.Root);
+		await rh.Construct(sp.Histogram, lh, !sp.Root);
 
-		var var = sqSumResponse - sumResponse * sumResponse / idx.Length;
-		var varLeft = lh.sqSumResponse - lh.sumResponse * lh.sumResponse / left.Length;
-		var varRight = rh.sqSumResponse - rh.sumResponse * rh.sumResponse / right.Length;
+		var var = _sqSumResponse - _sumResponse * _sumResponse / idx.Length;
+		var varLeft = lh._sqSumResponse - lh._sumResponse * lh._sumResponse / left.Length;
+		var varRight = rh._sqSumResponse - rh._sumResponse * rh._sumResponse / right.Length;
 
-		sp.Set(features[best.featureIdx], thresholds[best.featureIdx][best.thresholdIdx], var);
+		sp.Set(_features[best.featureIdx], _thresholds[best.featureIdx][best.thresholdIdx], var);
 		sp.SetLeft(new Split(left, lh, varLeft, sumLeft));
 		sp.SetRight(new Split(right, rh, varRight, sumRight));
 
@@ -467,6 +553,29 @@ public class FeatureHistogram
 					break;
 			}
 		}
+
+		public override Task RunAsync() =>
+			Task.Run(() =>
+			{
+				switch (type)
+				{
+					case 0:
+						cfg = fh.FindBestSplit(usedFeatures, minLeafSup, start, end);
+						break;
+					case 1:
+						fh.Update(labels, start, end);
+						break;
+					case 2:
+						fh.Construct(parent, soi, labels, start, end);
+						break;
+					case 3:
+						fh.Construct(parent, leftSibling, start, end);
+						break;
+					case 4:
+						fh.Construct(samples, labels, sampleSortedIdx, thresholds, start, end);
+						break;
+				}
+			});
 
 		public override WorkerThread Clone()
 		{

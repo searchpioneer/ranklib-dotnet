@@ -18,12 +18,14 @@ public class MART : LambdaMART
 
 	public override string Name => RankerName;
 
-	protected override void ComputePseudoResponses()
+	protected override Task ComputePseudoResponses()
 	{
 		for (var i = 0; i < MARTSamples.Length; i++)
 		{
 			PseudoResponses[i] = MARTSamples[i].Label - ModelScores[i];
 		}
+
+		return Task.CompletedTask;
 	}
 
 	protected override void UpdateTreeOutput(RegressionTree tree)

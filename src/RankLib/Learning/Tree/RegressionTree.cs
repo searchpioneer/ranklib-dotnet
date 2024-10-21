@@ -40,7 +40,7 @@ public class RegressionTree
 	/**
      * Fit the tree from the specified training data
      */
-	public void Fit()
+	public async Task Fit()
 	{
 		var queue = new LinkedList<Split>();
 		root = new Split(index, hist, float.MaxValue, 0)
@@ -49,7 +49,7 @@ public class RegressionTree
 		};
 
 		// Ensure inserts occur only after successful splits
-		if (root.TrySplit(trainingLabels, minLeafSupport))
+		if (await root.TrySplit(trainingLabels, minLeafSupport))
 		{
 			Insert(queue, root.GetLeft());
 			Insert(queue, root.GetRight());
@@ -67,7 +67,7 @@ public class RegressionTree
 				continue;
 			}
 
-			if (!leaf.TrySplit(trainingLabels, minLeafSupport))
+			if (!await leaf.TrySplit(trainingLabels, minLeafSupport))
 			{
 				taken++;
 			}

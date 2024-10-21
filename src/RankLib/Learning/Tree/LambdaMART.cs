@@ -79,7 +79,7 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 	{
 	}
 
-	public override Task Init()
+	public override async Task Init()
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -113,12 +113,10 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		}
 		else
 		{
-			var partition = threadPool.Partition(Features.Length);
-			for (var i = 0; i < partition.Length - 1; i++)
-			{
-				threadPool.Execute(new SortWorker(this, partition[i], partition[i + 1] - 1));
-			}
-			threadPool.Await();
+			var tasks = ParallelExecutor
+				.PartitionEnumerable(Features.Length, threadPool.Size())
+				.Select(range => new SortWorker(this, range.Start.Value, range.End.Value));
+			await ParallelExecutor.ExecuteAsync(tasks, threadPool.Size());
 		}
 
 		_thresholds = new float[Features.Length][];
@@ -148,7 +146,7 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 			if (values.Count <= Parameters.nThreshold || Parameters.nThreshold == -1)
 			{
 				_thresholds[f] = values.ToArray();
-				_thresholds[f] = _thresholds[f].Concat(new float[] { float.MaxValue }).ToArray();
+				_thresholds[f] = _thresholds[f].Concat([float.MaxValue]).ToArray();
 			}
 			else
 			{
@@ -174,13 +172,11 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		}
 
 		_hist = new FeatureHistogram();
-		_hist.Construct(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts);
+		await _hist.Construct(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts);
 		_sortedIdx = [];
-
-		return Task.CompletedTask;
 	}
 
-	public override Task Learn()
+	public override async Task Learn()
 	{
 		_ensemble = new Ensemble();
 		_logger.LogInformation("Training starts...");
@@ -197,10 +193,10 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		for (var m = 0; m < Parameters.nTrees; m++)
 		{
 			PrintLog([7], [(m + 1).ToString()]);
-			ComputePseudoResponses();
-			_hist.Update(PseudoResponses);
+			await ComputePseudoResponses();
+			await _hist.Update(PseudoResponses);
 			var rt = new RegressionTree(Parameters.nTreeLeaves, MARTSamples, PseudoResponses, _hist, Parameters.minLeafSupport);
-			rt.Fit();
+			await rt.Fit();
 			_ensemble.Add(rt, Parameters.learningRate);
 			UpdateTreeOutput(rt);
 
@@ -265,8 +261,6 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		{
 			_logger.LogInformation($"Feature {Features[ftr]} reduced error {Impacts[ftr]}");
 		}
-
-		return Task.CompletedTask;
 	}
 
 	public override double Eval(DataPoint dataPoint) => _ensemble.Eval(dataPoint);
@@ -301,7 +295,7 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 	public Ensemble GetEnsemble() => _ensemble;
 
 	// Helper Methods
-	protected virtual void ComputePseudoResponses()
+	protected virtual async Task ComputePseudoResponses()
 	{
 		Array.Fill(PseudoResponses, 0);
 		Array.Fill(_weights, 0);
@@ -312,14 +306,20 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		}
 		else
 		{
-			var workers = new List<LambdaComputationWorker>();
-			var partition = p.Partition(Samples.Count);
+			var partition = ParallelExecutor.Partition(Samples.Count, p.Size());
 			var current = 0;
-			for (var i = 0; i < partition.Length - 1; i++)
+			var parallelOptions = new ParallelOptions
 			{
-				var worker = new LambdaComputationWorker(this, partition[i], partition[i + 1] - 1, current);
-				workers.Add(worker);
-				p.Execute(worker);
+				MaxDegreeOfParallelism = p.Size() == -1 ? Environment.ProcessorCount : p.Size(),
+				CancellationToken = default
+			};
+			await Parallel.ForEachAsync(Enumerable.Range(0, partition.Length), parallelOptions, async (i, token) =>
+			{
+				await Task.Run(() =>
+				{
+					ComputePseudoResponses(partition[i], partition[i + 1] - 1, current);
+				}, token);
+
 				if (i < partition.Length - 2)
 				{
 					for (var j = partition[i]; j <= partition[i + 1] - 1; j++)
@@ -327,8 +327,7 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 						current += Samples[j].Count;
 					}
 				}
-			}
-			p.Await();
+			});
 		}
 	}
 
@@ -443,9 +442,9 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		return score;
 	}
 
-	protected void SortSamplesByFeature(int fStart, int fEnd)
+	protected void SortSamplesByFeature(int start, int end)
 	{
-		for (var i = fStart; i <= fEnd; i++)
+		for (var i = start; i <= end; i++)
 		{
 			_sortedIdx[i] = SortSamplesByFeature(MARTSamples, Features[i]);
 		}
@@ -453,35 +452,18 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 
 	private class SortWorker : RunnableTask
 	{
-		private readonly LambdaMART ranker;
-		private readonly int start;
-		private readonly int end;
+		private readonly LambdaMART _ranker;
+		private readonly int _start;
+		private readonly int _end;
 
 		public SortWorker(LambdaMART ranker, int start, int end)
 		{
-			this.ranker = ranker;
-			this.start = start;
-			this.end = end;
+			_ranker = ranker;
+			_start = start;
+			_end = end;
 		}
 
-		public override void Run() => ranker.SortSamplesByFeature(start, end);
-	}
-
-	private class LambdaComputationWorker : RunnableTask
-	{
-		private readonly LambdaMART ranker;
-		private readonly int rlStart;
-		private readonly int rlEnd;
-		private readonly int martStart;
-
-		public LambdaComputationWorker(LambdaMART ranker, int rlStart, int rlEnd, int martStart)
-		{
-			this.ranker = ranker;
-			this.rlStart = rlStart;
-			this.rlEnd = rlEnd;
-			this.martStart = martStart;
-		}
-
-		public override void Run() => ranker.ComputePseudoResponses(rlStart, rlEnd, martStart);
+		public override void Run() => _ranker.SortSamplesByFeature(_start, _end);
+		public override Task RunAsync() => Task.Run(() => _ranker.SortSamplesByFeature(_start, _end));
 	}
 }

@@ -104,7 +104,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<string>("--kcvmn", "Name for model learned in each fold. It will be prefix-ed with the fold-number (default=empty)"));
 
 		AddOption(new Option<IEnumerable<FileInfo>>("--load", "Load saved model file"));
-		AddOption(new Option<int>("--thread", () => -1, "Number of threads to use"));
+		AddOption(new Option<int>("--thread", () => Environment.ProcessorCount, "Number of threads to use. If unspecified, will use number of processors"));
 		AddOption(new Option<FileInfo>("--rank", "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
 		AddOption(new Option<FileInfo>("--indri", "Indri ranking file").ExistingOnly());
 		AddOption(new Option<bool>("--sparse", "Use sparse representation"));
@@ -338,10 +338,6 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			LinearRegRankParameters.Lambda = options.L2.Value;
 		}
 
-		if (options.Thread == -1)
-		{
-			options.Thread = Environment.ProcessorCount;
-		}
 		MyThreadPool.Init(options.Thread);
 
 		Normalizer? normalizer = null;
