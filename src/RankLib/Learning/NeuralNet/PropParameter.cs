@@ -7,7 +7,7 @@ public class PropParameter
 	public int[][] PairMap { get; protected set; } = [];
 
 	// LambdaRank: RankNet + the following
-	public float[][] PairWeight { get; protected set; } = [];
+	public float[][]? PairWeight { get; protected set; }
 	public float[][] TargetValue { get; protected set; } = [];
 
 	// ListNet

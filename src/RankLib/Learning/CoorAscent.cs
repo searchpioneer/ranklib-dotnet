@@ -1,6 +1,8 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using RankLib.Features;
 using RankLib.Metric;
 using RankLib.Utilities;
 
@@ -51,11 +53,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 	{
 		_logger.LogInformation("Initializing...");
 		Weight = new double[Features.Length];
-		for (var i = 0; i < Weight.Length; i++)
-		{
-			Weight[i] = 1.0 / Features.Length;
-		}
-
+		Array.Fill(Weight, 1.0d / Features.Length);
 		return Task.CompletedTask;
 	}
 
@@ -91,7 +89,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 			{
 				_logger.LogInformation("Shuffling features' order...");
 				_logger.LogInformation("Optimizing weight vector... ");
-				PrintLogLn(new[] { 7, 8, 7 }, new[] { "Feature", "weight", Scorer.Name });
+				PrintLogLn([7, 8, 7], ["Feature", "weight", Scorer.Name]);
 
 				var shuffledFeatures = GetShuffledFeatures();
 
@@ -133,7 +131,8 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 								bestTotalStep = totalStep;
 								succeeds = true;
 								var bw = Weight[shuffledFeatures[i]] > 0 ? "+" : "";
-								PrintLogLn(new[] { 7, 8, 7 }, new[] { Features[shuffledFeatures[i]].ToString(), $"{bw}{Math.Round(Weight[shuffledFeatures[i]], 4)}", Math.Round(bestScore, 4).ToString() });
+								PrintLogLn([7, 8, 7], [Features[shuffledFeatures[i]].ToString(), $"{bw}{Math.Round(Weight[shuffledFeatures[i]], 4)}", Math.Round(bestScore, 4).ToString(CultureInfo.InvariantCulture)
+								]);
 							}
 
 							if (j < Parameters.nMaxIteration - 1)
@@ -265,7 +264,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 			output.AppendLine($"## StepBase = {Parameters.stepBase}");
 			output.AppendLine($"## StepScale = {Parameters.stepScale}");
 			output.AppendLine($"## Tolerance = {Parameters.tolerance}");
-			output.AppendLine($"## Regularized = {Parameters.regularized}");
+			output.AppendLine($"## Regularized = {(Parameters.regularized ? "true" : "false")}");
 			output.AppendLine($"## Slack = {Parameters.slack}");
 			output.AppendLine(ToString());
 			return output.ToString();
@@ -315,22 +314,35 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 			var rl = Samples[j];
 			for (var i = 0; i < rl.Count; i++)
 			{
-				rl[i].Cached = rl[i].Cached / sum;
+				rl[i].Cached = (rl[i].Cached / sum);
 			}
 		}
 	}
 
 	private int[] GetShuffledFeatures()
 	{
-		var indices = Enumerable.Range(0, Features.Length).ToList();
-		indices = indices.OrderBy(x => Guid.NewGuid()).ToList(); // Shuffle
-		return indices.ToArray();
+		var fids = new int[Features.Length];
+		var l = new List<int>(Features.Length);
+		for (var i = 0; i < Features.Length; i++)
+			l.Add(i);
+
+		l.Shuffle();
+		for (var i = 0; i < l.Count; i++)
+			fids[i] = l[i];
+
+		return fids;
+
 	}
 
 	private double GetDistance(double[] w1, double[] w2)
 	{
-		var s1 = w1.Sum(Math.Abs);
-		var s2 = w2.Sum(Math.Abs);
+		var s1 = 0.0;
+		var s2 = 0.0;
+		for (var i = 0; i < w1.Length; i++)
+		{
+			s1 += Math.Abs(w1[i]);
+			s2 += Math.Abs(w2[i]);
+		}
 		var dist = 0.0;
 		for (var i = 0; i < w1.Length; i++)
 		{
@@ -346,17 +358,13 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 		if (sum > 0)
 		{
 			for (var i = 0; i < weights.Length; i++)
-			{
 				weights[i] /= sum;
-			}
 		}
 		else
 		{
 			sum = 1;
 			for (var i = 0; i < weights.Length; i++)
-			{
 				weights[i] = 1.0 / weights.Length;
-			}
 		}
 		return sum;
 	}

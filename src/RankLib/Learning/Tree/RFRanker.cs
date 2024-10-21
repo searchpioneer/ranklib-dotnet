@@ -73,10 +73,9 @@ public class RFRanker : Ranker<RFRankerParameters>
 			nThreshold = Parameters.nThreshold,
 			minLeafSupport = Parameters.minLeafSupport,
 			nRoundToStopEarly = -1, // no early stopping since we're doing bagging
+			// Turn on feature sampling
+			SamplingRate = Parameters.featureSamplingRate,
 		};
-
-		// Turn on feature sampling
-		FeatureHistogram.samplingRate = Parameters.featureSamplingRate;
 
 		return Task.CompletedTask;
 	}

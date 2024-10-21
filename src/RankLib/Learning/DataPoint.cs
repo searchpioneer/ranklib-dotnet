@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace RankLib.Learning;
 
@@ -46,7 +47,7 @@ public abstract class DataPoint
 				text = text.Substring(0, idx).Trim(); // remove the comment part at the end of the line
 			}
 
-			var fs = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+			var fs = Regex.Split(text, "\\s+");
 			Label = float.Parse(fs[0]);
 
 			if (Label < 0)

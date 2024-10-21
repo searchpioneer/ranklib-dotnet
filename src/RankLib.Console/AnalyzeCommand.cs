@@ -7,9 +7,9 @@ namespace RankLib.Console;
 
 public class AnalyzeCommandOptions : ICommandOptions
 {
-	public DirectoryInfo All { get; set; }
+	public DirectoryInfo All { get; set; } = default!;
 
-	public FileInfo Base { get; set; }
+	public FileInfo Base { get; set; } = default!;
 
 	public int? Np { get; set; }
 }

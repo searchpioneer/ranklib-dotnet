@@ -33,9 +33,9 @@ public class AdaRank : Ranker<AdaRankParameters>
 
 	private readonly ILogger<AdaRank> _logger;
 	private readonly Dictionary<int, int> _usedFeatures = new();
-	private double[] _sweight = []; // Sample weight
+	private double[] _sampleWeights = []; // Sample weight
 	private List<AdaRankWeakRanker> _rankers = []; // Alpha
-	private List<double> _rweight = []; // Weak rankers' weight
+	private List<double> _rankerWeights = []; // Weak rankers' weight
 	private List<AdaRankWeakRanker> _bestModelRankers = [];
 	private List<double> _bestModelWeights = [];
 
@@ -61,7 +61,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 		_bestModelRankers.Clear();
 		_bestModelRankers.AddRange(_rankers);
 		_bestModelWeights.Clear();
-		_bestModelWeights.AddRange(_rweight);
+		_bestModelWeights.AddRange(_rankerWeights);
 	}
 
 	private AdaRankWeakRanker? LearnWeakRanker()
@@ -78,7 +78,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 			var s = 0.0;
 			for (var j = 0; j < Samples.Count; j++)
 			{
-				var t = Scorer.Score(wr.Rank(Samples[j])) * _sweight[j];
+				var t = Scorer.Score(wr.Rank(Samples[j])) * _sampleWeights[j];
 				s += t;
 			}
 
@@ -110,8 +110,8 @@ public class AdaRank : Ranker<AdaRankParameters>
 				{
 					_featureQueue.Add(_lastFeature);
 					_rankers.RemoveAt(_rankers.Count - 1);
-					_rweight.RemoveAt(_rweight.Count - 1);
-					Array.Copy(_backupSampleWeight, _sweight, _sweight.Length);
+					_rankerWeights.RemoveAt(_rankerWeights.Count - 1);
+					Array.Copy(_backupSampleWeight, _sampleWeights, _sampleWeights.Length);
 					BestScoreOnValidationData = 0.0;
 					_lastTrainedScore = _backupTrainScore;
 					PrintLogLn([8, 9, 9, 9], [bestWeakRanker.Fid.ToString(), "", "", "ROLLBACK"]);
@@ -119,7 +119,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 				}
 
 				_lastFeature = bestWeakRanker.Fid;
-				Array.Copy(_sweight, _backupSampleWeight, _sweight.Length);
+				Array.Copy(_sampleWeights, _backupSampleWeight, _sampleWeights.Length);
 				_backupTrainScore = _lastTrainedScore;
 			}
 
@@ -128,13 +128,13 @@ public class AdaRank : Ranker<AdaRankParameters>
 			for (var i = 0; i < Samples.Count; i++)
 			{
 				var tmp = Scorer.Score(bestWeakRanker.Rank(Samples[i]));
-				num += _sweight[i] * (1.0 + tmp);
-				denom += _sweight[i] * (1.0 - tmp);
+				num += _sampleWeights[i] * (1.0 + tmp);
+				denom += _sampleWeights[i] * (1.0 - tmp);
 			}
 
 			_rankers.Add(bestWeakRanker);
 			var alphaT = 0.5 * SimpleMath.Ln(num / denom);
-			_rweight.Add(alphaT);
+			_rankerWeights.Add(alphaT);
 
 			var trainedScore = 0.0;
 			var total = 0.0;
@@ -204,16 +204,14 @@ public class AdaRank : Ranker<AdaRankParameters>
 			if (delta <= 0)
 			{
 				_rankers.RemoveAt(_rankers.Count - 1);
-				_rweight.RemoveAt(_rweight.Count - 1);
+				_rankerWeights.RemoveAt(_rankerWeights.Count - 1);
 				break;
 			}
 
 			_lastTrainedScore = trainedScore;
 
-			for (var i = 0; i < _sweight.Length; i++)
-			{
-				_sweight[i] *= Math.Exp(-alphaT * Scorer.Score(Rank(Samples[i]))) / total;
-			}
+			for (var i = 0; i < _sampleWeights.Length; i++)
+				_sampleWeights[i] *= Math.Exp(-alphaT * Scorer.Score(Rank(Samples[i]))) / total;
 		}
 
 		return t;
@@ -224,22 +222,20 @@ public class AdaRank : Ranker<AdaRankParameters>
 		_logger.LogInformation("Initializing...");
 		_usedFeatures.Clear();
 
-		_sweight = new double[Samples.Count];
-		for (var i = 0; i < _sweight.Length; i++)
-		{
-			_sweight[i] = 1.0f / Samples.Count;
-		}
+		_sampleWeights = new double[Samples.Count];
+		for (var i = 0; i < _sampleWeights.Length; i++)
+			_sampleWeights[i] = 1.0f / Samples.Count;
 
-		_backupSampleWeight = new double[_sweight.Length];
-		Array.Copy(_sweight, _backupSampleWeight, _sweight.Length);
+		_backupSampleWeight = new double[_sampleWeights.Length];
+		Array.Copy(_sampleWeights, _backupSampleWeight, _sampleWeights.Length);
 
 		_lastTrainedScore = -1.0;
-		_rankers = new List<AdaRankWeakRanker>();
-		_rweight = new List<double>();
-		_featureQueue = new List<int>();
+		_rankers = [];
+		_rankerWeights = [];
+		_featureQueue = [];
 		BestScoreOnValidationData = 0.0;
-		_bestModelRankers = new List<AdaRankWeakRanker>();
-		_bestModelWeights = new List<double>();
+		_bestModelRankers = [];
+		_bestModelWeights = [];
 
 		return Task.CompletedTask;
 	}
@@ -266,9 +262,9 @@ public class AdaRank : Ranker<AdaRankParameters>
 		if (ValidationSamples != null && _bestModelRankers.Count > 0)
 		{
 			_rankers.Clear();
-			_rweight.Clear();
+			_rankerWeights.Clear();
 			_rankers.AddRange(_bestModelRankers);
-			_rweight.AddRange(_bestModelWeights);
+			_rankerWeights.AddRange(_bestModelWeights);
 		}
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
@@ -290,7 +286,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 		var score = 0.0;
 		for (var j = 0; j < _rankers.Count; j++)
 		{
-			score += _rweight[j] * dataPoint.GetFeatureValue(_rankers[j].Fid);
+			score += _rankerWeights[j] * dataPoint.GetFeatureValue(_rankers[j].Fid);
 		}
 		return score;
 	}
@@ -299,7 +295,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 	{
 		var output = new StringBuilder();
 		for (var i = 0; i < _rankers.Count; i++)
-			output.Append(_rankers[i].Fid + ":" + _rweight[i] + (i == _rankers.Count - 1 ? "" : " "));
+			output.Append(_rankers[i].Fid + ":" + _rankerWeights[i] + (i == _rankers.Count - 1 ? "" : " "));
 		return output.ToString();
 	}
 
@@ -340,7 +336,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 				throw new InvalidOperationException("Error in AdaRank::LoadFromString: Unable to load model");
 			}
 
-			_rweight = new List<double>();
+			_rankerWeights = new List<double>();
 			_rankers = new List<AdaRankWeakRanker>();
 			Features = new int[kvp.Count];
 
@@ -349,7 +345,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 				var kv = kvp[i];
 				Features[i] = int.Parse(kv.Key);
 				_rankers.Add(new AdaRankWeakRanker(Features[i]));
-				_rweight.Add(double.Parse(kv.Key));
+				_rankerWeights.Add(double.Parse(kv.Key));
 			}
 		}
 		catch (Exception ex)

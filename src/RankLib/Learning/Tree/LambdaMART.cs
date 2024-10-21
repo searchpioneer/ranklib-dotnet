@@ -16,6 +16,8 @@ public class LambdaMARTParameters : IRankerParameters
 	public int nRoundToStopEarly { get; set; } = 100;
 	public int nTreeLeaves { get; set; } = 10;
 	public int minLeafSupport { get; set; } = 1;
+	public float SamplingRate { get; set; } = 1;
+	public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
 
 	public void Log(ILogger logger)
 	{
@@ -106,17 +108,14 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 
 		// Sort samples by each feature
 		_sortedIdx = new int[Features.Length][];
-		var threadPool = MyThreadPool.Instance;
-		if (threadPool.Size() == 1)
-		{
+		if (Parameters.MaxDegreeOfParallelism == 1)
 			SortSamplesByFeature(0, Features.Length - 1);
-		}
 		else
 		{
 			var tasks = ParallelExecutor
-				.PartitionEnumerable(Features.Length, threadPool.Size())
+				.PartitionEnumerable(Features.Length, Parameters.MaxDegreeOfParallelism)
 				.Select(range => new SortWorker(this, range.Start.Value, range.End.Value));
-			await ParallelExecutor.ExecuteAsync(tasks, threadPool.Size());
+			await ParallelExecutor.ExecuteAsync(tasks, Parameters.MaxDegreeOfParallelism);
 		}
 
 		_thresholds = new float[Features.Length][];
@@ -171,7 +170,7 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 			}
 		}
 
-		_hist = new FeatureHistogram();
+		_hist = new FeatureHistogram(Parameters.SamplingRate, Parameters.MaxDegreeOfParallelism);
 		await _hist.Construct(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts);
 		_sortedIdx = [];
 	}
@@ -195,12 +194,12 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 			PrintLog([7], [(m + 1).ToString()]);
 			await ComputePseudoResponses();
 			await _hist.Update(PseudoResponses);
-			var rt = new RegressionTree(Parameters.nTreeLeaves, MARTSamples, PseudoResponses, _hist, Parameters.minLeafSupport);
-			await rt.Fit();
-			_ensemble.Add(rt, Parameters.learningRate);
-			UpdateTreeOutput(rt);
+			var tree = new RegressionTree(Parameters.nTreeLeaves, MARTSamples, PseudoResponses, _hist, Parameters.minLeafSupport);
+			await tree.Fit();
+			_ensemble.Add(tree, Parameters.learningRate);
+			UpdateTreeOutput(tree);
 
-			var leaves = rt.Leaves;
+			var leaves = tree.Leaves;
 			for (var i = 0; i < leaves.Count; i++)
 			{
 				var s = leaves[i];
@@ -210,7 +209,7 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 					ModelScores[idx[j]] += Parameters.learningRate * s.GetOutput();
 				}
 			}
-			rt.ClearSamples();
+			tree.ClearSamples();
 
 			ScoreOnTrainingData = ComputeModelScoreOnTraining();
 			PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
@@ -222,7 +221,7 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 					for (var j = 0; j < _modelScoresOnValidation[i].Length; j++)
 					{
 						var tempQualifier = ValidationSamples[i];
-						_modelScoresOnValidation[i][j] += Parameters.learningRate * rt.Eval(tempQualifier[j]);
+						_modelScoresOnValidation[i][j] += Parameters.learningRate * tree.Eval(tempQualifier[j]);
 					}
 				}
 				double score = ComputeModelScoreOnValidation();
@@ -299,34 +298,41 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 	{
 		Array.Fill(PseudoResponses, 0);
 		Array.Fill(_weights, 0);
-		var p = MyThreadPool.Instance;
-		if (p.Size() == 1)
-		{
+		if (Parameters.MaxDegreeOfParallelism == 1)
 			ComputePseudoResponses(0, Samples.Count - 1, 0);
-		}
 		else
 		{
-			var partition = ParallelExecutor.Partition(Samples.Count, p.Size());
+			var partition = ParallelExecutor.Partition(Samples.Count, Parameters.MaxDegreeOfParallelism);
 			var current = 0;
 			var parallelOptions = new ParallelOptions
 			{
-				MaxDegreeOfParallelism = p.Size() == -1 ? Environment.ProcessorCount : p.Size(),
+				MaxDegreeOfParallelism = Parameters.MaxDegreeOfParallelism,
 				CancellationToken = default
 			};
-			await Parallel.ForEachAsync(Enumerable.Range(0, partition.Length), parallelOptions, async (i, token) =>
+
+			var e = Enumerable.Range(0, partition.Length - 1)
+				.Select(i =>
+				{
+					var start = partition[i];
+					var end = partition[i + 1] - 1;
+					var thisCurrent = current;
+					if (i > 0 && i < partition.Length - 2)
+					{
+						for (var j = partition[i]; j <= partition[i + 1] - 1; j++)
+						{
+							thisCurrent += Samples[j].Count;
+						}
+					}
+
+					return (start, end, thisCurrent);
+				});
+
+			await Parallel.ForEachAsync(e, parallelOptions, async (i, token) =>
 			{
 				await Task.Run(() =>
 				{
-					ComputePseudoResponses(partition[i], partition[i + 1] - 1, current);
+					ComputePseudoResponses(i.start, i.end, i.thisCurrent);
 				}, token);
-
-				if (i < partition.Length - 2)
-				{
-					for (var j = partition[i]; j <= partition[i + 1] - 1; j++)
-					{
-						current += Samples[j].Count;
-					}
-				}
 			});
 		}
 	}
@@ -375,20 +381,20 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 	protected virtual void UpdateTreeOutput(RegressionTree tree)
 	{
 		var leaves = tree.Leaves;
-		foreach (var s in leaves)
+		foreach (var split in leaves)
 		{
 			var s1 = 0F;
 			var s2 = 0F;
-			var idx = s.GetSamples();
+			var idx = split.GetSamples();
 			foreach (var k in idx)
 			{
 				s1 += Convert.ToSingle(PseudoResponses[k]);
 				s2 += Convert.ToSingle(_weights[k]);
 			}
 			if (s2 == 0)
-				s.SetOutput(0);
+				split.SetOutput(0);
 			else
-				s.SetOutput(s1 / s2);
+				split.SetOutput(s1 / s2);
 		}
 	}
 
@@ -463,7 +469,6 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 			_end = end;
 		}
 
-		public override void Run() => _ranker.SortSamplesByFeature(_start, _end);
 		public override Task RunAsync() => Task.Run(() => _ranker.SortSamplesByFeature(_start, _end));
 	}
 }

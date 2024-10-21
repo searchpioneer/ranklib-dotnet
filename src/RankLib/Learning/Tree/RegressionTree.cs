@@ -67,7 +67,7 @@ public class RegressionTree
 				continue;
 			}
 
-			if (!await leaf.TrySplit(trainingLabels, minLeafSupport))
+			if (!(await leaf.TrySplit(trainingLabels, minLeafSupport)))
 			{
 				taken++;
 			}
@@ -157,12 +157,8 @@ public class RegressionTree
 		}
 
 		if (current == null)
-		{
-			ls.AddLast(s);
-		}
+			ls.AddFirst(s);
 		else
-		{
 			ls.AddBefore(current, s);
-		}
 	}
 }

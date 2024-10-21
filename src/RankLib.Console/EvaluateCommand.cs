@@ -338,7 +338,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			LinearRegRankParameters.Lambda = options.L2.Value;
 		}
 
-		MyThreadPool.Init(options.Thread);
+		LambdaMARTParameters.MaxDegreeOfParallelism = options.Thread;
 
 		Normalizer? normalizer = null;
 		if (options.Norm != null)
@@ -521,7 +521,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 					logger.LogInformation($"Highest relevance label (to compute ERR): {(int)SimpleMath.LogBase2(ERRScorer.DefaultMax)}");
 				}
 
-				if (savedModelFiles.Count() > 1)
+				if (savedModelFiles.Count > 1)
 				{
 					if (testFiles.Count() > 1)
 					{

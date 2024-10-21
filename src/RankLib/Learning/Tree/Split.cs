@@ -20,6 +20,8 @@ public class Split
 	private int[] _samples = [];
 	public FeatureHistogram? Histogram { get; private set; }
 
+	public bool Root { get; set; }
+
 	public Split() { }
 
 	public Split(int featureId, float threshold, double deviance)
@@ -114,12 +116,12 @@ public class Split
 		var buf = new StringBuilder();
 		if (_featureId == -1)
 		{
-			buf.Append(indent).Append("<output>").Append(_avgLabel).Append("</output>\n");
+			buf.Append(indent).Append("<output> ").Append(_avgLabel).Append(" </output>\n");
 		}
 		else
 		{
-			buf.Append(indent).Append("<feature>").Append(_featureId).Append("</feature>\n");
-			buf.Append(indent).Append("<threshold> ").Append(_threshold).Append("</threshold>\n");
+			buf.Append(indent).Append("<feature> ").Append(_featureId).Append(" </feature>\n");
+			buf.Append(indent).Append("<threshold> ").Append(_threshold).Append(" </threshold>\n");
 			buf.Append(indent).Append("<split pos=\"left\">\n");
 			buf.Append(_left.GetString(indent + "\t"));
 			buf.Append(indent).Append("</split>\n");
@@ -154,6 +156,4 @@ public class Split
 		_samples = [];
 		Histogram = null;
 	}
-
-	public bool Root { get; set; }
 }

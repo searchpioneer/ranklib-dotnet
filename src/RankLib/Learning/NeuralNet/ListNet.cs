@@ -13,6 +13,8 @@ public class ListNetParameters : RankNetParameters
 	{
 		// FIXED, it doesn't work with hidden layer
 		NHiddenLayer = 0;
+		NIteration = 1500;
+		LearningRate = 0.00001;
 	}
 }
 

@@ -16,7 +16,5 @@ public abstract class WorkerThread : RunnableTask
 
 public abstract class RunnableTask
 {
-	public abstract void Run();
-
 	public abstract Task RunAsync();
 }

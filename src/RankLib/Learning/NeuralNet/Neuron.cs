@@ -62,7 +62,7 @@ public class Neuron
 			float weight = 1;
 			double pij;
 
-			if (param.PairWeight == null)
+			if (param.PairWeight is null)
 			{
 				pij = 1.0 / (1.0 + Math.Exp(_outputs[current] - _outputs[j]));
 			}
