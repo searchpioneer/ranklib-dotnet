@@ -21,9 +21,7 @@ public class MART : LambdaMART
 	protected override Task ComputePseudoResponses()
 	{
 		for (var i = 0; i < MARTSamples.Length; i++)
-		{
 			PseudoResponses[i] = MARTSamples[i].Label - ModelScores[i];
-		}
 
 		return Task.CompletedTask;
 	}
@@ -35,10 +33,12 @@ public class MART : LambdaMART
 		{
 			float s1 = 0;
 			var idx = s.GetSamples();
-			foreach (var k in idx)
+			for (var i = 0; i < idx.Length; i++)
 			{
-				s1 = (float) (s1 + PseudoResponses[k]);
+				var k = idx[i];
+				s1 = (float)(s1 + PseudoResponses[k]);
 			}
+
 			s.SetOutput(s1 / idx.Length);
 		}
 	}

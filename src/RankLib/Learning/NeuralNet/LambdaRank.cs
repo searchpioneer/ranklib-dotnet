@@ -93,7 +93,7 @@ public class LambdaRank : RankNet
 			{
 				var k = pairMap[i][j];
 				var sign = rl[i].Label > rl[k].Label ? 1 : -1;
-				weight[i][j] = (float)Math.Abs(changes[i][pairMap[i][j]]) * sign;
+				weight[i][j] = (float) (Math.Abs(changes[i][pairMap[i][j]]) * sign);
 			}
 		}
 
