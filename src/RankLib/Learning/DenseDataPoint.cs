@@ -6,39 +6,39 @@ public class DenseDataPoint : DataPoint
 {
 	public DenseDataPoint(string text) : base(text) { }
 
-	public DenseDataPoint(DenseDataPoint dp)
+	public DenseDataPoint(DenseDataPoint dataPoint)
 	{
-		Label = dp.Label;
-		Id = dp.Id;
-		Description = dp.Description;
-		Cached = dp.Cached;
-		_fVals = new float[dp._fVals.Length];
-		Array.Copy(dp._fVals, _fVals, dp._fVals.Length);
+		Label = dataPoint.Label;
+		Id = dataPoint.Id;
+		Description = dataPoint.Description;
+		Cached = dataPoint.Cached;
+		FVals = new float[dataPoint.FVals.Length];
+		Array.Copy(dataPoint.FVals, FVals, dataPoint.FVals.Length);
 	}
 
 	public override float GetFeatureValue(int fid)
 	{
-		if (fid <= 0 || fid >= _fVals.Length)
+		if (fid <= 0 || fid >= FVals.Length)
 		{
 			if (MissingZero)
-			{
 				return 0f;
-			}
+
 			throw RankLibException.Create($"Error in DenseDataPoint::GetFeatureValue(): requesting unspecified feature, fid={fid}");
 		}
-		return IsUnknown(_fVals[fid]) ? 0 : _fVals[fid];
+
+		return IsUnknown(FVals[fid]) ? 0 : FVals[fid];
 	}
 
 	public override void SetFeatureValue(int fid, float fval)
 	{
-		if (fid <= 0 || fid >= _fVals.Length)
+		if (fid <= 0 || fid >= FVals.Length)
 		{
 			throw RankLibException.Create($"Error in DenseDataPoint::SetFeatureValue(): feature (id={fid}) not found.");
 		}
-		_fVals[fid] = fval;
+		FVals[fid] = fval;
 	}
 
-	public override void SetFeatureVector(float[] dfVals) => _fVals = dfVals;
+	protected override void SetFeatureVector(float[] dfVals) => FVals = dfVals;
 
-	public override float[] GetFeatureVector() => _fVals;
+	protected override float[] GetFeatureVector() => FVals;
 }

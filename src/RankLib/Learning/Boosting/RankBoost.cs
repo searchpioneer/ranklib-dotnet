@@ -192,7 +192,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 		}
 	}
 
-	public override Task Init()
+	public override Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -320,7 +320,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 		return Task.CompletedTask;
 	}
 
-	public override Task Learn()
+	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn([7, 8, 9, 9, 9, 9], ["#iter", "Sel. F.", "Threshold", "Error", Scorer.Name + "-T", Scorer.Name + "-V"

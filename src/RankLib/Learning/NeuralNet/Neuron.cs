@@ -29,9 +29,8 @@ public class Neuron
 	{
 		var wsum = 0.0;
 		foreach (var synapse in InLinks)
-		{
 			wsum += synapse.Source.GetOutput() * synapse.Weight;
-		}
+
 		_output = _transferFunction.Compute(wsum);
 	}
 
@@ -39,9 +38,8 @@ public class Neuron
 	{
 		var wsum = 0.0;
 		foreach (var synapse in InLinks)
-		{
 			wsum += synapse.Source.GetOutput(i) * synapse.Weight;
-		}
+
 		_output = _transferFunction.Compute(wsum);
 		_outputs.Add(_output);
 	}
@@ -59,17 +57,18 @@ public class Neuron
 		for (var k = 0; k < pairMap[current].Length; k++)
 		{
 			var j = pairMap[current][k];
-			float weight = 1;
+			float weight;
 			double pij;
 
 			if (param.PairWeight is null)
 			{
+				weight = 1;
 				pij = 1.0 / (1.0 + Math.Exp(_outputs[current] - _outputs[j]));
 			}
 			else
 			{
 				weight = param.PairWeight[current][k];
-				pij = param.TargetValue[current][k] - 1.0 / (1.0 + Math.Exp(_outputs[current] - _outputs[j]));
+				pij = (double) (param.TargetValue[current][k] - 1.0 / (1.0 + Math.Exp(-(_outputs[current] - _outputs[j]))));
 			}
 
 			var lambda = weight * pij;
@@ -99,15 +98,11 @@ public class Neuron
 			{
 				errorSum += synapse.Target._deltas_j[k] * synapse.Weight;
 				if (k == 0)
-				{
 					_delta_i += synapse.Target._delta_i * synapse.Weight;
-				}
 			}
 
 			if (k == 0)
-			{
 				_delta_i *= weight * _transferFunction.ComputeDerivative(_outputs[current]);
-			}
 
 			_deltas_j[k] = errorSum * weight * _transferFunction.ComputeDerivative(_outputs[j]);
 		}
@@ -119,9 +114,7 @@ public class Neuron
 		{
 			var sumJ = 0.0;
 			for (var l = 0; l < _deltas_j.Length; l++)
-			{
 				sumJ += _deltas_j[l] * synapse.Source.GetOutput(param.PairMap[param.Current][l]);
-			}
 
 			var dw = LearningRate * (_delta_i * synapse.Source.GetOutput(param.Current) - sumJ);
 			synapse.UpdateWeight(dw);

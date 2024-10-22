@@ -107,7 +107,6 @@ public abstract class Ranker : IRanker
 		}
 
 		FileUtils.Write(modelFile, Encoding.ASCII, Model);
-		_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 	}
 
 	protected void PrintLog(int[] len, string[] messages)
@@ -147,8 +146,8 @@ public abstract class Ranker : IRanker
 		}
 	}
 
-	public abstract Task Init();
-	public abstract Task Learn();
+	public abstract Task InitAsync();
+	public abstract Task LearnAsync();
 	public abstract double Eval(DataPoint dataPoint);
 	public abstract override string ToString();
 	public abstract string Model { get; }

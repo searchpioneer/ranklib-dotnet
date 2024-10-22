@@ -133,7 +133,7 @@ public class Evaluator
 				Normalize(test, features);
 		}
 
-		var (ranker, _) = await _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
+		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
 
 		if (test != null)
 		{
@@ -163,7 +163,7 @@ public class Evaluator
 		Type rankerType,
 		string sampleFile,
 		string? validationFile,
-		string featureDefFile,
+		string? featureDefFile,
 		double percentTrain,
 		string? modelFile = null,
 		IRankerParameters? parameters = default)
@@ -178,7 +178,7 @@ public class Evaluator
 			Normalize(validation, features);
 		}
 
-		var (ranker, _) = await _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
+		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
 		var rankScore = Evaluate(ranker, test);
 		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
@@ -205,7 +205,7 @@ public class Evaluator
 		string trainFile,
 		double percentTrain,
 		string? testFile,
-		string featureDefFile,
+		string? featureDefFile,
 		string? modelFile = null,
 		IRankerParameters? parameters = default)
 	{
@@ -219,7 +219,7 @@ public class Evaluator
 			Normalize(test, features);
 		}
 
-		var (ranker, _) = await _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
+		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
 
 		if (test != null)
 		{
@@ -296,7 +296,7 @@ public class Evaluator
 			var validation = tvs > 0 ? validationData[i] : null;
 			var test = testData[i];
 
-			var (ranker, _) = await _trainer.Train(rankerType, train, validation, features, _trainScorer, parameters);
+			var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
 
 			var testScore = Evaluate(ranker, test);
 			scoreOnTrain += ranker.GetScoreOnTrainingData();

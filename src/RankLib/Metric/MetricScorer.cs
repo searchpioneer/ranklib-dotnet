@@ -29,9 +29,8 @@ public abstract class MetricScorer
 	{
 		var score = 0.0;
 		for (var i = 0; i < rankLists.Count; i++)
-		{
 			score += Score(rankLists[i]);
-		}
+
 		return score / rankLists.Count;
 	}
 
@@ -44,9 +43,8 @@ public abstract class MetricScorer
 	{
 		var rel = new int[rankList.Count];
 		for (var i = 0; i < rankList.Count; i++)
-		{
 			rel[i] = (int)rankList[i].Label;
-		}
+
 		return rel;
 	}
 

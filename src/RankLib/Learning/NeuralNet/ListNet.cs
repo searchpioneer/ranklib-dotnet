@@ -82,7 +82,7 @@ public class ListNet : RankNet
 		_lastError = _error;
 	}
 
-	public override Task Init()
+	public override Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -103,7 +103,7 @@ public class ListNet : RankNet
 		return Task.CompletedTask;
 	}
 
-	public override Task Learn()
+	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn([7, 14, 9, 9], ["#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V"]);

@@ -96,7 +96,7 @@ public class RankerFactory
 		if (!_rankers.TryGetValue(rankerType, out var factory))
 			throw new ArgumentException($"Ranker of type '{rankerType.Name}' is not registered.");
 
-		var ranker = CreateRanker(rankerType);
+		var ranker = factory(_loggerFactory);
 		ranker.Features = features;
 		ranker.Samples = samples;
 		ranker.Scorer = scorer;

@@ -6,14 +6,9 @@ public static class ParallelExecutor
 		where TWorker : WorkerThread
 	{
 		if (maxDegreeOfParallelism <= 0)
-		{
 			maxDegreeOfParallelism = Environment.ProcessorCount;
-		}
 
 		var partition = Partition(nTasks, maxDegreeOfParallelism);
-		//var workers = new TWorker[partition.Length - 1];
-
-
 		var workers = Enumerable.Range(0, partition.Length - 1)
 			.Select(i =>
 			{
@@ -35,23 +30,6 @@ public static class ParallelExecutor
 			});
 
 		return workers.ToArray();
-	}
-
-	public static async Task ExecuteAsync(IEnumerable<Task> tasks, int maxDegreeOfParallelism = -1, CancellationToken cancellationToken = default)
-	{
-		if (maxDegreeOfParallelism <= 0)
-			maxDegreeOfParallelism = Environment.ProcessorCount;
-
-		await Parallel.ForEachAsync(tasks,
-			new ParallelOptions
-			{
-				MaxDegreeOfParallelism = maxDegreeOfParallelism,
-				CancellationToken = cancellationToken
-			},
-			async (task, ct) =>
-			{
-				await task.ConfigureAwait(false);
-			});
 	}
 
 	public static async Task ExecuteAsync(IEnumerable<RunnableTask> tasks, int maxDegreeOfParallelism = -1, CancellationToken cancellationToken = default)

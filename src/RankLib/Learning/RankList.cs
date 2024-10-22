@@ -28,10 +28,8 @@ public class RankList
 	{
 		_dataPoints = new DataPoint[rankList.Count];
 		for (var i = 0; i < idx.Length; i++)
-		{
-			var k = idx[i];
-			_dataPoints[i] = rankList[k];
-		}
+			_dataPoints[i] = rankList[idx[i]];
+
 		Init();
 	}
 
@@ -40,23 +38,19 @@ public class RankList
 	{
 		_dataPoints = new DataPoint[rankList.Count];
 		for (var i = 0; i < idx.Length; i++)
-		{
-			var k = idx[i] - offset;
-			_dataPoints[i] = rankList[k];
-		}
+			_dataPoints[i] = rankList[idx[i] - offset];
+
 		Init();
 	}
 
 	// Initialize feature count
-	protected void Init()
+	private void Init()
 	{
 		foreach (var dp in _dataPoints)
 		{
 			var count = dp.FeatureCount;
 			if (count > FeatureCount)
-			{
 				FeatureCount = count;
-			}
 		}
 	}
 
@@ -80,9 +74,7 @@ public class RankList
 	{
 		var score = new double[_dataPoints.Length];
 		for (var i = 0; i < _dataPoints.Length; i++)
-		{
 			score[i] = _dataPoints[i].Label;
-		}
 
 		var idx = Sorter.Sort(score, false);
 		return new RankList(this, idx);
@@ -93,9 +85,7 @@ public class RankList
 	{
 		var score = new double[_dataPoints.Length];
 		for (var i = 0; i < _dataPoints.Length; i++)
-		{
 			score[i] = _dataPoints[i].GetFeatureValue(fid);
-		}
 
 		var idx = Sorter.Sort(score, false);
 		return new RankList(this, idx);

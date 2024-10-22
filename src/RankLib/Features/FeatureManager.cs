@@ -16,7 +16,7 @@ public class FeatureManager
 
 	public List<RankList> ReadInput(string inputFile, bool mustHaveRelDoc, bool useSparseRepresentation)
 	{
-		var samples = new List<RankList>(1000);
+		var samples = new List<RankList>();
 		var countEntries = 0;
 
 		try
@@ -24,21 +24,17 @@ public class FeatureManager
 			using var reader = FileUtils.SmartReader(inputFile);
 			var lastId = string.Empty;
 			var hasRel = false;
-			var dataPoints = new List<DataPoint>(10000);
+			var dataPoints = new List<DataPoint>();
 
 			while (reader.ReadLine() is { } content)
 			{
 				var contentSpan = content.AsSpan().Trim();
 
 				if (contentSpan.IsEmpty || contentSpan[0] == '#')
-				{
 					continue;
-				}
 
 				if (countEntries % 10000 == 0)
-				{
 					_logger.LogInformation("Reading feature file [{InputFile}]: {CountEntries}...", inputFile, countEntries);
-				}
 
 				DataPoint dataPoint = useSparseRepresentation
 					? new SparseDataPoint(contentSpan.ToString())
@@ -47,17 +43,14 @@ public class FeatureManager
 				if (!string.IsNullOrEmpty(lastId) && !lastId.Equals(dataPoint.Id, StringComparison.OrdinalIgnoreCase))
 				{
 					if (!mustHaveRelDoc || hasRel)
-					{
 						samples.Add(new RankList(dataPoints));
-					}
+
 					dataPoints = new List<DataPoint>();
 					hasRel = false;
 				}
 
 				if (dataPoint.Label > 0)
-				{
 					hasRel = true;
-				}
 
 				lastId = dataPoint.Id;
 				dataPoints.Add(dataPoint);
@@ -65,9 +58,7 @@ public class FeatureManager
 			}
 
 			if (dataPoints.Count != 0 && (!mustHaveRelDoc || hasRel))
-			{
 				samples.Add(new RankList(dataPoints));
-			}
 
 			_logger.LogInformation(
 				"Reading feature file [{InputFile}] completed. (Read {SamplesCount} ranked lists, {CountEntries} entries)",
@@ -129,12 +120,13 @@ public class FeatureManager
 	public int[] GetFeatureFromSampleVector(List<RankList> samples)
 	{
 		if (samples.Count == 0)
-		{
 			throw RankLibException.Create("samples is empty");
-		}
 
 		var maxFeatureCount = samples.Max(rl => rl.FeatureCount);
-		var features = Enumerable.Range(1, maxFeatureCount).ToArray();
+		var features = new int[maxFeatureCount];
+
+		for(var i=1; i <= maxFeatureCount; i++)
+			features[i-1] = i;
 
 		return features;
 	}

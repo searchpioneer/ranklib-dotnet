@@ -129,10 +129,10 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<int?>("--leaf", "TODO: Number of leaves"));
 		AddOption(new Option<float?>("--shrinkage", "TODO: Learning Rate"));
 		AddOption(new Option<int?>("--mls", "Min leaf support. minimum #samples each leaf has to contain (default=1)"));
-		AddOption(new Option<int?>("--estop", "Stop early when no improvement is observed on validaton data in N consecutive rounds (default=100)"));
+		AddOption(new Option<int?>("--estop", "Stop early when no improvement is observed on validation data in e consecutive rounds (default=100)"));
 		AddOption(new Option<int?>("--bag", "Number of bags (default=300)"));
-		AddOption(new Option<float?>("--srate", "Sub-sampling rate (default=1.0)"));
-		AddOption(new Option<float?>("--frate", "Feature sampling rate (default=0.3)"));
+		AddOption(new Option<float?>("--srate", () => RFRankerParameters.DefaultSubSamplingRate, "Sub-sampling rate"));
+		AddOption(new Option<float?>("--frate", () => RFRankerParameters.DefaultFeatureSamplingRate, "Feature sampling rate"));
 		AddOption(new Option<RankerType?>("--rtype", "RfRanker ranker type to bag. Random Forests only support MART/LambdaMART"));
 		AddOption(new Option<double?>("--L2", "TODO: Lambda"));
 		AddOption(new Option<bool?>("--hr", "TODO: Must Have Relevance Doc"));
@@ -242,24 +242,16 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		}
 
 		if (options.NoEq != null)
-		{
 			AdaRankParameters.TrainWithEnqueue = false;
-		}
 
 		if (options.Max != null)
-		{
 			AdaRankParameters.MaxSelCount = options.Max.Value;
-		}
 
 		if (options.R != null)
-		{
 			CoorAscentParameters.nRestart = options.R.Value;
-		}
 
 		if (options.I != null)
-		{
 			CoorAscentParameters.nMaxIteration = options.I.Value;
-		}
 
 		if (options.Round != null)
 		{
@@ -304,39 +296,30 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		}
 
 		if (options.EStop != null)
-		{
 			LambdaMARTParameters.nRoundToStopEarly = options.EStop.Value;
-		}
 
 		if (options.Bag != null)
-		{
 			RfRankerParameters.nBag = options.Bag.Value;
-		}
 
 		if (options.SRate != null)
-		{
 			RfRankerParameters.subSamplingRate = options.SRate.Value;
-		}
 
 		if (options.FRate != null)
-		{
 			RfRankerParameters.featureSamplingRate = options.FRate.Value;
-		}
 
 		if (options.RType != null)
 		{
 			if (options.RType != RankerType.MART && options.RType != RankerType.LAMBDAMART)
 			{
-				throw RankLibException.Create(options.RType + " cannot be bagged. Random Forests only supports MART/LambdaMART.");
+				throw RankLibException.Create(
+					$"{options.RType} cannot be bagged. Random Forests only supports MART/LambdaMART.");
 			}
 
 			RfRankerParameters.rType = options.RType.Value;
 		}
 
 		if (options.L2 != null)
-		{
 			LinearRegRankParameters.Lambda = options.L2.Value;
-		}
 
 		LambdaMARTParameters.MaxDegreeOfParallelism = options.Thread;
 
@@ -383,9 +366,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			{
 				logger.LogInformation("Cross validation: {FoldCv} folds.", foldCv);
 				if (tvSplit > 0)
-				{
 					logger.LogInformation("Train-Validation split: {TvSplit}", tvSplit);
-				}
 			}
 			else
 			{
@@ -400,7 +381,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 					logger.LogInformation("Train-Validation split: {TrainValidationSplit}", tvSplit);
 			}
 
-			logger.LogInformation($"Feature vector representation: {(options.Sparse ? "Sparse" : "Dense")}.");
+			logger.LogInformation("Feature vector representation: {VectorRepresentation}.", options.Sparse ? "Sparse" : "Dense");
 			logger.LogInformation("Ranking method: {Ranker}", options.Ranker);
 
 			if (featureDescriptionFile != null)
@@ -412,7 +393,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			logger.LogInformation("Test metric: {TestMetric}", testMetric);
 
 			if (trainMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase)
-			    || testMetric != null && testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
+			    || (testMetric != null && testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase)))
 				logger.LogInformation("Highest relevance label (to compute ERR): {HighRelevanceLabel}", (int)SimpleMath.LogBase2(ERRScorer.DefaultMax));
 
 			if (options.QRel != null)
@@ -421,21 +402,15 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			logger.LogInformation("Feature normalization: {FeatureNormalization}", normalizer != null ? normalizer.Name : "No");
 
 			if (kcvModelDir != null)
-			{
 				logger.LogInformation("Models directory: {KcvModelDir}", kcvModelDir);
-			}
 
 			if (!string.IsNullOrEmpty(kcvModelFile))
-			{
 				logger.LogInformation($"Models' name: {kcvModelFile}");
-			}
 
 			if (options.Save != null)
-			{
 				logger.LogInformation("Model file: {ModelFile}", options.Save.FullName);
-			}
 
-			logger.LogInformation($"[+] {options.Ranker}'s Parameters:");
+			logger.LogInformation("[+] {Ranker}'s Parameters:", options.Ranker);
 			rankerParameters.Log(logger);
 
 			// starting to do some work
@@ -445,31 +420,56 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				//  default names for missing arguments: "kcvmodels" default directory
 				//  and "kcv" default model name.
 				if (kcvModelDir != null && string.IsNullOrEmpty(kcvModelFile))
-				{
 					kcvModelFile = "kcv";
-				}
 				else if (kcvModelDir == null && !string.IsNullOrEmpty(kcvModelFile))
-				{
 					kcvModelDir = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "kcvmodels"));
-				}
 
 				//- models won't be saved if kcvModelDir=""   [OBSOLETE]
 				//- Models saved if EITHER kcvmd OR kcvmn defined.  Use default names for missing values.
-				await evaluator.Evaluate(rankerType, trainFile.FullName, featureDescriptionFile?.FullName, foldCv, tvSplit, kcvModelDir!.FullName, kcvModelFile!, rankerParameters);
+				await evaluator.Evaluate(
+					rankerType,
+					trainFile.FullName,
+					featureDescriptionFile?.FullName,
+					foldCv,
+					tvSplit,
+					kcvModelDir!.FullName,
+					kcvModelFile!,
+					rankerParameters);
 			}
 			else
 			{
 				if (ttSplit > 0.0)
 				{
-					await evaluator.Evaluate(rankerType, trainFile.FullName, validationFile?.FullName, featureDescriptionFile?.FullName, ttSplit, options.Save?.FullName, rankerParameters);
+					await evaluator.Evaluate(
+						rankerType,
+						trainFile.FullName,
+						validationFile?.FullName,
+						featureDescriptionFile?.FullName,
+						ttSplit,
+						options.Save?.FullName,
+						rankerParameters);
 				}
 				else if (tvSplit > 0.0)
 				{
-					await evaluator.Evaluate(rankerType, trainFile.FullName, tvSplit, testFile?.FullName, featureDescriptionFile.FullName, options.Save?.FullName, rankerParameters);
+					await evaluator.Evaluate(
+						rankerType,
+						trainFile.FullName,
+						tvSplit,
+						testFile?.FullName,
+						featureDescriptionFile?.FullName,
+						options.Save?.FullName,
+						rankerParameters);
 				}
 				else
 				{
-					await evaluator.Evaluate(rankerType, trainFile.FullName, validationFile?.FullName, testFile?.FullName, featureDescriptionFile?.FullName, options.Save?.FullName, rankerParameters);
+					await evaluator.Evaluate(
+						rankerType,
+						trainFile.FullName,
+						validationFile?.FullName,
+						testFile?.FullName,
+						featureDescriptionFile?.FullName,
+						options.Save?.FullName,
+						rankerParameters);
 				}
 			}
 		}
@@ -503,47 +503,38 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 							evaluator.Rank(savedModelFiles[0], rankFile.FullName, indriRankingFile.FullName);
 							break;
 						default:
+							// This is *ONLY* for debugging purposes. It is *NOT* exposed via cmd-line
+							// It will evaluate the input ranking (without being re-ranked by any model) using any measure specified via metric2T
 							evaluator.Rank(rankFile.FullName, indriRankingFile.FullName);
 							break;
 					}
 				}
 				else
 				{
-					throw RankLibException.Create("This function has been removed. Consider using -score in addition to " +
-											  "your current parameters and do the ranking yourself based on these scores.");
+					throw RankLibException.Create(
+						"This function has been removed. Consider using -score in addition to " +
+						"your current parameters and do the ranking yourself based on these scores.");
 				}
 			}
 			else
 			{
 				logger.LogInformation("Test metric: {TestMetric}", testMetric);
 				if (testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
-				{
 					logger.LogInformation($"Highest relevance label (to compute ERR): {(int)SimpleMath.LogBase2(ERRScorer.DefaultMax)}");
-				}
 
 				if (savedModelFiles.Count > 1)
 				{
 					if (testFiles.Count() > 1)
-					{
 						evaluator.Test(savedModelFiles, testFiles.Select(f => f.FullName).ToList(), prpFile.FullName);
-					}
 					else
-					{
 						evaluator.Test(savedModelFiles, testFile.FullName, prpFile.FullName);
-					}
 				}
 				else if (savedModelFiles.Count == 1)
-				{
 					evaluator.Test(savedModelFiles[0], testFile.FullName, prpFile?.FullName);
-				}
 				else if (scoreFile != null)
-				{
 					evaluator.TestWithScoreFile(testFile!.FullName, scoreFile.FullName);
-				}
 				else
-				{
 					evaluator.Test(testFile!.FullName, prpFile?.FullName);
-				}
 			}
 		}
 

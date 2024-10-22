@@ -35,9 +35,9 @@ public class SparseDataPoint : DataPoint
 		Description = dp.Description;
 		Cached = dp.Cached;
 		_fIds = new int[dp._fIds.Length];
-		_fVals = new float[dp._fVals.Length];
+		FVals = new float[dp.FVals.Length];
 		Array.Copy(dp._fIds, 0, _fIds, 0, dp._fIds.Length);
-		Array.Copy(dp._fVals, 0, _fVals, 0, dp._fVals.Length);
+		Array.Copy(dp.FVals, 0, FVals, 0, dp.FVals.Length);
 	}
 
 	private int Locate(int fid)
@@ -90,7 +90,7 @@ public class SparseDataPoint : DataPoint
 		var pos = Locate(fid);
 		if (pos >= 0)
 		{
-			return _fVals[pos];
+			return FVals[pos];
 		}
 
 		return 0; // Should ideally be returning unknown?
@@ -106,7 +106,7 @@ public class SparseDataPoint : DataPoint
 		var pos = Locate(fid);
 		if (pos >= 0)
 		{
-			_fVals[pos] = fval;
+			FVals[pos] = fval;
 		}
 		else
 		{
@@ -114,17 +114,17 @@ public class SparseDataPoint : DataPoint
 		}
 	}
 
-	public override void SetFeatureVector(float[] dfVals)
+	protected override void SetFeatureVector(float[] dfVals)
 	{
 		_fIds = new int[_knownFeatures];
-		_fVals = new float[_knownFeatures];
+		FVals = new float[_knownFeatures];
 		var pos = 0;
 		for (var i = 1; i < dfVals.Length; i++)
 		{
 			if (!IsUnknown(dfVals[i]))
 			{
 				_fIds[pos] = i;
-				_fVals[pos] = dfVals[i];
+				FVals[pos] = dfVals[i];
 				pos++;
 			}
 		}
@@ -134,13 +134,13 @@ public class SparseDataPoint : DataPoint
 		}
 	}
 
-	public override float[] GetFeatureVector()
+	protected override float[] GetFeatureVector()
 	{
 		var dfVals = new float[_fIds[_knownFeatures - 1] + 1]; // Adjust for array length
 		Array.Fill(dfVals, Unknown);
 		for (var i = 0; i < _knownFeatures; i++)
 		{
-			dfVals[_fIds[i]] = _fVals[i];
+			dfVals[_fIds[i]] = FVals[i];
 		}
 		return dfVals;
 	}

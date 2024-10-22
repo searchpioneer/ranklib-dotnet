@@ -36,13 +36,13 @@ public class LinearRegRank : Ranker<LinearRegRankParameters>
 
 	public override string Name => RankerName;
 
-	public override Task Init()
+	public override Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
 		return Task.CompletedTask;
 	}
 
-	public override Task Learn()
+	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
 		_logger.LogInformation("Learning the least square model...");

@@ -60,7 +60,7 @@ public class SumNormalizer : Normalizer
 			for (var j = 0; j < fids.Length; j++)
 			{
 				if (norm[j] > 0)
-					dataPoint.SetFeatureValue(fids[j], Convert.ToSingle(dataPoint.GetFeatureValue(fids[j]) / norm[j]));
+					dataPoint.SetFeatureValue(fids[j], (float)(dataPoint.GetFeatureValue(fids[j]) / norm[j]));
 			}
 		}
 	}

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace RankLib.Learning.Tree;
@@ -20,7 +21,7 @@ public class Split
 	private int[] _samples = [];
 	public FeatureHistogram? Histogram { get; private set; }
 
-	public bool Root { get; set; }
+	public bool IsRoot { get; set; }
 
 	public Split() { }
 
@@ -80,9 +81,7 @@ public class Split
 	private void Leaves(List<Split> leaves)
 	{
 		if (_featureId == -1)
-		{
 			leaves.Add(this);
-		}
 		else
 		{
 			_left.Leaves(leaves);
@@ -90,12 +89,14 @@ public class Split
 		}
 	}
 
-	public double Eval(DataPoint dp)
+	public double Eval(DataPoint dataPoint)
 	{
 		var n = this;
 		while (n._featureId != -1)
 		{
-			n = dp.GetFeatureValue(n._featureId) <= n._threshold ? n._left : n._right;
+			n = dataPoint.GetFeatureValue(n._featureId) <= n._threshold
+				? n._left
+				: n._right;
 		}
 		return n._avgLabel;
 	}
@@ -104,42 +105,43 @@ public class Split
 
 	public string ToString(string indent)
 	{
-		var buf = new StringBuilder();
-		buf.Append(indent).Append("<split>\n");
-		buf.Append(GetString(indent + "\t"));
-		buf.Append(indent).Append("</split>\n");
-		return buf.ToString();
+		var builder = new StringBuilder();
+		builder.Append(indent).Append("<split>\n");
+		builder.Append(GetString(indent + "\t"));
+		builder.Append(indent).Append("</split>\n");
+		return builder.ToString();
 	}
 
 	private string GetString(string indent)
 	{
-		var buf = new StringBuilder();
+		var builder = new StringBuilder();
 		if (_featureId == -1)
-		{
-			buf.Append(indent).Append("<output> ").Append(_avgLabel).Append(" </output>\n");
-		}
+			builder.Append(indent).Append("<output> ").Append(GetString(_avgLabel)).Append(" </output>\n");
 		else
 		{
-			buf.Append(indent).Append("<feature> ").Append(_featureId).Append(" </feature>\n");
-			buf.Append(indent).Append("<threshold> ").Append(_threshold).Append(" </threshold>\n");
-			buf.Append(indent).Append("<split pos=\"left\">\n");
-			buf.Append(_left.GetString(indent + "\t"));
-			buf.Append(indent).Append("</split>\n");
-			buf.Append(indent).Append("<split pos=\"right\">\n");
-			buf.Append(_right.GetString(indent + "\t"));
-			buf.Append(indent).Append("</split>\n");
+			builder.Append(indent).Append("<feature> ").Append(_featureId).Append(" </feature>\n");
+			builder.Append(indent).Append("<threshold> ").Append(GetString(_threshold)).Append(" </threshold>\n");
+			builder.Append(indent).Append("<split pos=\"left\">\n");
+			builder.Append(_left.GetString(indent + "\t"));
+			builder.Append(indent).Append("</split>\n");
+			builder.Append(indent).Append("<split pos=\"right\">\n");
+			builder.Append(_right.GetString(indent + "\t"));
+			builder.Append(indent).Append("</split>\n");
 		}
-		return buf.ToString();
+		return builder.ToString();
 	}
+
+	private static string GetString(double value) => double.IsInteger(value) ? value.ToString("F1") : value.ToString(CultureInfo.InvariantCulture);
+	private static string GetString(float value) => float.IsInteger(value) ? value.ToString("F1") : value.ToString(CultureInfo.InvariantCulture);
 
 	// Internal functions (ONLY used during learning)
 	//*DO NOT* attempt to call them once the training is done
-	public async Task<bool> TrySplit(double[] trainingLabels, int minLeafSupport)
+	public async Task<bool> TrySplitAsync(double[] trainingLabels, int minLeafSupport)
 	{
 		if (Histogram is null)
 			throw new InvalidOperationException("Histogram is null");
 
-		return await Histogram.FindBestSplit(this, trainingLabels, minLeafSupport);
+		return await Histogram.FindBestSplitAsync(this, trainingLabels, minLeafSupport);
 	}
 
 	public int[] GetSamples() => _sortedSampleIDs != null ? _sortedSampleIDs[0] : _samples;

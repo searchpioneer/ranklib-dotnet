@@ -28,16 +28,16 @@ public class MART : LambdaMART
 		return Task.CompletedTask;
 	}
 
-	protected override void UpdateTreeOutput(RegressionTree tree)
+	protected override void UpdateTreeOutput(RegressionTree rt)
 	{
-		var leaves = tree.Leaves;
+		var leaves = rt.Leaves;
 		foreach (var s in leaves)
 		{
-			var s1 = 0.0F;
+			float s1 = 0;
 			var idx = s.GetSamples();
 			foreach (var k in idx)
 			{
-				s1 += Convert.ToSingle(PseudoResponses[k]);
+				s1 = (float) (s1 + PseudoResponses[k]);
 			}
 			s.SetOutput(s1 / idx.Length);
 		}

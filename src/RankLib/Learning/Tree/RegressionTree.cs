@@ -3,162 +3,133 @@ namespace RankLib.Learning.Tree;
 public class RegressionTree
 {
 	// Parameters
-	protected int nodes = 10; // -1 for unlimited number of nodes (the size of the tree will then be controlled *ONLY* by minLeafSupport)
-	protected int minLeafSupport = 1;
+	private readonly int _nodes = 10; // -1 for unlimited number of nodes (the size of the tree will then be controlled *ONLY* by minLeafSupport)
+	private readonly int _minLeafSupport = 1;
 
 	// Member variables and functions
-	protected Split? root = null;
-	protected List<Split> leaves = null;
+	private Split? _root;
+	private List<Split> _leaves = null;
 
-	protected DataPoint[] trainingSamples = [];
-	protected double[] trainingLabels = [];
+	private DataPoint[] _trainingSamples = [];
+	private double[] _trainingLabels = [];
 	protected int[] features = [];
 	protected float[][] thresholds = [];
-	protected int[] index = [];
-	protected FeatureHistogram hist = null;
+	private int[] _index = [];
+	private FeatureHistogram _hist = null;
 
 	public RegressionTree(Split root)
 	{
-		this.root = root;
-		leaves = root.Leaves();
+		_root = root;
+		_leaves = root.Leaves();
 	}
 
 	public RegressionTree(int nLeaves, DataPoint[] trainingSamples, double[] labels, FeatureHistogram hist, int minLeafSupport)
 	{
-		nodes = nLeaves;
-		this.trainingSamples = trainingSamples;
-		trainingLabels = labels;
-		this.hist = hist;
-		this.minLeafSupport = minLeafSupport;
-		index = new int[trainingSamples.Length];
+		_nodes = nLeaves;
+		_trainingSamples = trainingSamples;
+		_trainingLabels = labels;
+		_hist = hist;
+		_minLeafSupport = minLeafSupport;
+		_index = new int[trainingSamples.Length];
+
 		for (var i = 0; i < trainingSamples.Length; i++)
-		{
-			index[i] = i;
-		}
+			_index[i] = i;
 	}
 
 	/**
      * Fit the tree from the specified training data
      */
-	public async Task Fit()
+	public async Task FitAsync()
 	{
-		var queue = new LinkedList<Split>();
-		root = new Split(index, hist, float.MaxValue, 0)
+		var queue = new List<Split>();
+		_root = new Split(_index, _hist, float.MaxValue, 0)
 		{
-			Root = true
+			IsRoot = true
 		};
 
 		// Ensure inserts occur only after successful splits
-		if (await root.TrySplit(trainingLabels, minLeafSupport))
+		if (await _root.TrySplitAsync(_trainingLabels, _minLeafSupport))
 		{
-			Insert(queue, root.GetLeft());
-			Insert(queue, root.GetRight());
+			Insert(queue, _root.GetLeft());
+			Insert(queue, _root.GetRight());
 		}
 
 		var taken = 0;
-		while ((nodes == -1 || taken + queue.Count < nodes) && queue.Count > 0)
+		while ((_nodes == -1 || taken + queue.Count < _nodes) && queue.Count > 0)
 		{
-			var leaf = queue.First!.Value;
-			queue.RemoveFirst();
+			var leaf = queue[0];
+			queue.RemoveAt(0);
 
-			if (leaf.GetSamples().Length < 2 * minLeafSupport)
+			if (leaf.GetSamples().Length < 2 * _minLeafSupport)
 			{
 				taken++;
 				continue;
 			}
 
-			if (!(await leaf.TrySplit(trainingLabels, minLeafSupport)))
-			{
+			// unsplitable (i.e. variance(s)==0; or after-split variance is higher than before)
+			if (!await leaf.TrySplitAsync(_trainingLabels, _minLeafSupport))
 				taken++;
-			}
 			else
 			{
 				Insert(queue, leaf.GetLeft());
 				Insert(queue, leaf.GetRight());
 			}
 		}
-		leaves = root.Leaves();
+		_leaves = _root.Leaves();
 	}
 
-	/**
-     * Get the tree output for the input sample
-     * @param dp
-     * @return
-     */
-	public double Eval(DataPoint dp) => root.Eval(dp);
+	/// <summary>
+	/// Get the tree output for the input sample
+	/// </summary>
+	public double Eval(DataPoint dp) => _root.Eval(dp);
 
 	/**
      * Retrieve all leaf nodes in the tree
-     * @return
      */
-	public List<Split> Leaves => leaves;
+	public List<Split> Leaves => _leaves;
 
 	/**
      * Clear samples associated with each leaf (when they are no longer necessary) in order to save memory
      */
 	public void ClearSamples()
 	{
-		trainingSamples = null;
-		trainingLabels = null;
-		features = null;
-		thresholds = null;
-		index = null;
-		hist = null;
-		for (var i = 0; i < leaves.Count; i++)
-		{
-			leaves[i].ClearSamples();
-		}
+		_trainingSamples = [];
+		_trainingLabels = [];
+		features = [];
+		thresholds = [];
+		_index = [];
+		_hist = null;
+
+		for (var i = 0; i < _leaves.Count; i++)
+			_leaves[i].ClearSamples();
 	}
 
 	/**
      * Generate the string representation of the tree
      */
-	public override string ToString()
-	{
-		if (root != null)
-		{
-			return root.ToString();
-		}
-		return string.Empty;
-	}
+	public override string ToString() => _root != null ? _root.ToString() : string.Empty;
 
-	public string ToString(string indent)
-	{
-		if (root != null)
-		{
-			return root.ToString(indent);
-		}
-		return string.Empty;
-	}
+	public string ToString(string indent) => _root != null ? _root.ToString(indent) : string.Empty;
 
 	public double Variance()
 	{
-		double var = 0;
-		for (var i = 0; i < leaves.Count; i++)
-		{
-			var += leaves[i].GetDeviance();
-		}
-		return var;
+		double variance = 0;
+		for (var i = 0; i < _leaves.Count; i++)
+			variance += _leaves[i].GetDeviance();
+
+		return variance;
 	}
 
-	protected void Insert(LinkedList<Split> ls, Split s)
+	private static void Insert(List<Split> ls, Split s)
 	{
-		var current = ls.First;
-		while (current != null)
+		var i = 0;
+		while(i < ls.Count)
 		{
-			if (current.Value.GetDeviance() > s.GetDeviance())
-			{
-				current = current.Next;
-			}
+			if(ls[i].GetDeviance() > s.GetDeviance())
+				i++;
 			else
-			{
 				break;
-			}
 		}
-
-		if (current == null)
-			ls.AddFirst(s);
-		else
-			ls.AddBefore(current, s);
+		ls.Insert(i, s);
 	}
 }

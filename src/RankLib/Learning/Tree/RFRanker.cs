@@ -10,11 +10,14 @@ namespace RankLib.Learning.Tree;
 
 public class RFRankerParameters : IRankerParameters
 {
+	public const float DefaultFeatureSamplingRate = 0.3f;
+	public const float DefaultSubSamplingRate = 1.0f;
+
 	// Parameters
 	// [a] general bagging parameters
 	public int nBag { get; set; } = 300;
-	public float subSamplingRate { get; set; } = 1.0f; // sampling of samples (*WITH* replacement)
-	public float featureSamplingRate { get; set; } = 0.3f; // sampling of features (*WITHOUT* replacement)
+	public float subSamplingRate { get; set; } = DefaultSubSamplingRate; // sampling of samples (*WITH* replacement)
+	public float featureSamplingRate { get; set; } = DefaultFeatureSamplingRate; // sampling of features (*WITHOUT* replacement)
 
 	// [b] what to do in each bag
 	public RankerType rType { get; set; } = RankerType.MART; // which algorithm to bag
@@ -61,7 +64,7 @@ public class RFRanker : Ranker<RFRankerParameters>
 		_logger = _loggerFactory.CreateLogger<RFRanker>();
 	}
 
-	public override Task Init()
+	public override Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
 		Ensembles = new Ensemble[Parameters.nBag];
@@ -80,7 +83,7 @@ public class RFRanker : Ranker<RFRankerParameters>
 		return Task.CompletedTask;
 	}
 
-	public override async Task Learn()
+	public override async Task LearnAsync()
 	{
 		var rankerFactory = new RankerFactory(_loggerFactory);
 		_logger.LogInformation("Training starts...");
@@ -96,8 +99,8 @@ public class RFRanker : Ranker<RFRankerParameters>
 			var r = (LambdaMART)rankerFactory.CreateRanker(Parameters.rType, bag, Features, Scorer);
 
 			r.Parameters = _lambdaMARTParameters;
-			await r.Init();
-			await r.Learn();
+			await r.InitAsync();
+			await r.LearnAsync();
 
 			// Accumulate impacts
 			if (impacts == null)

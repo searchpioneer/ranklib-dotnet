@@ -217,7 +217,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 		return t;
 	}
 
-	public override Task Init()
+	public override Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
 		_usedFeatures.Clear();
@@ -240,7 +240,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 		return Task.CompletedTask;
 	}
 
-	public override Task Learn()
+	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn([7, 8, 9, 9, 9], ["#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status"]);

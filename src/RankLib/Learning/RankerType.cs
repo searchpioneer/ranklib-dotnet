@@ -33,6 +33,6 @@ public static class RankerTypeExtensions
 			RankerType.LISTNET => typeof(ListNet),
 			RankerType.RANDOM_FOREST => typeof(RFRanker),
 			RankerType.LINEAR_REGRESSION => typeof(LinearRegRank),
-			_ => throw new ArgumentOutOfRangeException(nameof(rankerType), rankerType, null)
+			_ => throw new ArgumentOutOfRangeException(nameof(rankerType), rankerType, "Unknown ranker type")
 		};
 }

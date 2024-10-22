@@ -49,7 +49,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 		: base(samples, features, scorer, logger) =>
 		_logger = logger ?? NullLogger<CoorAscent>.Instance;
 
-	public override Task Init()
+	public override Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
 		Weight = new double[Features.Length];
@@ -57,7 +57,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 		return Task.CompletedTask;
 	}
 
-	public override Task Learn()
+	public override Task LearnAsync()
 	{
 		var regVector = new double[Weight.Length];
 		Array.Copy(Weight, regVector, Weight.Length); // Uniform weight distribution

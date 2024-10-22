@@ -29,23 +29,19 @@ public class ERRScorer : MetricScorer
 	{
 		var size = K;
 		if (K > rankList.Count || K <= 0)
-		{
 			size = rankList.Count;
-		}
 
 		var rel = new List<int>();
 		for (var i = 0; i < rankList.Count; i++)
-		{
 			rel.Add((int)rankList[i].Label);
-		}
 
-		var s = 0.0;
-		var p = 1.0;
+		var s = 0.0d;
+		var p = 1.0d;
 		for (var i = 1; i <= size; i++)
 		{
 			var r = R(rel[i - 1]);
 			s += p * r / i;
-			p *= (1.0 - r);
+			p *= 1.0 - r;
 		}
 		return s;
 	}
@@ -56,7 +52,7 @@ public class ERRScorer : MetricScorer
 
 	public override double[][] SwapChange(RankList rankList)
 	{
-		var size = (rankList.Count > K) ? K : rankList.Count;
+		var size = rankList.Count > K ? K : rankList.Count;
 		var labels = new int[rankList.Count];
 		var r = new double[rankList.Count];
 		var np = new double[rankList.Count]; // p[i] = (1 - p[0])(1 - p[1])...(1 - p[i - 1])
@@ -84,9 +80,7 @@ public class ERRScorer : MetricScorer
 			{
 				double change;
 				if (labels[i] == labels[j])
-				{
 					change = 0;
-				}
 				else
 				{
 					change = v1 * (r[j] - r[i]);

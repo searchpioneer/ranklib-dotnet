@@ -12,10 +12,15 @@ namespace RankLib.Learning;
 public class RankerTrainer
 {
 	private readonly RankerFactory _rankerFactory;
+	private readonly ILogger<RankerTrainer> _logger;
 
-	public RankerTrainer(RankerFactory rankerFactory) => _rankerFactory = rankerFactory;
+	public RankerTrainer(RankerFactory rankerFactory, ILogger<RankerTrainer> logger)
+	{
+		_rankerFactory = rankerFactory;
+		_logger = logger;
+	}
 
-	public async Task<(IRanker ranker, TimeSpan trainingTime)> Train(
+	public async Task<(IRanker ranker, TimeSpan trainingTime)> TrainAsync(
 		Type rankerType,
 		List<RankList> trainingSamples,
 		List<RankList>? validationSamples,
@@ -26,13 +31,13 @@ public class RankerTrainer
 		var ranker = _rankerFactory.CreateRanker(rankerType, trainingSamples, features, scorer, parameters);
 		ranker.ValidationSamples = validationSamples;
 		var stopwatch = Stopwatch.StartNew();
-		await ranker.Init();
-		await ranker.Learn();
+		await ranker.InitAsync();
+		await ranker.LearnAsync();
 		stopwatch.Stop();
 		return (ranker, stopwatch.Elapsed);
 	}
 
-	public async Task<(TRanker ranker, TimeSpan trainingTime)> Train<TRanker, TRankerParameters>(
+	public async Task<(TRanker ranker, TimeSpan trainingTime)> TrainAsync<TRanker, TRankerParameters>(
 		List<RankList> trainingSamples,
 		List<RankList>? validationSamples,
 		int[] features,
@@ -44,8 +49,8 @@ public class RankerTrainer
 		var ranker = _rankerFactory.CreateRanker<TRanker, TRankerParameters>(trainingSamples, features, scorer, parameters);
 		ranker.ValidationSamples = validationSamples;
 		var stopwatch = Stopwatch.StartNew();
-		await ranker.Init();
-		await ranker.Learn();
+		await ranker.InitAsync();
+		await ranker.LearnAsync();
 		stopwatch.Stop();
 		return (ranker, stopwatch.Elapsed);
 	}

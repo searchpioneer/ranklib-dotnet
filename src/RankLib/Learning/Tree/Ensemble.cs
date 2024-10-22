@@ -98,13 +98,12 @@ public class Ensemble
 		}
 	}
 
-	public float Eval(DataPoint dp)
+	public float Eval(DataPoint dataPoint)
 	{
 		float s = 0;
 		for (var i = 0; i < _trees.Count; i++)
-		{
-			s += Convert.ToSingle(_trees[i].Eval(dp) * _weights[i]);
-		}
+			s = (float) (s + _trees[i].Eval(dataPoint) * _weights[i]);
+
 		return s;
 	}
 
@@ -114,7 +113,10 @@ public class Ensemble
 		builder.Append("<ensemble>\n");
 		for (var i = 0; i < _trees.Count; i++)
 		{
-			builder.Append("\t<tree id=\"").Append(i + 1).Append("\" weight=\"").Append(_weights[i].ToString(CultureInfo.InvariantCulture)).Append("\">\n");
+			builder.Append("\t<tree id=\"").Append(i + 1)
+				.Append("\" weight=\"")
+				.Append(_weights[i].ToString(CultureInfo.InvariantCulture))
+				.Append("\">\n");
 			builder.Append(_trees[i].ToString("\t\t"));
 			builder.Append("\t</tree>\n");
 		}

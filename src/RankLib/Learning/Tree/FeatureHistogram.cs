@@ -32,7 +32,7 @@ public class FeatureHistogram
 		_maxDegreesOfParallelism = maxDegreesOfParallelism ?? Environment.ProcessorCount;
 	}
 
-	public async Task Construct(DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, int[] features, float[][] thresholds, double[] impacts)
+	public async Task ConstructAsync(DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, int[] features, float[][] thresholds, double[] impacts)
 	{
 		_features = features;
 		_thresholds = thresholds;
@@ -44,9 +44,7 @@ public class FeatureHistogram
 		_sampleToThresholdMap = new int[features.Length][];
 
 		if (_maxDegreesOfParallelism == 1)
-		{
 			Construct(samples, labels, sampleSortedIdx, thresholds, 0, features.Length - 1);
-		}
 		else
 		{
 			await ParallelExecutor.ExecuteAsync(
@@ -97,15 +95,13 @@ public class FeatureHistogram
 		}
 	}
 
-	protected internal async Task Update(double[] labels)
+	protected internal async Task UpdateAsync(double[] labels)
 	{
 		_sumResponse = 0;
 		_sqSumResponse = 0;
 
 		if (_maxDegreesOfParallelism == 1)
-		{
 			Update(labels, 0, _features.Length - 1);
-		}
 		else
 		{
 			await ParallelExecutor.ExecuteAsync(
@@ -118,32 +114,44 @@ public class FeatureHistogram
 	protected void Update(double[] labels, int start, int end)
 	{
 		for (var f = start; f <= end; f++)
-		{
 			Array.Fill(_sum[f], 0);
-		}
+
+		// for each pseudo-response
 		for (var k = 0; k < labels.Length; k++)
 		{
+			// for each feature
 			for (var f = start; f <= end; f++)
 			{
+				// find the best threshold for a given pseudo-response
 				var t = _sampleToThresholdMap[f][k];
+
+				// build a histogram at feature f, threshold t for
+				// add the pseudo response that fits in here
+				//
+				// later, this can let us pick the best split
+				// by finding the point t in the histogram with
+				// divides the pseudo-response space
 				_sum[f][t] += labels[k];
 				if (f == 0)
 				{
+					// accumulate each pseudo response
+					// effectively: for each pseudo response k,
+					// 		accumulate sumResponse, sqSumResponse
 					_sumResponse += labels[k];
 					_sqSumResponse += labels[k] * labels[k];
 				}
+				//count doesn't change, so no need to re-compute
 			}
 		}
+
 		for (var f = start; f <= end; f++)
 		{
 			for (var t = 1; t < _thresholds[f].Length; t++)
-			{
 				_sum[f][t] += _sum[f][t - 1];
-			}
 		}
 	}
 
-	public async Task Construct(FeatureHistogram parent, int[] soi, double[] labels)
+	public async Task ConstructAsync(FeatureHistogram parent, int[] soi, double[] labels)
 	{
 		_features = parent._features;
 		_thresholds = parent._thresholds;
@@ -155,9 +163,7 @@ public class FeatureHistogram
 		_sampleToThresholdMap = parent._sampleToThresholdMap;
 
 		if (_maxDegreesOfParallelism == 1)
-		{
 			Construct(parent, soi, labels, 0, _features.Length - 1);
-		}
 		else
 		{
 			await ParallelExecutor.ExecuteAsync(
@@ -178,8 +184,9 @@ public class FeatureHistogram
 			Array.Fill(_count[i], 0);
 		}
 
-		foreach (var k in soi)
+		for (var i = 0; i < soi.Length; i++)
 		{
+			var k = soi[i];
 			for (var f = start; f <= end; f++)
 			{
 				var t = _sampleToThresholdMap[f][k];
@@ -203,7 +210,7 @@ public class FeatureHistogram
 		}
 	}
 
-	public async Task Construct(FeatureHistogram parent, FeatureHistogram leftSibling, bool reuseParent)
+	public async Task ConstructAsync(FeatureHistogram parent, FeatureHistogram leftSibling, bool reuseParent)
 	{
 		_reuseParent = reuseParent;
 		_features = parent._features;
@@ -225,9 +232,7 @@ public class FeatureHistogram
 		_sampleToThresholdMap = parent._sampleToThresholdMap;
 
 		if (_maxDegreesOfParallelism == 1)
-		{
 			Construct(parent, leftSibling, 0, _features.Length - 1);
-		}
 		else
 		{
 			await ParallelExecutor.ExecuteAsync(
@@ -247,6 +252,7 @@ public class FeatureHistogram
 				_sum[f] = new double[threshold.Length];
 				_count[f] = new int[threshold.Length];
 			}
+
 			for (var t = 0; t < threshold.Length; t++)
 			{
 				_sum[f][t] = parent._sum[f][t] - leftSibling._sum[f][t];
@@ -255,7 +261,7 @@ public class FeatureHistogram
 		}
 	}
 
-	public Config FindBestSplit(int[] usedFeatures, int minLeafSupport, int start, int end)
+	private Config FindBestSplit(int[] usedFeatures, int minLeafSupport, int start, int end)
 	{
 		var cfg = new Config();
 		var totalCount = _count[start][_count[start].Length - 1];
@@ -269,18 +275,23 @@ public class FeatureHistogram
 				var countLeft = _count[i][t];
 				var countRight = totalCount - countLeft;
 				if (countLeft < minLeafSupport || countRight < minLeafSupport)
-				{
 					continue;
-				}
 
 				var sumLeft = _sum[i][t];
 				var sumRight = _sumResponse - sumLeft;
 
-				var S = sumLeft * sumLeft / countLeft + sumRight * sumRight / countRight;
-				var errSt = (_sqSumResponse / totalCount) * (S / totalCount);
-				if (cfg.S < S)
+				// See: http://www.dcc.fc.up.pt/~ltorgo/PhD/th3.pdf  pp69
+				//
+				// This S approximates the error. S is relative to this decision
+				//
+				// Error is really (sqSumResponse / count) - S / count
+				// we add back in the error calculation
+
+				var s = (sumLeft * sumLeft / countLeft) + (sumRight * sumRight / countRight);
+				var errSt = (_sqSumResponse / totalCount) * (s / totalCount);
+				if (cfg.S < s)
 				{
-					cfg.S = S;
+					cfg.S = s;
 					cfg.featureIdx = i;
 					cfg.thresholdIdx = t;
 					cfg.errReduced = errSt;
@@ -290,24 +301,22 @@ public class FeatureHistogram
 		return cfg;
 	}
 
-	public async Task<bool> FindBestSplit(Split sp, double[] labels, int minLeafSupport)
+	public async Task<bool> FindBestSplitAsync(Split sp, double[] labels, int minLeafSupport)
 	{
 		if (sp.GetDeviance() >= 0 && sp.GetDeviance() <= 0)
-		{
 			return false; // No need to split
-		}
 
 		int[] usedFeatures;
-		if (_samplingRate < 1) // Subsampling (feature sampling)
+		if (_samplingRate < 1) //need to do sub sampling (feature sampling)
 		{
 			var size = (int)(_samplingRate * _features.Length);
 			usedFeatures = new int[size];
+			//put all features into a pool
 			var featurePool = new List<int>();
 			for (var i = 0; i < _features.Length; i++)
-			{
 				featurePool.Add(i);
-			}
 
+			//do sampling, without replacement
 			var random = Random.Shared;
 			for (var i = 0; i < size; i++)
 			{
@@ -316,19 +325,16 @@ public class FeatureHistogram
 				featurePool.RemoveAt(selected);
 			}
 		}
-		else // No subsampling, use all features
+		else //no sub sampling, all features will be used
 		{
 			usedFeatures = new int[_features.Length];
-			for (var i = 0; i < _features.Length; i++) {
+			for (var i = 0; i < _features.Length; i++)
 				usedFeatures[i] = i;
-			}
 		}
 
 		var best = new Config();
 		if (_maxDegreesOfParallelism == 1)
-		{
 			best = FindBestSplit(usedFeatures, minLeafSupport, 0, usedFeatures.Length - 1);
-		}
 		else
 		{
 			var workers = await ParallelExecutor.ExecuteAsync(
@@ -344,10 +350,8 @@ public class FeatureHistogram
 		}
 
 		// ReSharper disable once CompareOfFloatsByEqualityOperator
-		if (best.S == -1)
-		{
+		if (best.S == -1) // cannot be split, for some reason...
 			return false;
-		}
 
 		// bestFeaturesHist is the best features
 		var bestFeaturesHist = _sum[best.featureIdx];
@@ -367,22 +371,22 @@ public class FeatureHistogram
 		var l = 0;
 		var r = 0;
 		var idx = sp.GetSamples();
-		foreach (var k in idx)
+		for (var j = 0; j < idx.Length; j++)
 		{
-			if (_sampleToThresholdMap[best.featureIdx][k] <= best.thresholdIdx)
-			{
+			var k = idx[j];
+			if (_sampleToThresholdMap[best.featureIdx][k] <= best.thresholdIdx)// go to the left
 				left[l++] = k;
-			}
-			else
-			{
+			else // go to the right
 				right[r++] = k;
-			}
 		}
 
+		// update impact with info on best
+		_impacts[best.featureIdx] += best.errReduced;
+
 		var lh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
-		await lh.Construct(sp.Histogram!, left, labels);
+		await lh.ConstructAsync(sp.Histogram!, left, labels);
 		var rh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
-		await rh.Construct(sp.Histogram!, lh, !sp.Root);
+		await rh.ConstructAsync(sp.Histogram!, lh, !sp.IsRoot);
 
 		var var = _sqSumResponse - _sumResponse * _sumResponse / idx.Length;
 		var varLeft = lh._sqSumResponse - lh._sumResponse * lh._sumResponse / left.Length;

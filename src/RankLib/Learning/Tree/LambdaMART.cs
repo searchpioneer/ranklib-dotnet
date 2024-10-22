@@ -8,10 +8,13 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
 
+/// <summary>
+/// Parameters for <see cref="LambdaMART"/>
+/// </summary>
 public class LambdaMARTParameters : IRankerParameters
 {
 	public int nTrees { get; set; } = 1000; // number of trees
-	public float learningRate { get; set; } = 0.1F; // shrinkage
+	public float learningRate { get; set; } = 0.1f; // shrinkage
 	public int nThreshold { get; set; } = 256;
 	public int nRoundToStopEarly { get; set; } = 100;
 	public int nTreeLeaves { get; set; } = 10;
@@ -30,7 +33,20 @@ public class LambdaMARTParameters : IRankerParameters
 	}
 }
 
-public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
+/// <summary>
+/// LambdaMART is a machine learning ranking algorithm that combines LambdaRank and gradient-boosted decision trees (GBDT).
+/// It optimizes for ranking metrics like NDCG (Normalized Discounted Cumulative Gain) by adjusting the model's weights
+/// based on the relative order of items, rather than just classification or regression errors. LambdaMART is widely used
+/// in information retrieval tasks, such as search engines and recommendation systems, where the goal is to present
+/// results in the most relevant order.
+/// </summary>
+/// <remarks>
+/// <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/LambdaMART_Final.pdf">
+/// Q. Wu, C.J.C. Burges, K. Svore and J. Gao. Adapting Boosting for Information Retrieval Measures.
+/// Journal of Information Retrieval, 2007.
+/// </a>
+/// </remarks>
+public class LambdaMART : Ranker<LambdaMARTParameters>
 {
 	internal const string RankerName = "LambdaMART";
 
@@ -48,14 +64,6 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 	protected DataPoint[] MARTSamples = [];
 	protected internal double[] Impacts = [];
 	protected double[] PseudoResponses = [];
-
-	public LambdaMARTParameters Parameters { get; set; }
-
-	IRankerParameters IRanker.Parameters
-	{
-		get => Parameters;
-		set => Parameters = (LambdaMARTParameters)value;
-	}
 
 	public override string Name => RankerName;
 
@@ -81,7 +89,7 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 	{
 	}
 
-	public override async Task Init()
+	public override async Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -99,8 +107,8 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 			for (var j = 0; j < rl.Count; j++)
 			{
 				MARTSamples[current + j] = rl[j];
-				ModelScores[current + j] = 0.0F;
-				PseudoResponses[current + j] = 0.0F;
+				ModelScores[current + j] = 0.0f;
+				PseudoResponses[current + j] = 0.0f;
 				_weights[current + j] = 0;
 			}
 			current += rl.Count;
@@ -118,34 +126,47 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 			await ParallelExecutor.ExecuteAsync(tasks, Parameters.MaxDegreeOfParallelism);
 		}
 
+		//Create a table of candidate thresholds (for each feature). Later on, we will select the best tree split from these candidates
 		_thresholds = new float[Features.Length][];
 		for (var f = 0; f < Features.Length; f++)
 		{
+			//For this feature, keep track of the list of unique values and the max/min
 			var values = new List<float>();
-			var fmax = float.MinValue;
+			var fmax = float.NegativeInfinity;
 			var fmin = float.MaxValue;
 			for (var i = 0; i < MARTSamples.Length; i++)
 			{
+				//get samples sorted with respect to this feature
 				var k = _sortedIdx[f][i];
 				var fv = MARTSamples[k].GetFeatureValue(Features[f]);
 				values.Add(fv);
+
 				if (fmax < fv)
 					fmax = fv;
+
 				if (fmin > fv)
 					fmin = fv;
 
 				var j = i + 1;
-				while (j < MARTSamples.Length && MARTSamples[_sortedIdx[f][j]].GetFeatureValue(Features[f]) <= fv)
+				while (j < MARTSamples.Length)
 				{
+					if (MARTSamples[_sortedIdx[f][j]].GetFeatureValue(Features[f]) > fv)
+						break;
+
 					j++;
 				}
+
+				//[i, j] gives the range of samples with the same feature value
 				i = j - 1;
 			}
 
 			if (values.Count <= Parameters.nThreshold || Parameters.nThreshold == -1)
 			{
-				_thresholds[f] = values.ToArray();
-				_thresholds[f] = _thresholds[f].Concat([float.MaxValue]).ToArray();
+				_thresholds[f] = new float[values.Count + 1];
+				for (var i = 0; i < values.Count; i++)
+					_thresholds[f][i] = values[i];
+
+				_thresholds[f][values.Count] = float.MaxValue;
 			}
 			else
 			{
@@ -153,9 +174,8 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 				_thresholds[f] = new float[Parameters.nThreshold + 1];
 				_thresholds[f][0] = fmin;
 				for (var j = 1; j < Parameters.nThreshold; j++)
-				{
 					_thresholds[f][j] = _thresholds[f][j - 1] + step;
-				}
+
 				_thresholds[f][Parameters.nThreshold] = float.MaxValue;
 			}
 		}
@@ -171,47 +191,62 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		}
 
 		_hist = new FeatureHistogram(Parameters.SamplingRate, Parameters.MaxDegreeOfParallelism);
-		await _hist.Construct(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts);
+		await _hist.ConstructAsync(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts);
+
+		//we no longer need the sorted indexes of samples
 		_sortedIdx = [];
 	}
 
-	public override async Task Learn()
+	public override async Task LearnAsync()
 	{
 		_ensemble = new Ensemble();
 		_logger.LogInformation("Training starts...");
 
 		if (ValidationSamples != null)
-		{
 			PrintLogLn([7, 9, 9], ["#iter", Scorer.Name + "-T", Scorer.Name + "-V"]);
-		}
 		else
-		{
 			PrintLogLn([7, 9], ["#iter", Scorer.Name + "-T"]);
-		}
 
 		for (var m = 0; m < Parameters.nTrees; m++)
 		{
 			PrintLog([7], [(m + 1).ToString()]);
-			await ComputePseudoResponses();
-			await _hist.Update(PseudoResponses);
-			var tree = new RegressionTree(Parameters.nTreeLeaves, MARTSamples, PseudoResponses, _hist, Parameters.minLeafSupport);
-			await tree.Fit();
-			_ensemble.Add(tree, Parameters.learningRate);
-			UpdateTreeOutput(tree);
 
-			var leaves = tree.Leaves;
+			//Compute lambdas (which act as the "pseudo responses")
+			//Create training instances for MART:
+			//  - Each document is a training sample
+			//	- The lambda for this document serves as its training label
+			await ComputePseudoResponses();
+
+			//update the histogram with these training labels (the feature histogram will be used to find the best tree split)
+			await _hist.UpdateAsync(PseudoResponses);
+
+			//Fit a regression tree
+			var rt = new RegressionTree(Parameters.nTreeLeaves, MARTSamples, PseudoResponses, _hist, Parameters.minLeafSupport);
+			await rt.FitAsync();
+
+			//Add this tree to the ensemble (our model)
+			_ensemble.Add(rt, Parameters.learningRate);
+
+			//update the outputs of the tree (with gamma computed using the Newton-Raphson method)
+			UpdateTreeOutput(rt);
+
+			//Update the model's outputs on all training samples
+			var leaves = rt.Leaves;
 			for (var i = 0; i < leaves.Count; i++)
 			{
 				var s = leaves[i];
 				var idx = s.GetSamples();
 				for (var j = 0; j < idx.Length; j++)
-				{
 					ModelScores[idx[j]] += Parameters.learningRate * s.GetOutput();
-				}
 			}
-			tree.ClearSamples();
 
+			//clear references to data that is no longer used
+			rt.ClearSamples();
+
+			//Evaluate the current model
 			ScoreOnTrainingData = ComputeModelScoreOnTraining();
+
+
 			PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
 
 			if (ValidationSamples != null)
@@ -219,11 +254,9 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 				for (var i = 0; i < _modelScoresOnValidation.Length; i++)
 				{
 					for (var j = 0; j < _modelScoresOnValidation[i].Length; j++)
-					{
-						var tempQualifier = ValidationSamples[i];
-						_modelScoresOnValidation[i][j] += Parameters.learningRate * tree.Eval(tempQualifier[j]);
-					}
+						_modelScoresOnValidation[i][j] += Parameters.learningRate * rt.Eval(ValidationSamples[i][j]);
 				}
+
 				double score = ComputeModelScoreOnValidation();
 				PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
 				if (score > BestScoreOnValidationData)
@@ -232,18 +265,15 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 					_bestModelOnValidation = _ensemble.TreeCount - 1;
 				}
 			}
+
 			FlushLog();
 
 			if (m - _bestModelOnValidation > Parameters.nRoundToStopEarly)
-			{
 				break;
-			}
 		}
 
 		while (_ensemble.TreeCount > _bestModelOnValidation + 1)
-		{
 			_ensemble.Remove(_ensemble.TreeCount - 1);
-		}
 
 		ScoreOnTrainingData = Scorer.Score(Rank(Samples));
 		_logger.LogInformation($"Finished successfully. {Scorer.Name} on training data: {SimpleMath.Round(ScoreOnTrainingData, 4)}");
@@ -256,8 +286,9 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 
 		_logger.LogInformation("-- FEATURE IMPACTS");
 		var ftrsSorted = MergeSorter.Sort(Impacts, false);
-		foreach (var ftr in ftrsSorted)
+		for (var index = 0; index < ftrsSorted.Length; index++)
 		{
+			var ftr = ftrsSorted[index];
 			_logger.LogInformation($"Feature {Features[ftr]} reduced error {Impacts[ftr]}");
 		}
 	}
@@ -302,7 +333,10 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 			ComputePseudoResponses(0, Samples.Count - 1, 0);
 		else
 		{
-			var partition = ParallelExecutor.Partition(Samples.Count, Parameters.MaxDegreeOfParallelism);
+			_logger.LogInformation($"Samples {string.Join(",", Samples)}");
+
+			// TODO: Current does not appear to be correct value. Fix this
+			var partition = ParallelExecutor.Partition(Features.Length, Parameters.MaxDegreeOfParallelism);
 			var current = 0;
 			var parallelOptions = new ParallelOptions
 			{
@@ -315,56 +349,92 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 				{
 					var start = partition[i];
 					var end = partition[i + 1] - 1;
-					var thisCurrent = current;
 					if (i > 0 && i < partition.Length - 2)
 					{
 						for (var j = partition[i]; j <= partition[i + 1] - 1; j++)
-						{
-							thisCurrent += Samples[j].Count;
-						}
+							current += Samples[j].Count;
 					}
 
-					return (start, end, thisCurrent);
-				});
+					return (start, end, current);
+				})
+				.ToList();
+
+			_logger.LogInformation($"Partition {partition.Length}: {string.Join(", ", e)}");
 
 			await Parallel.ForEachAsync(e, parallelOptions, async (i, token) =>
 			{
 				await Task.Run(() =>
 				{
-					ComputePseudoResponses(i.start, i.end, i.thisCurrent);
+					ComputePseudoResponses(i.start, i.end, i.current);
 				}, token);
 			});
 		}
 	}
 
+	// compute psuedo responses based on the current model's error (another name for pseudo response -- 'force' or 'gradient')
+	// "pseudo responses" is the error currently in the model (that we'll attempt to model with features)
+	// How do we get that error?
+	//  Let's say we have two training samples (aka docs) for a query. Docs k and j, where k is more relevant than j
+	//  (ie label of k is 4, label for j is 0)
+	// Then we want two values to help compute a pseudo response to help build a model for the remaining error
+	//  1. rho -- a weight for how wrong the previous model is. Higher rho is, the more the prev model is wrong
+	//			  at dealing with docs k and j by just predicting scores that don't make sense
+	//  2. deltaNDCG -- what swapping k and j means for the NDCG for this query.
+	//					even though the variable is called 'NDCG' it really uses whatever relevance metric you
+	//					specify (MAP, precision, ERR,... whatever)
+	//
+	// We update pseudoResponse[k] += rho * deltaNDCG (higher gradient/force when
+	//													(a) -- rho high: previous models are more wrong
+	//													(b) -- deltaNDCG high: these two docs being swapped
+	//														   would be really bad for this particular query
+	//     aka pseudoResponse[k] += current error * importance
+
+	// We also update down j (which remember should be left relevant than k) by subtracting out the same val:
+	//         pseudoResponse[j] -= current error * importance
 	protected void ComputePseudoResponses(int start, int end, int current)
 	{
 		var cutoff = Scorer.K;
+		// compute the lambda for each document (a.k.a "pseudo response")
 		for (var i = start; i <= end; i++)
 		{
 			var orig = Samples[i];
+			// sort based on current model's relevance scores
 			var idx = MergeSorter.Sort(ModelScores, current, current + orig.Count - 1, false);
 			var rl = new RankList(orig, idx, current);
+
+			// a table of possible rearrangements of rl
 			var changes = Scorer.SwapChange(rl);
+			//NOTE: j, k are indices in the sorted (by modelScore) list, not the original
+			// ==> need to map back with idx[j] and idx[k]
 			for (var j = 0; j < rl.Count; j++)
 			{
-				var p1 = rl[j];
+				var pointJ = rl[j];
 				var mj = idx[j];
 				for (var k = 0; k < rl.Count; k++)
 				{
+					//swapping these pair won't result in any change in target measures since they're below the cut-off point
 					if (j > cutoff && k > cutoff)
-					{
 						break;
-					}
-					var p2 = rl[k];
+
+					var pointK = rl[k];
 					var mk = idx[k];
-					if (p1.Label > p2.Label)
+					if (pointJ.Label > pointK.Label)
 					{
+						// ReSharper disable once InconsistentNaming
 						var deltaNDCG = Math.Abs(changes[j][k]);
 						if (deltaNDCG > 0)
 						{
+							// rho weighs the delta ndcg by the current model score
+							// in this way, this is acting as a gradient
+							// rho mj's score
+							// if the model scores are close (say 100 for j, k for 99)
+							//   rho is smaller
+							// if model scores are far
 							var rho = 1.0 / (1 + Math.Exp(ModelScores[mj] - ModelScores[mk]));
 							var lambda = rho * deltaNDCG;
+
+							// response of DataPoint j in original list
+							// which is better than k in original list
 							PseudoResponses[mj] += lambda;
 							PseudoResponses[mk] -= lambda;
 							var delta = rho * (1.0 - rho) * deltaNDCG;
@@ -378,19 +448,22 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		}
 	}
 
-	protected virtual void UpdateTreeOutput(RegressionTree tree)
+	protected virtual void UpdateTreeOutput(RegressionTree rt)
 	{
-		var leaves = tree.Leaves;
-		foreach (var split in leaves)
+		var leaves = rt.Leaves;
+		for (var i = 0; i < leaves.Count; i++)
 		{
-			var s1 = 0F;
-			var s2 = 0F;
+			var s1 = 0f;
+			var s2 = 0f;
+			var split = leaves[i];
 			var idx = split.GetSamples();
-			foreach (var k in idx)
+			for (var j = 0; j < idx.Length; j++)
 			{
-				s1 += Convert.ToSingle(PseudoResponses[k]);
-				s2 += Convert.ToSingle(_weights[k]);
+				var k = idx[j];
+				s1 = (float) (s1 + PseudoResponses[k]);
+				s2 = (float) (s2 + _weights[k]);
 			}
+
 			if (s2 == 0)
 				split.SetOutput(0);
 			else
@@ -402,9 +475,8 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 	{
 		var score = new double[samples.Length];
 		for (var i = 0; i < samples.Length; i++)
-		{
 			score[i] = samples[i].GetFeatureValue(fid);
-		}
+
 		var idx = MergeSorter.Sort(score, true);
 		return idx;
 	}
@@ -414,9 +486,8 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		var orig = Samples[rankListIndex];
 		var scores = new double[orig.Count];
 		for (var i = 0; i < scores.Length; i++)
-		{
 			scores[i] = ModelScores[current + i];
-		}
+
 		var idx = MergeSorter.Sort(scores, false);
 		return new RankList(orig, idx);
 	}
@@ -429,31 +500,29 @@ public class LambdaMART : Ranker, IRanker<LambdaMARTParameters>
 		var c = current;
 		for (var i = start; i <= end; i++)
 		{
-			s += Convert.ToSingle(Scorer.Score(Rank(i, c)));
+			s = (float) (s + Scorer.Score(Rank(i, c)));
 			c += Samples[i].Count;
 		}
 		return s;
 	}
 
-	protected float ComputeModelScoreOnValidation() => ComputeModelScoreOnValidation(0, ValidationSamples.Count - 1) / ValidationSamples.Count;
+	private float ComputeModelScoreOnValidation() => ComputeModelScoreOnValidation(0, ValidationSamples!.Count - 1) / ValidationSamples.Count;
 
-	protected float ComputeModelScoreOnValidation(int start, int end)
+	private float ComputeModelScoreOnValidation(int start, int end)
 	{
 		float score = 0;
 		for (var i = start; i <= end; i++)
 		{
 			var idx = MergeSorter.Sort(_modelScoresOnValidation[i], false);
-			score += Convert.ToSingle(Scorer.Score(new RankList(ValidationSamples[i], idx)));
+			score = (float) (score + Scorer.Score(new RankList(ValidationSamples![i], idx)));
 		}
 		return score;
 	}
 
-	protected void SortSamplesByFeature(int start, int end)
+	private void SortSamplesByFeature(int start, int end)
 	{
 		for (var i = start; i <= end; i++)
-		{
 			_sortedIdx[i] = SortSamplesByFeature(MARTSamples, Features[i]);
-		}
 	}
 
 	private class SortWorker : RunnableTask

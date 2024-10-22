@@ -262,7 +262,7 @@ public class RankNet : Ranker<RankNetParameters>
 		_lastError = _error;
 	}
 
-	public override Task Init()
+	public override Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -293,7 +293,7 @@ public class RankNet : Ranker<RankNetParameters>
 		return Task.CompletedTask;
 	}
 
-	public override Task Learn()
+	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
 		PrintLogLn(new[] { 7, 14, 9, 9 },

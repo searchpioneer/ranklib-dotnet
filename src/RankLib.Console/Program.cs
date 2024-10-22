@@ -3,6 +3,7 @@ using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using RankLib.Eval;
 using RankLib.Features;
 using RankLib.Learning;
@@ -32,7 +33,13 @@ internal class Program
 			{
 				services.AddLogging(builder =>
 				{
-					builder.AddConsole();
+					builder.ClearProviders();
+					builder.AddConsole(options =>
+						{
+							options.FormatterName = "custom";
+						})
+						.AddConsoleFormatter<CustomFormatter, ConsoleFormatterOptions>(_ => { });
+
 					ConfigureLogging?.Invoke(builder);
 				});
 

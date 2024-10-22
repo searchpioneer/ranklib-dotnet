@@ -12,9 +12,7 @@ public static class Sorter
 	{
 		var freqIdx = new int[sortVal.Length];
 		for (var i = 0; i < sortVal.Length; i++)
-		{
 			freqIdx[i] = i;
-		}
 
 		for (var i = 0; i < sortVal.Length - 1; i++)
 		{
@@ -24,16 +22,12 @@ public static class Sorter
 				if (asc)
 				{
 					if (sortVal[freqIdx[max]] > sortVal[freqIdx[j]])
-					{
 						max = j;
-					}
 				}
 				else
 				{
 					if (sortVal[freqIdx[max]] < sortVal[freqIdx[j]])
-					{
 						max = j;
-					}
 				}
 			}
 			// Swap
@@ -46,9 +40,7 @@ public static class Sorter
 	{
 		var freqIdx = new int[sortVal.Length];
 		for (var i = 0; i < sortVal.Length; i++)
-		{
 			freqIdx[i] = i;
-		}
 
 		for (var i = 0; i < sortVal.Length - 1; i++)
 		{
@@ -58,16 +50,12 @@ public static class Sorter
 				if (asc)
 				{
 					if (sortVal[freqIdx[max]] > sortVal[freqIdx[j]])
-					{
 						max = j;
-					}
 				}
 				else
 				{
 					if (sortVal[freqIdx[max]] < sortVal[freqIdx[j]])
-					{
 						max = j;
-					}
 				}
 			}
 			// Swap
