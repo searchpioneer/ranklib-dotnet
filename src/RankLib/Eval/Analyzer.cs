@@ -7,11 +7,8 @@ namespace RankLib.Eval;
 
 public partial class Analyzer
 {
-
 	[GeneratedRegex(@"\s+")]
 	private static partial Regex WhitespaceRegex();
-
-	//private static readonly RandomPermutationTest RandomizedTest = new();
 	private static readonly double[] ImprovementRatioThreshold = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1000];
 	private const int IndexOfZero = 4;
 

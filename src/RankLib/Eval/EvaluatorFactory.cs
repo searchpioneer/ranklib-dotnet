@@ -48,7 +48,16 @@ public class EvaluatorFactory
 			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
 		}
 
-		return new Evaluator(_rankerFactory, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(
+			_rankerFactory,
+			_featureManager,
+			trainScorer,
+			testScorer,
+			_trainer,
+			normalizer,
+			mustHaveRelDoc,
+			useSparseRepresentation,
+			_loggerFactory.CreateLogger<Evaluator>());
 	}
 
 	public Evaluator CreateEvaluator(
@@ -70,7 +79,16 @@ public class EvaluatorFactory
 			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
 		}
 
-		return new Evaluator(_rankerFactory, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(
+			_rankerFactory,
+			_featureManager,
+			trainScorer,
+			testScorer,
+			_trainer,
+			normalizer,
+			mustHaveRelDoc,
+			useSparseRepresentation,
+			_loggerFactory.CreateLogger<Evaluator>());
 	}
 
 	public Evaluator CreateEvaluator(
@@ -91,7 +109,16 @@ public class EvaluatorFactory
 			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
 		}
 
-		return new Evaluator(_rankerFactory, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(
+			_rankerFactory,
+			_featureManager,
+			trainScorer,
+			testScorer,
+			_trainer,
+			normalizer,
+			mustHaveRelDoc,
+			useSparseRepresentation,
+			_loggerFactory.CreateLogger<Evaluator>());
 	}
 
 	public Evaluator CreateEvaluator(
@@ -105,11 +132,17 @@ public class EvaluatorFactory
 		var scorer = _metricScorerFactory.CreateScorer(metric, k);
 
 		if (queryRelevanceFile != null)
-		{
 			scorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
-		}
 
-		return new Evaluator(_rankerFactory, _featureManager, scorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(
+			_rankerFactory,
+			_featureManager,
+			scorer,
+			_trainer,
+			normalizer,
+			mustHaveRelDoc,
+			useSparseRepresentation,
+			_loggerFactory.CreateLogger<Evaluator>());
 	}
 
 	public Evaluator CreateEvaluator(
@@ -129,6 +162,15 @@ public class EvaluatorFactory
 			testScorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
 		}
 
-		return new Evaluator(_rankerFactory, _featureManager, trainScorer, testScorer, _trainer, normalizer, mustHaveRelDoc, useSparseRepresentation, _loggerFactory);
+		return new Evaluator(
+			_rankerFactory,
+			_featureManager,
+			trainScorer,
+			testScorer,
+			_trainer,
+			normalizer,
+			mustHaveRelDoc,
+			useSparseRepresentation,
+			_loggerFactory.CreateLogger<Evaluator>());
 	}
 }

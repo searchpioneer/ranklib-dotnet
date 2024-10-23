@@ -10,7 +10,6 @@ namespace RankLib.Eval;
 
 public class Evaluator
 {
-	private readonly ILoggerFactory _loggerFactory;
 	private readonly ILogger<Evaluator> _logger;
 	private readonly RankerFactory _rankerFactory;
 	private readonly MetricScorer _trainScorer;
@@ -31,7 +30,7 @@ public class Evaluator
 		Normalizer? normalizer = null,
 		bool mustHaveRelDoc = false,
 		bool useSparseRepresentation = false,
-		ILoggerFactory? loggerFactory = null
+		ILogger<Evaluator>? logger = null
 	)
 	{
 		_rankerFactory = rankerFactory;
@@ -41,8 +40,7 @@ public class Evaluator
 		_trainer = trainer;
 		_mustHaveRelDoc = mustHaveRelDoc;
 		_useSparseRepresentation = useSparseRepresentation;
-		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = _loggerFactory.CreateLogger<Evaluator>();
+		_logger = logger ?? NullLogger<Evaluator>.Instance;
 		_normalize = normalizer != null;
 		_normalizer = normalizer ?? SumNormalizer.Instance;
 	}
@@ -55,7 +53,7 @@ public class Evaluator
 		Normalizer? normalizer = null,
 		bool mustHaveRelDoc = false,
 		bool useSparseRepresentation = false,
-		ILoggerFactory? loggerFactory = null
+		ILogger<Evaluator>? logger = null
 	)
 	{
 		_rankerFactory = rankerFactory;
@@ -65,8 +63,7 @@ public class Evaluator
 		_trainer = trainer;
 		_mustHaveRelDoc = mustHaveRelDoc;
 		_useSparseRepresentation = useSparseRepresentation;
-		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = _loggerFactory.CreateLogger<Evaluator>();
+		_logger = logger ?? NullLogger<Evaluator>.Instance;
 		_normalize = normalizer != null;
 		_normalizer = normalizer ?? SumNormalizer.Instance;
 	}
@@ -77,25 +74,19 @@ public class Evaluator
 	public void Normalize(List<RankList> samples)
 	{
 		foreach (var sample in samples)
-		{
 			_normalizer.Normalize(sample);
-		}
 	}
 
 	public void Normalize(List<RankList> samples, int[] fids)
 	{
 		foreach (var sample in samples)
-		{
 			_normalizer.Normalize(sample, fids);
-		}
 	}
 
 	public void NormalizeAll(List<List<RankList>> samples, int[] fids)
 	{
 		foreach (var sample in samples)
-		{
 			Normalize(sample, fids);
-		}
 	}
 
 	public int[]? ReadFeature(string? featureDefFile) =>
@@ -174,9 +165,7 @@ public class Evaluator
 		var validation = !string.IsNullOrEmpty(validationFile) ? ReadInput(validationFile) : null;
 
 		if (_normalize && validation != null)
-		{
 			Normalize(validation, features);
-		}
 
 		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
 		var rankScore = Evaluate(ranker, test);
@@ -215,9 +204,7 @@ public class Evaluator
 		var test = !string.IsNullOrEmpty(testFile) ? ReadInput(testFile) : null;
 
 		if (_normalize && test != null)
-		{
 			Normalize(test, features);
-		}
 
 		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
 
@@ -319,9 +306,7 @@ public class Evaluator
 		_logger.LogInformation($"{_testScorer.Name}\t|   Train\t| Test");
 
 		for (var i = 0; i < nFold; i++)
-		{
 			_logger.LogInformation($"Fold {i + 1}\t|   {Math.Round(scores[i][0], 4)}\t|  {Math.Round(scores[i][1], 4)}\t");
-		}
 
 		_logger.LogInformation($"Avg.\t|   {Math.Round(scoreOnTrain / nFold, 4)}\t|  {Math.Round(scoreOnTest / nFold, 4)}\t");
 		_logger.LogInformation($"Total\t|   \t\t|  {Math.Round(totalScoreOnTest / totalTestSampleSize, 4)}\t");
@@ -383,9 +368,7 @@ public class Evaluator
 		var test = ReadInput(testFile);
 
 		if (_normalize)
-		{
 			Normalize(test, features);
-		}
 
 		var rankScore = 0.0;
 		var ids = new List<string>();
@@ -436,9 +419,7 @@ public class Evaluator
 			var features = ranker.Features;
 
 			if (_normalize)
-			{
 				Normalize(test, features);
-			}
 
 			foreach (var aTest in test)
 			{
@@ -478,9 +459,7 @@ public class Evaluator
 			var features = ranker.Features;
 
 			if (_normalize)
-			{
 				Normalize(testRankLists, features);
-			}
 
 			foreach (var rankList in testRankLists)
 			{
@@ -518,9 +497,7 @@ public class Evaluator
 				{
 					content = content.Trim();
 					if (!string.IsNullOrEmpty(content))
-					{
 						scores.Add(double.Parse(content));
-					}
 				}
 			}
 
@@ -531,9 +508,7 @@ public class Evaluator
 				var scoreArray = new double[rl.Count];
 
 				for (var j = 0; j < rl.Count; j++)
-				{
 					scoreArray[j] = scores[k++];
-				}
 
 				test[i] = new RankList(rl, MergeSorter.Sort(scoreArray, false));
 			}
@@ -556,9 +531,7 @@ public class Evaluator
 		var testRankLists = ReadInput(testFile);
 
 		if (_normalize)
-		{
 			Normalize(testRankLists, features);
-		}
 
 		try
 		{
@@ -567,9 +540,7 @@ public class Evaluator
 			{
 				var rankListId = rankList.Id;
 				for (var j = 0; j < rankList.Count; j++)
-				{
 					outWriter.WriteLine($"{rankListId}\t{j}\t{ranker.Eval(rankList[j])}");
-				}
 			}
 		}
 		catch (IOException ex)
@@ -598,17 +569,13 @@ public class Evaluator
 				var features = ranker.Features;
 
 				if (_normalize)
-				{
 					Normalize(testRankLists, features);
-				}
 
 				foreach (var rankList in testRankLists)
 				{
 					var rankListId = rankList.Id;
 					for (var j = 0; j < rankList.Count; j++)
-					{
 						outWriter.WriteLine($"{rankListId}\t{j}\t{ranker.Eval(rankList[j])}");
-					}
 				}
 			}
 		}
@@ -630,17 +597,13 @@ public class Evaluator
 				var features = ranker.Features;
 
 				if (_normalize)
-				{
 					Normalize(testRankLists, features);
-				}
 
 				foreach (var rankList in testRankLists)
 				{
 					var rankListId = rankList.Id;
 					for (var j = 0; j < rankList.Count; j++)
-					{
 						outWriter.WriteLine($"{rankListId}\t{j}\t{ranker.Eval(rankList[j])}");
-					}
 				}
 			}
 		}
@@ -657,9 +620,7 @@ public class Evaluator
 		var test = ReadInput(testFile);
 
 		if (_normalize)
-		{
 			Normalize(test, features);
-		}
 
 		try
 		{
@@ -668,9 +629,7 @@ public class Evaluator
 			{
 				var scores = new double[l.Count];
 				for (var j = 0; j < l.Count; j++)
-				{
 					scores[j] = ranker.Eval(l[j]);
-				}
 
 				var idx = MergeSorter.Sort(scores, false);
 				for (var j = 0; j < idx.Length; j++)
@@ -721,7 +680,7 @@ public class Evaluator
 
 		try
 		{
-			using var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), System.Text.Encoding.UTF8);
+			using var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), Encoding.UTF8);
 			for (var f = 0; f < nFold; f++)
 			{
 				var test = testData[f];
@@ -729,17 +688,13 @@ public class Evaluator
 				var features = ranker.Features;
 
 				if (_normalize)
-				{
 					Normalize(test, features);
-				}
 
 				foreach (var l in test)
 				{
 					var scores = new double[l.Count];
 					for (var j = 0; j < l.Count; j++)
-					{
 						scores[j] = ranker.Eval(l[j]);
-					}
 
 					var idx = MergeSorter.Sort(scores, false);
 					for (var j = 0; j < idx.Length; j++)
@@ -771,17 +726,13 @@ public class Evaluator
 				var features = ranker.Features;
 
 				if (_normalize)
-				{
 					Normalize(test, features);
-				}
 
 				foreach (var l in test)
 				{
 					var scores = new double[l.Count];
 					for (var j = 0; j < l.Count; j++)
-					{
 						scores[j] = ranker.Eval(l[j]);
-					}
 
 					var idx = MergeSorter.Sort(scores, false);
 					for (var j = 0; j < idx.Length; j++)
@@ -805,20 +756,16 @@ public class Evaluator
 		var features = ReadFeature(featureDefFile) ?? _featureManager.GetFeatureFromSampleVector(data);
 
 		if (normalize)
-		{
 			Normalize(data, features);
-		}
 
 		_featureManager.PrepareSplit(data, percentTrain, trainingData, testData);
 		return features;
 	}
 
-	public void SavePerRankListPerformanceFile(List<string> ids, List<double> scores, string prpFile)
+	private void SavePerRankListPerformanceFile(List<string> ids, List<double> scores, string prpFile)
 	{
 		using var writer = new StreamWriter(prpFile);
 		for (var i = 0; i < ids.Count; i++)
-		{
 			writer.WriteLine($"{_testScorer.Name}   {ids[i]}   {scores[i]}");
-		}
 	}
 }
