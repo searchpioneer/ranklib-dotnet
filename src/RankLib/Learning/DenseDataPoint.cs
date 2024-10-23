@@ -4,8 +4,6 @@ namespace RankLib.Learning;
 
 public class DenseDataPoint : DataPoint
 {
-	public DenseDataPoint(string text) : base(text) { }
-
 	public DenseDataPoint(ReadOnlySpan<char> span) : base(span) { }
 
 	public DenseDataPoint(DenseDataPoint dataPoint)

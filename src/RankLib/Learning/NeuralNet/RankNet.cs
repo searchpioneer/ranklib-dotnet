@@ -382,9 +382,9 @@ public class RankNet : Ranker<RankNetParameters>
 		}
 	}
 
-	public override void LoadFromString(string fullText)
+	public override void LoadFromString(string model)
 	{
-		var lines = fullText.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+		var lines = model.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
 
 		var features = lines[0].Split(' ');
 		Features = new int[features.Length];

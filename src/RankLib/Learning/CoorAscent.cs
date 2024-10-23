@@ -3,11 +3,15 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Features;
+using RankLib.Learning.Tree;
 using RankLib.Metric;
 using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// Parameters for <see cref="CoorAscent"/>
+/// </summary>
 public class CoorAscentParameters : IRankerParameters
 {
 	public int nRestart { get; set; } = 5;
@@ -30,6 +34,17 @@ public class CoorAscentParameters : IRankerParameters
 	}
 }
 
+/// <summary>
+/// Coordinate Ascent is an optimization algorithm for ranking tasks
+/// that iteratively improves a ranking model by optimizing one parameter
+/// at a time while keeping the others fixed, often used to maximize
+/// metrics like NDCG or MAP.
+/// </summary>
+/// <remarks>
+/// <a href="https://link.springer.com/content/pdf/10.1007/s10791-006-9019-z.pdf">
+/// D. Metzler and W.B. Croft. Linear feature-based models for information retrieval. Information Retrieval, 10(3): 257-274, 2007.
+/// </a>
+/// </remarks>
 public class CoorAscent : Ranker<CoorAscentParameters>
 {
 	internal const string RankerName = "Coordinate Ascent";
@@ -74,9 +89,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 			var consecutiveFails = 0;
 
 			for (var i = 0; i < Weight.Length; i++)
-			{
 				Weight[i] = 1.0f / Features.Length;
-			}
 
 			_currentFeature = -1;
 			var startScore = Scorer.Score(Rank(Samples));
@@ -247,9 +260,8 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 	{
 		var output = new StringBuilder();
 		for (var i = 0; i < Weight.Length; i++)
-		{
 			output.Append($"{Features[i]}:{Weight[i]}{(i == Weight.Length - 1 ? "" : " ")}");
-		}
+
 		return output.ToString();
 	}
 
@@ -261,19 +273,19 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 			output.AppendLine($"## {Name}");
 			output.AppendLine($"## Restart = {Parameters.nRestart}");
 			output.AppendLine($"## MaxIteration = {Parameters.nMaxIteration}");
-			output.AppendLine($"## StepBase = {Parameters.stepBase}");
-			output.AppendLine($"## StepScale = {Parameters.stepScale}");
-			output.AppendLine($"## Tolerance = {Parameters.tolerance}");
+			output.AppendLine($"## StepBase = {Parameters.stepBase.ToRankLibString()}");
+			output.AppendLine($"## StepScale = {Parameters.stepScale.ToRankLibString()}");
+			output.AppendLine($"## Tolerance = {Parameters.tolerance.ToRankLibString()}");
 			output.AppendLine($"## Regularized = {(Parameters.regularized ? "true" : "false")}");
-			output.AppendLine($"## Slack = {Parameters.slack}");
+			output.AppendLine($"## Slack = {Parameters.slack.ToRankLibString()}");
 			output.AppendLine(ToString());
 			return output.ToString();
 		}
 	}
 
-	public override void LoadFromString(string fullText)
+	public override void LoadFromString(string model)
 	{
-		using var reader = new StringReader(fullText);
+		using var reader = new StringReader(model);
 		while (reader.ReadLine() is { } line)
 		{
 			if (line.StartsWith("##"))
@@ -313,9 +325,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 		{
 			var rl = Samples[j];
 			for (var i = 0; i < rl.Count; i++)
-			{
 				rl[i].Cached = (rl[i].Cached / sum);
-			}
 		}
 	}
 

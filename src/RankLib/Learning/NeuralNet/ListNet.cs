@@ -182,11 +182,11 @@ public class ListNet : RankNet
 		}
 	}
 
-	public override void LoadFromString(string fullText)
+	public override void LoadFromString(string model)
 	{
 		try
 		{
-			using var reader = new StringReader(fullText);
+			using var reader = new StringReader(model);
 			var l = new List<string>();
 			while (reader.ReadLine() is { } content)
 			{

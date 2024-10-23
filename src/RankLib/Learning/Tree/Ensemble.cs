@@ -13,20 +13,14 @@ public class Ensemble
 {
 	private readonly List<RegressionTree> _trees = [];
 	private readonly List<float> _weights = [];
-	private readonly int[] _features = [];
+	private int[] _features = [];
 
-	public Ensemble() { }
 
-	public Ensemble(Ensemble e)
-	{
-		_trees.AddRange(e._trees);
-		_weights.AddRange(e._weights);
-	}
-
-	public Ensemble(string xml)
+	public static Ensemble Parse(string xml)
 	{
 		try
 		{
+			var ensemble = new Ensemble();
 			using var stream = new MemoryStream(Encoding.UTF8.GetBytes(xml));
 			var doc = new XmlDocument();
 			doc.Load(stream);
@@ -39,27 +33,20 @@ public class Ensemble
 				// Get the weight for this tree
 				var weight = float.Parse(n.Attributes["weight"].Value);
 				// Add it to the ensemble
-				_trees.Add(new RegressionTree(root));
-				_weights.Add(weight);
+				ensemble.Add(new RegressionTree(root), weight);
 			}
 
-			_features = new int[fids.Keys.Count];
+			ensemble._features = new int[fids.Keys.Count];
 			var i = 0;
 			foreach (var fid in fids.Keys)
-			{
-				_features[i++] = fid;
-			}
+				ensemble._features[i++] = fid;
+
+			return ensemble;
 		}
 		catch (Exception ex)
 		{
 			throw RankLibException.Create("Error reading ensemble from xml", ex);
 		}
-	}
-
-	public void Add(RegressionTree tree, float weight)
-	{
-		_trees.Add(tree);
-		_weights.Add(weight);
 	}
 
 	public IReadOnlyList<RegressionTree> Trees => _trees;
@@ -70,16 +57,21 @@ public class Ensemble
 	{
 		double variance = 0;
 		foreach (var tree in _trees)
-		{
 			variance += tree.Variance();
-		}
+
 		return variance;
 	}
 
-	public void Remove(int k)
+	public void Add(RegressionTree tree, float weight)
 	{
-		_trees.RemoveAt(k);
-		_weights.RemoveAt(k);
+		_trees.Add(tree);
+		_weights.Add(weight);
+	}
+
+	public void RemoveAt(int index)
+	{
+		_trees.RemoveAt(index);
+		_weights.RemoveAt(index);
 	}
 
 	public int TreeCount => _trees.Count;
@@ -124,21 +116,19 @@ public class Ensemble
 		return builder.ToString();
 	}
 
-	private Split Create(XmlNode node, Dictionary<int, int> fids)
+	private static Split Create(XmlNode node, Dictionary<int, int> fids)
 	{
-		Split s;
 		if (node.FirstChild is null)
-		{
 			throw new InvalidOperationException("Node does not have a first child.");
-		}
 
+		Split s;
 		if (node.FirstChild.Name.Equals("feature", StringComparison.OrdinalIgnoreCase)) // this is a split
 		{
 			var childNodes = node.ChildNodes;
 
 			if (childNodes.Count != 4)
 			{
-				throw new InvalidDataException("Invalid feature");
+				throw new ArgumentException("Invalid feature");
 			}
 
 			var fid = int.Parse(childNodes[0].FirstChild.Value.Trim()); // <feature>

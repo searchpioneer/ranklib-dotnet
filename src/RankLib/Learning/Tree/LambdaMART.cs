@@ -192,7 +192,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		}
 
 		_hist = new FeatureHistogram(Parameters.SamplingRate, Parameters.MaxDegreeOfParallelism);
-		await _hist.ConstructAsync(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts);
+		await _hist.ConstructAsync(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts).ConfigureAwait(false);
 
 		//we no longer need the sorted indexes of samples
 		_sortedIdx = [];
@@ -216,14 +216,14 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			//Create training instances for MART:
 			//  - Each document is a training sample
 			//	- The lambda for this document serves as its training label
-			await ComputePseudoResponses();
+			await ComputePseudoResponses().ConfigureAwait(false);
 
 			//update the histogram with these training labels (the feature histogram will be used to find the best tree split)
-			await _hist.UpdateAsync(PseudoResponses);
+			await _hist.UpdateAsync(PseudoResponses).ConfigureAwait(false);
 
 			//Fit a regression tree
 			var rt = new RegressionTree(Parameters.nTreeLeaves, MARTSamples, PseudoResponses, _hist, Parameters.minLeafSupport);
-			await rt.FitAsync();
+			await rt.FitAsync().ConfigureAwait(false);
 
 			//Add this tree to the ensemble (our model)
 			_ensemble.Add(rt, Parameters.learningRate);
@@ -274,7 +274,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		}
 
 		while (_ensemble.TreeCount > _bestModelOnValidation + 1)
-			_ensemble.Remove(_ensemble.TreeCount - 1);
+			_ensemble.RemoveAt(_ensemble.TreeCount - 1);
 
 		ScoreOnTrainingData = Scorer.Score(Rank(Samples));
 		_logger.LogInformation($"Finished successfully. {Scorer.Name} on training data: {SimpleMath.Round(ScoreOnTrainingData, 4)}");
@@ -315,11 +315,11 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		}
 	}
 
-	public override void LoadFromString(string fullText)
+	public override void LoadFromString(string model)
 	{
 		var lineByLine = new ModelLineProducer();
-		lineByLine.Parse(fullText, (model, endEns) => { });
-		_ensemble = new Ensemble(lineByLine.Model.ToString());
+		lineByLine.Parse(model, (_, _) => { });
+		_ensemble = Ensemble.Parse(lineByLine.Model.ToString());
 		Features = _ensemble.Features;
 	}
 
@@ -334,45 +334,37 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			ComputePseudoResponses(0, Samples.Count - 1, 0);
 		else
 		{
-			_logger.LogInformation($"Samples {string.Join(",", Samples)}");
-
-			// TODO: Current does not appear to be correct value. Fix this
-			var partition = ParallelExecutor.Partition(Features.Length, Parameters.MaxDegreeOfParallelism);
+			var partition = ParallelExecutor.Partition(Samples.Count, Parameters.MaxDegreeOfParallelism);
 			var current = 0;
+			var e = Enumerable.Range(0, partition.Length - 1)
+				.Select(i =>
+				{
+					var start = partition[i];
+					var end = partition[i + 1] - 1;
+					var values = (start, end, current);
+					if (i < partition.Length - 2)
+					{
+						for (var j = partition[i]; j <= partition[i + 1] - 1; j++)
+							current += Samples[j].Count;
+					}
+
+					return values;
+				})
+				.ToList();
+
 			var parallelOptions = new ParallelOptions
 			{
 				MaxDegreeOfParallelism = Parameters.MaxDegreeOfParallelism,
 				CancellationToken = default
 			};
 
-			var e = Enumerable.Range(0, partition.Length - 1)
-				.Select(i =>
-				{
-					var start = partition[i];
-					var end = partition[i + 1] - 1;
-					if (i > 0 && i < partition.Length - 2)
-					{
-						for (var j = partition[i]; j <= partition[i + 1] - 1; j++)
-							current += Samples[j].Count;
-					}
-
-					return (start, end, current);
-				})
-				.ToList();
-
-			_logger.LogInformation($"Partition {partition.Length}: {string.Join(", ", e)}");
-
-			await Parallel.ForEachAsync(e, parallelOptions, async (i, token) =>
-			{
-				await Task.Run(() =>
-				{
-					ComputePseudoResponses(i.start, i.end, i.current);
-				}, token);
-			});
+			await Parallel.ForEachAsync(e, parallelOptions, async (values, token) =>
+				await Task.Run(() => ComputePseudoResponses(values.start, values.end, values.current), token).ConfigureAwait(false))
+				.ConfigureAwait(false);
 		}
 	}
 
-	// compute psuedo responses based on the current model's error (another name for pseudo response -- 'force' or 'gradient')
+	// compute pseudo responses based on the current model's error (another name for pseudo response -- 'force' or 'gradient')
 	// "pseudo responses" is the error currently in the model (that we'll attempt to model with features)
 	// How do we get that error?
 	//  Let's say we have two training samples (aka docs) for a query. Docs k and j, where k is more relevant than j

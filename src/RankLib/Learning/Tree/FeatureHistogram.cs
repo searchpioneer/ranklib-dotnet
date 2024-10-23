@@ -4,12 +4,12 @@ namespace RankLib.Learning.Tree;
 
 public class FeatureHistogram
 {
-	public class Config
+	private class Config
 	{
-		public int featureIdx = -1;
-		public int thresholdIdx = -1;
+		public int FeatureIdx = -1;
+		public int ThresholdIdx = -1;
 		public double S = -1;
-		public double errReduced = -1;
+		public double ErrReduced = -1;
 	}
 
 	private readonly float _samplingRate;
@@ -50,7 +50,7 @@ public class FeatureHistogram
 			await ParallelExecutor.ExecuteAsync(
 				new Worker(this, samples, labels, sampleSortedIdx, thresholds),
 				features.Length,
-				_maxDegreesOfParallelism);
+				_maxDegreesOfParallelism).ConfigureAwait(false);
 		}
 	}
 
@@ -107,7 +107,7 @@ public class FeatureHistogram
 			await ParallelExecutor.ExecuteAsync(
 				new Worker(this, labels),
 				_features.Length,
-				_maxDegreesOfParallelism);
+				_maxDegreesOfParallelism).ConfigureAwait(false);
 		}
 	}
 
@@ -151,7 +151,7 @@ public class FeatureHistogram
 		}
 	}
 
-	public async Task ConstructAsync(FeatureHistogram parent, int[] soi, double[] labels)
+	private async Task ConstructAsync(FeatureHistogram parent, int[] soi, double[] labels)
 	{
 		_features = parent._features;
 		_thresholds = parent._thresholds;
@@ -169,11 +169,11 @@ public class FeatureHistogram
 			await ParallelExecutor.ExecuteAsync(
 				new Worker(this, parent, soi, labels),
 				_features.Length,
-				_maxDegreesOfParallelism);
+				_maxDegreesOfParallelism).ConfigureAwait(false);
 		}
 	}
 
-	protected void Construct(FeatureHistogram parent, int[] soi, double[] labels, int start, int end)
+	private void Construct(FeatureHistogram parent, int[] soi, double[] labels, int start, int end)
 	{
 		for (var i = start; i <= end; i++)
 		{
@@ -210,7 +210,7 @@ public class FeatureHistogram
 		}
 	}
 
-	public async Task ConstructAsync(FeatureHistogram parent, FeatureHistogram leftSibling, bool reuseParent)
+	private async Task ConstructAsync(FeatureHistogram parent, FeatureHistogram leftSibling, bool reuseParent)
 	{
 		_reuseParent = reuseParent;
 		_features = parent._features;
@@ -238,11 +238,11 @@ public class FeatureHistogram
 			await ParallelExecutor.ExecuteAsync(
 				new Worker(this, parent, leftSibling),
 				_features.Length,
-				_maxDegreesOfParallelism);
+				_maxDegreesOfParallelism).ConfigureAwait(false);
 		}
 	}
 
-	protected void Construct(FeatureHistogram parent, FeatureHistogram leftSibling, int start, int end)
+	private void Construct(FeatureHistogram parent, FeatureHistogram leftSibling, int start, int end)
 	{
 		for (var f = start; f <= end; f++)
 		{
@@ -292,9 +292,9 @@ public class FeatureHistogram
 				if (cfg.S < s)
 				{
 					cfg.S = s;
-					cfg.featureIdx = i;
-					cfg.thresholdIdx = t;
-					cfg.errReduced = errSt;
+					cfg.FeatureIdx = i;
+					cfg.ThresholdIdx = t;
+					cfg.ErrReduced = errSt;
 				}
 			}
 		}
@@ -340,7 +340,7 @@ public class FeatureHistogram
 			var workers = await ParallelExecutor.ExecuteAsync(
 				new Worker(this, usedFeatures, minLeafSupport),
 				usedFeatures.Length,
-				_maxDegreesOfParallelism);
+				_maxDegreesOfParallelism).ConfigureAwait(false);
 
 			foreach (var worker in workers)
 			{
@@ -354,14 +354,14 @@ public class FeatureHistogram
 			return false;
 
 		// bestFeaturesHist is the best features
-		var bestFeaturesHist = _sum[best.featureIdx];
-		var sampleCount = _count[best.featureIdx];
+		var bestFeaturesHist = _sum[best.FeatureIdx];
+		var sampleCount = _count[best.FeatureIdx];
 
 		var s = bestFeaturesHist[^1];
 		var c = sampleCount[bestFeaturesHist.Length - 1];
 
-		var sumLeft = bestFeaturesHist[best.thresholdIdx];
-		var countLeft = sampleCount[best.thresholdIdx];
+		var sumLeft = bestFeaturesHist[best.ThresholdIdx];
+		var countLeft = sampleCount[best.ThresholdIdx];
 
 		var sumRight = s - sumLeft;
 		var countRight = c - countLeft;
@@ -374,28 +374,27 @@ public class FeatureHistogram
 		for (var j = 0; j < idx.Length; j++)
 		{
 			var k = idx[j];
-			if (_sampleToThresholdMap[best.featureIdx][k] <= best.thresholdIdx)// go to the left
+			if (_sampleToThresholdMap[best.FeatureIdx][k] <= best.ThresholdIdx)// go to the left
 				left[l++] = k;
 			else // go to the right
 				right[r++] = k;
 		}
 
 		// update impact with info on best
-		_impacts[best.featureIdx] += best.errReduced;
+		_impacts[best.FeatureIdx] += best.ErrReduced;
 
 		var lh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
-		await lh.ConstructAsync(sp.Histogram!, left, labels);
+		await lh.ConstructAsync(sp.Histogram!, left, labels).ConfigureAwait(false);
 		var rh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
-		await rh.ConstructAsync(sp.Histogram!, lh, !sp.IsRoot);
+		await rh.ConstructAsync(sp.Histogram!, lh, !sp.IsRoot).ConfigureAwait(false);
 
 		var var = _sqSumResponse - _sumResponse * _sumResponse / idx.Length;
 		var varLeft = lh._sqSumResponse - lh._sumResponse * lh._sumResponse / left.Length;
 		var varRight = rh._sqSumResponse - rh._sumResponse * rh._sumResponse / right.Length;
 
-		sp.Set(_features[best.featureIdx], _thresholds[best.featureIdx][best.thresholdIdx], var);
+		sp.Set(_features[best.FeatureIdx], _thresholds[best.FeatureIdx][best.ThresholdIdx], var);
 		sp.SetLeft(new Split(left, lh, varLeft, sumLeft));
 		sp.SetRight(new Split(right, rh, varRight, sumRight));
-
 		sp.ClearSamples();
 
 		return true;

@@ -6,6 +6,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// Parameters for <see cref="LinearRegRank"/>.
+/// </summary>
 public class LinearRegRankParameters : IRankerParameters
 {
 	/// <summary>
@@ -17,13 +20,16 @@ public class LinearRegRankParameters : IRankerParameters
 		logger.LogInformation("L2-norm regularization: lambda = {Lambda}", Lambda);
 }
 
+/// <summary>
+/// Linear Regression ranking model that applies linear regression
+/// to predict relevance scores for items, using feature weights learned from
+/// training data to produce a ranked list of items based on predicted relevance.
+/// </summary>
 public class LinearRegRank : Ranker<LinearRegRankParameters>
 {
 	internal const string RankerName = "Linear Regression";
 
 	private readonly ILogger<LinearRegRank> _logger;
-
-	// Local variables
 	private double[] _weight = [];
 
 	public LinearRegRank(ILogger<LinearRegRank>? logger = null) : base(logger) =>
@@ -90,7 +96,7 @@ public class LinearRegRank : Ranker<LinearRegRankParameters>
 			}
 		}
 
-		if (Parameters.Lambda != 0.0)
+		if (Parameters.Lambda != 0)
 		{
 			for (var i = 0; i < xTx.Length; i++)
 				xTx[i][i] += Parameters.Lambda;
@@ -145,11 +151,11 @@ public class LinearRegRank : Ranker<LinearRegRankParameters>
 		}
 	}
 
-	public override void LoadFromString(string fullText)
+	public override void LoadFromString(string model)
 	{
 		try
 		{
-			using var reader = new StringReader(fullText);
+			using var reader = new StringReader(model);
 			KeyValuePairs? kvp = null;
 			while (reader.ReadLine() is { } content)
 			{
@@ -180,9 +186,7 @@ public class LinearRegRank : Ranker<LinearRegRankParameters>
 					idx++;
 				}
 				else
-				{
 					_weight[^1] = double.Parse(kv.Value);
-				}
 			}
 		}
 		catch (Exception ex)
@@ -191,7 +195,7 @@ public class LinearRegRank : Ranker<LinearRegRankParameters>
 		}
 	}
 
-	protected double[] Solve(double[][] a, double[] b)
+	private static double[] Solve(double[][] a, double[] b)
 	{
 		if (a.Length == 0 || b.Length == 0)
 			throw RankLibException.Create("Error: some of the input arrays is empty.");

@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
-using RankLib.Utilities;
 
-namespace RankLib.Features;
+namespace RankLib.Utilities;
 
 internal static class ListExtensions
 {

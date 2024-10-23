@@ -4,18 +4,27 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// A list of <see cref="DataPoint"/> to be ranked.
+/// </summary>
 public class RankList : IEnumerable<DataPoint>
 {
 	private readonly DataPoint[] _dataPoints;
 
-	// Constructor that initializes the rank list from a list of DataPoint
+	/// <summary>
+	/// Initializes a new instance of <see cref="RankList"/> with the specified data points.
+	/// </summary>
+	/// <param name="dataPoints">The list of data points.</param>
 	public RankList(List<DataPoint> dataPoints)
 	{
 		_dataPoints = dataPoints.ToArray();
 		Init();
 	}
 
-	// Copy constructor that creates a new RankList from an existing one
+	/// <summary>
+	/// Initializes a new instance of <see cref="RankList"/> with a copy of the data points from the specified rank list.
+	/// </summary>
+	/// <param name="rankList">The rank list to copy data points from.</param>
 	public RankList(RankList rankList)
 	{
 		_dataPoints = new DataPoint[rankList.Count];
@@ -23,7 +32,12 @@ public class RankList : IEnumerable<DataPoint>
 		Init();
 	}
 
-	// Constructor that creates a RankList from selected indices
+	/// <summary>
+	/// Initializes a new instance of <see cref="RankList"/> with a copy of
+	/// selected data points from the specified rank list specified by <see cref="idx"/>
+	/// </summary>
+	/// <param name="rankList">The rank list to copy data points from.</param>
+	/// <param name="idx">The indexes of data points to copy.</param>
 	public RankList(RankList rankList, int[] idx)
 	{
 		_dataPoints = new DataPoint[rankList.Count];
@@ -33,7 +47,14 @@ public class RankList : IEnumerable<DataPoint>
 		Init();
 	}
 
-	// Constructor that creates a RankList with offset
+	/// <summary>
+	/// Initializes a new instance of <see cref="RankList"/> with a copy of
+	/// selected data points from the specified rank list specified by <see cref="idx"/>
+	/// minus the specified offset.
+	/// </summary>
+	/// <param name="rankList">The rank list to copy data points from.</param>
+	/// <param name="idx">The indexes of data points to copy.</param>
+	/// <param name="offset">The offset to apply to indexes of data points to copy.</param>
 	public RankList(RankList rankList, int[] idx, int offset)
 	{
 		_dataPoints = new DataPoint[rankList.Count];
@@ -54,20 +75,26 @@ public class RankList : IEnumerable<DataPoint>
 		}
 	}
 
-	// Get the ID of the first DataPoint in the list
+	/// <summary>
+	/// Gets the ID of the first data point in the rank list.
+	/// </summary>
 	public string Id => this[0].Id;
 
-	// Get the size of the rank list
+	/// <summary>
+	/// Gets the count of data points in the rank list
+	/// </summary>
 	public int Count => _dataPoints.Length;
 
-	// Gets the feature count
+	/// <summary>
+	/// Gets the feature count
+	/// </summary>
 	public int FeatureCount { get; private set; }
 
-	public DataPoint this[int index]
-	{
-		get => _dataPoints[index];
-		set => _dataPoints[index] = value;
-	}
+	/// <summary>
+	/// Indexer into the data points
+	/// </summary>
+	/// <param name="index">The index of the data point to get.</param>
+	public DataPoint this[int index] => _dataPoints[index];
 
 	// Get the correct ranking by label
 	public RankList GetCorrectRanking()
@@ -80,7 +107,11 @@ public class RankList : IEnumerable<DataPoint>
 		return new RankList(this, idx);
 	}
 
-	// Get the ranking based on a specific feature ID
+	/// <summary>
+	/// Gets the ranking based on a specific feature ID
+	/// </summary>
+	/// <param name="fid">The feature ID</param>
+	/// <returns>A new instance of <see cref="RankList"/> with ranking based on the feature ID.</returns>
 	public RankList GetRanking(int fid)
 	{
 		var score = new double[_dataPoints.Length];
@@ -91,10 +122,12 @@ public class RankList : IEnumerable<DataPoint>
 		return new RankList(this, idx);
 	}
 
-	// Override the ToString method
+	/// <inheritdoc />
 	public override string ToString() => $"RankList ({Count}, {FeatureCount})";
 
+	/// <inheritdoc />
 	public IEnumerator<DataPoint> GetEnumerator() => ((IEnumerable<DataPoint>)_dataPoints).GetEnumerator();
 
+	/// <inheritdoc />
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

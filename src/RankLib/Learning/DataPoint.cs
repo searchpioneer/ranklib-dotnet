@@ -2,14 +2,12 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
-public abstract partial class DataPoint
+public abstract class DataPoint
 {
-	[GeneratedRegex("\\s+")]
-	private static partial Regex WhitespaceRegex();
-
 	public static int MaxFeature = 51;
 	public static bool MissingZero = false;
 	public static int FeatureIncrease = 10;
@@ -50,7 +48,7 @@ public abstract partial class DataPoint
 			if (idx != -1)
 			{
 				Description = span[idx..].ToString();
-				span = span[..idx].Trim(); // remove the comment part at the end of the line
+				span = span[..idx].Trim();
 			}
 
 			var enumerator = span.SplitOnWhitespace();
@@ -116,16 +114,10 @@ public abstract partial class DataPoint
 	// Default constructor
 	protected DataPoint() { }
 
-	// Constructor to initialize DataPoint from text
-	protected DataPoint(string text)
-	{
-		var fVals = Parse(text.AsSpan());
-		SetFeatureVector(fVals);
-	}
-
 	protected DataPoint(ReadOnlySpan<char> span)
 	{
 		var fVals = Parse(span);
+		// ReSharper disable once VirtualMemberCallInConstructor
 		SetFeatureVector(fVals);
 	}
 
@@ -138,7 +130,6 @@ public abstract partial class DataPoint
 	public int FeatureCount { get; protected set; }
 
 	public void ResetCached() => Cached = -100000000.0f;
-
 
 	// Override ToString method
 	public override string ToString()
@@ -156,42 +147,4 @@ public abstract partial class DataPoint
 		output.Append($" {Description}");
 		return output.ToString();
 	}
-}
-
-public ref struct WhitespaceSplitEnumerator
-{
-	private ReadOnlySpan<char> _remaining;
-	private ReadOnlySpan<char> _current;
-
-	public WhitespaceSplitEnumerator(ReadOnlySpan<char> span)
-	{
-		_remaining = span;
-		_current = default;
-	}
-
-	public bool MoveNext()
-	{
-		while (_remaining.Length > 0 && char.IsWhiteSpace(_remaining[0]))
-			_remaining = _remaining[1..];
-
-		if (_remaining.Length == 0)
-			return false;
-
-		var end = 0;
-		while (end < _remaining.Length && !char.IsWhiteSpace(_remaining[end]))
-			end++;
-
-		_current = _remaining[..end];
-		_remaining = _remaining[end..];
-		return true;
-	}
-
-	public ReadOnlySpan<char> Current => _current;
-
-	public WhitespaceSplitEnumerator GetEnumerator() => this;
-}
-
-public static class SpanExtensions
-{
-	public static WhitespaceSplitEnumerator SplitOnWhitespace(this ReadOnlySpan<char> span) => new(span);
 }

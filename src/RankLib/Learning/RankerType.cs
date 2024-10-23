@@ -4,6 +4,9 @@ using RankLib.Learning.Tree;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// The ranker type
+/// </summary>
 public enum RankerType
 {
 	MART = 0,
@@ -20,6 +23,14 @@ public enum RankerType
 
 public static class RankerTypeExtensions
 {
+	/// <summary>
+	/// Gets the ranker <see cref="Type"/> from the <see cref="RankerType"/>.
+	/// </summary>
+	/// <param name="rankerType">The ranker type</param>
+	/// <returns>The ranker type</returns>
+	/// <exception cref="ArgumentOutOfRangeException">
+	/// <paramref name="rankerType"/> is outside of the range of valid values.
+	/// </exception>
 	public static Type GetRankerType(this RankerType rankerType) =>
 		rankerType switch
 		{

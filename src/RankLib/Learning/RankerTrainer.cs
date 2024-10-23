@@ -31,8 +31,8 @@ public class RankerTrainer
 		var ranker = _rankerFactory.CreateRanker(rankerType, trainingSamples, features, scorer, parameters);
 		ranker.ValidationSamples = validationSamples;
 		var stopwatch = Stopwatch.StartNew();
-		await ranker.InitAsync();
-		await ranker.LearnAsync();
+		await ranker.InitAsync().ConfigureAwait(false);
+		await ranker.LearnAsync().ConfigureAwait(false);
 		stopwatch.Stop();
 		return (ranker, stopwatch.Elapsed);
 	}
@@ -49,8 +49,8 @@ public class RankerTrainer
 		var ranker = _rankerFactory.CreateRanker<TRanker, TRankerParameters>(trainingSamples, features, scorer, parameters);
 		ranker.ValidationSamples = validationSamples;
 		var stopwatch = Stopwatch.StartNew();
-		await ranker.InitAsync();
-		await ranker.LearnAsync();
+		await ranker.InitAsync().ConfigureAwait(false);
+		await ranker.LearnAsync().ConfigureAwait(false);
 		stopwatch.Stop();
 		return (ranker, stopwatch.Elapsed);
 	}

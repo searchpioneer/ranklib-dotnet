@@ -151,6 +151,6 @@ public abstract class Ranker : IRanker
 	public abstract double Eval(DataPoint dataPoint);
 	public abstract override string ToString();
 	public abstract string Model { get; }
-	public abstract void LoadFromString(string fullText);
+	public abstract void LoadFromString(string model);
 	public abstract string Name { get; }
 }

@@ -29,9 +29,7 @@ public static class Sampler
 			for (var i = 0; i < samplingPool.Count; i++)
 			{
 				if (used[i] == 0)
-				{
 					remains.Add(samplingPool[i]);
-				}
 			}
 		}
 		else

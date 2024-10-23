@@ -1,11 +1,15 @@
-using System.Globalization;
 using System.Text;
+using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
 
+/// <summary>
+/// Split represents a decision point in a regression or decision tree model,
+/// where the dataset is divided based on a feature and a threshold value,
+/// determining how data is partitioned to improve the accuracy of ranking or prediction.
+/// </summary>
 public class Split
 {
-	// Key attributes of a split (tree node)
 	private int _featureId = -1;
 	private float _threshold;
 	private double _avgLabel;
@@ -116,11 +120,11 @@ public class Split
 	{
 		var builder = new StringBuilder();
 		if (_featureId == -1)
-			builder.Append(indent).Append("<output> ").Append(GetString(_avgLabel)).Append(" </output>\n");
+			builder.Append(indent).Append("<output> ").Append(_avgLabel.ToRankLibString()).Append(" </output>\n");
 		else
 		{
 			builder.Append(indent).Append("<feature> ").Append(_featureId).Append(" </feature>\n");
-			builder.Append(indent).Append("<threshold> ").Append(GetString(_threshold)).Append(" </threshold>\n");
+			builder.Append(indent).Append("<threshold> ").Append(_threshold.ToRankLibString()).Append(" </threshold>\n");
 			builder.Append(indent).Append("<split pos=\"left\">\n");
 			builder.Append(_left.GetString(indent + "\t"));
 			builder.Append(indent).Append("</split>\n");
@@ -131,9 +135,6 @@ public class Split
 		return builder.ToString();
 	}
 
-	private static string GetString(double value) => double.IsInteger(value) ? value.ToString("F1") : value.ToString(CultureInfo.InvariantCulture);
-	private static string GetString(float value) => float.IsInteger(value) ? value.ToString("F1") : value.ToString(CultureInfo.InvariantCulture);
-
 	// Internal functions (ONLY used during learning)
 	//*DO NOT* attempt to call them once the training is done
 	public async Task<bool> TrySplitAsync(double[] trainingLabels, int minLeafSupport)
@@ -141,7 +142,7 @@ public class Split
 		if (Histogram is null)
 			throw new InvalidOperationException("Histogram is null");
 
-		return await Histogram.FindBestSplitAsync(this, trainingLabels, minLeafSupport);
+		return await Histogram.FindBestSplitAsync(this, trainingLabels, minLeafSupport).ConfigureAwait(false);
 	}
 
 	public int[] GetSamples() => _sortedSampleIDs != null ? _sortedSampleIDs[0] : _samples;

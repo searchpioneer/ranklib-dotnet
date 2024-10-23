@@ -7,6 +7,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Boosting;
 
+/// <summary>
+/// Parameters for <see cref="AdaRank"/>
+/// </summary>
 public class AdaRankParameters : IRankerParameters
 {
 	public int NIteration { get; set; } = 500;
@@ -27,6 +30,11 @@ public class AdaRankParameters : IRankerParameters
 	}
 }
 
+/// <summary>
+/// AdaRank is a boosting algorithm designed for ranking tasks,
+/// optimizing ranking-specific metrics like NDCG and MAP by iteratively
+/// training weak rankers and adapting to misranked instances in each iteration.
+/// </summary>
 public class AdaRank : Ranker<AdaRankParameters>
 {
 	internal const string RankerName = "AdaRank";
@@ -69,23 +77,24 @@ public class AdaRank : Ranker<AdaRankParameters>
 		var bestScore = -1.0;
 		AdaRankWeakRanker? bestWeakRanker = null;
 
-		foreach (var i in Features)
+		for (var i = 0; i < Features.Length; i++)
 		{
-			if (_featureQueue.Contains(i) || _usedFeatures.ContainsKey(i))
+			var fid = Features[i];
+			if (_featureQueue.Contains(fid) || _usedFeatures.ContainsKey(fid))
 				continue;
 
-			var wr = new AdaRankWeakRanker(i);
+			var weakRanker = new AdaRankWeakRanker(fid);
 			var s = 0.0;
 			for (var j = 0; j < Samples.Count; j++)
 			{
-				var t = Scorer.Score(wr.Rank(Samples[j])) * _sampleWeights[j];
+				var t = Scorer.Score(weakRanker.Rank(Samples[j])) * _sampleWeights[j];
 				s += t;
 			}
 
 			if (bestScore < s)
 			{
 				bestScore = s;
-				bestWeakRanker = wr;
+				bestWeakRanker = weakRanker;
 			}
 		}
 
@@ -191,13 +200,11 @@ public class AdaRank : Ranker<AdaRankParameters>
 					UpdateBestModelOnValidation();
 				}
 
-				PrintLog([9, 9], [SimpleMath.Round(scoreOnValidation, 4).ToString(CultureInfo.InvariantCulture), status
-				]);
+				PrintLog([9, 9],
+					[SimpleMath.Round(scoreOnValidation, 4).ToString(CultureInfo.InvariantCulture), status]);
 			}
 			else
-			{
 				PrintLog([9, 9], ["", status]);
-			}
 
 			FlushLog();
 
@@ -255,9 +262,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 			}
 		}
 		else
-		{
 			Learn(1, false);
-		}
 
 		if (ValidationSamples != null && _bestModelRankers.Count > 0)
 		{
@@ -285,9 +290,8 @@ public class AdaRank : Ranker<AdaRankParameters>
 	{
 		var score = 0.0;
 		for (var j = 0; j < _rankers.Count; j++)
-		{
 			score += _rankerWeights[j] * dataPoint.GetFeatureValue(_rankers[j].Fid);
-		}
+
 		return score;
 	}
 
@@ -296,6 +300,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 		var output = new StringBuilder();
 		for (var i = 0; i < _rankers.Count; i++)
 			output.Append(_rankers[i].Fid + ":" + _rankerWeights[i] + (i == _rankers.Count - 1 ? "" : " "));
+
 		return output.ToString();
 	}
 
@@ -314,27 +319,24 @@ public class AdaRank : Ranker<AdaRankParameters>
 		}
 	}
 
-	public override void LoadFromString(string fullText)
+	public override void LoadFromString(string model)
 	{
 		try
 		{
-			using var reader = new StringReader(fullText);
+			using var reader = new StringReader(model);
 			KeyValuePairs? kvp = null;
 			while (reader.ReadLine() is { } content)
 			{
 				content = content.Trim();
 				if (content.Length == 0 || content.StartsWith("##"))
-				{
 					continue;
-				}
+
 				kvp = new KeyValuePairs(content);
 				break;
 			}
 
 			if (kvp == null)
-			{
 				throw new InvalidOperationException("Error in AdaRank::LoadFromString: Unable to load model");
-			}
 
 			_rankerWeights = new List<double>();
 			_rankers = new List<AdaRankWeakRanker>();

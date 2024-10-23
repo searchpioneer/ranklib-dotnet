@@ -99,8 +99,8 @@ public class RFRanker : Ranker<RFRankerParameters>
 			var r = (LambdaMART)rankerFactory.CreateRanker(Parameters.rType, bag, Features, Scorer);
 
 			r.Parameters = _lambdaMARTParameters;
-			await r.InitAsync();
-			await r.LearnAsync();
+			await r.InitAsync().ConfigureAwait(false);
+			await r.LearnAsync().ConfigureAwait(false);
 
 			// Accumulate impacts
 			if (impacts == null)
@@ -179,28 +179,28 @@ public class RFRanker : Ranker<RFRankerParameters>
 		}
 	}
 
-	public override void LoadFromString(string fullText)
+	public override void LoadFromString(string model)
 	{
-		var ens = new List<Ensemble>();
+		var ensembles = new List<Ensemble>();
 		var lineByLine = new ModelLineProducer();
 
-		lineByLine.Parse(fullText, (model, maybeEndEns) =>
+		lineByLine.Parse(model, (builder, maybeEndEns) =>
 		{
-			if (maybeEndEns && model.ToString().EndsWith("</ensemble>"))
+			if (maybeEndEns && builder.ToString().EndsWith("</ensemble>"))
 			{
-				ens.Add(new Ensemble(model.ToString()));
-				model.Clear();
+				ensembles.Add(Ensemble.Parse(builder.ToString()));
+				builder.Clear();
 			}
 		});
 
 		var uniqueFeatures = new HashSet<int>();
-		Ensembles = new Ensemble[ens.Count];
-		for (var i = 0; i < ens.Count; i++)
+		Ensembles = new Ensemble[ensembles.Count];
+		for (var i = 0; i < ensembles.Count; i++)
 		{
-			Ensembles[i] = ens[i];
+			Ensembles[i] = ensembles[i];
 
 			// Obtain used features
-			var fids = ens[i].Features;
+			var fids = ensembles[i].Features;
 			foreach (var fid in fids)
 			{
 				uniqueFeatures.Add(fid);

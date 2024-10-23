@@ -27,7 +27,7 @@ public static class ParallelExecutor
 			async (w, ct) =>
 			{
 				await w.RunAsync().ConfigureAwait(false);
-			});
+			}).ConfigureAwait(false);
 
 		return workers.ToArray();
 	}
@@ -46,7 +46,7 @@ public static class ParallelExecutor
 			async (task, ct) =>
 			{
 				await task.RunAsync().ConfigureAwait(false);
-			});
+			}).ConfigureAwait(false);
 	}
 
 	public static IEnumerable<Range> PartitionEnumerable(int listSize, int nChunks)

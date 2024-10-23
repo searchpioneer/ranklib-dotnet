@@ -38,6 +38,6 @@ internal static class DependencyInjectionMiddleware
 				context.BindingContext.AddService(enumerableServiceType, _ => serviceProvider.GetServices(serviceType));
 			}
 
-			await next(context);
+			await next(context).ConfigureAwait(false);
 		});
 }

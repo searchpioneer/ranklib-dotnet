@@ -421,11 +421,11 @@ public class RankBoost : Ranker<RankBoostParameters>
 		}
 	}
 
-	public override void LoadFromString(string fullText)
+	public override void LoadFromString(string model)
 	{
 		try
 		{
-			using var inReader = new StringReader(fullText);
+			using var inReader = new StringReader(model);
 			string? content;
 			while ((content = inReader.ReadLine()) != null)
 			{

@@ -1,12 +1,15 @@
 namespace RankLib.Learning.Tree;
 
+/// <summary>
+/// A decision tree-based model used for ranking tasks, which partitions the feature space
+/// into regions and fits a constant value (or prediction) in each region,
+/// enabling ranking based on the predicted relevance scores for items.
+/// </summary>
 public class RegressionTree
 {
-	// Parameters
 	private readonly int _nodes = 10; // -1 for unlimited number of nodes (the size of the tree will then be controlled *ONLY* by minLeafSupport)
 	private readonly int _minLeafSupport = 1;
 
-	// Member variables and functions
 	private Split? _root;
 	private List<Split> _leaves = null;
 
@@ -36,9 +39,9 @@ public class RegressionTree
 			_index[i] = i;
 	}
 
-	/**
-     * Fit the tree from the specified training data
-     */
+	/// <summary>
+	/// Fits the tree from the specified training data.
+	/// </summary>
 	public async Task FitAsync()
 	{
 		var queue = new List<Split>();
@@ -48,7 +51,7 @@ public class RegressionTree
 		};
 
 		// Ensure inserts occur only after successful splits
-		if (await _root.TrySplitAsync(_trainingLabels, _minLeafSupport))
+		if (await _root.TrySplitAsync(_trainingLabels, _minLeafSupport).ConfigureAwait(false))
 		{
 			Insert(queue, _root.GetLeft());
 			Insert(queue, _root.GetRight());
@@ -66,8 +69,8 @@ public class RegressionTree
 				continue;
 			}
 
-			// unsplitable (i.e. variance(s)==0; or after-split variance is higher than before)
-			if (!await leaf.TrySplitAsync(_trainingLabels, _minLeafSupport))
+			// unsplit-able (i.e. variance(s)==0; or after-split variance is higher than before)
+			if (!await leaf.TrySplitAsync(_trainingLabels, _minLeafSupport).ConfigureAwait(false))
 				taken++;
 			else
 			{
@@ -81,7 +84,7 @@ public class RegressionTree
 	/// <summary>
 	/// Get the tree output for the input sample
 	/// </summary>
-	public double Eval(DataPoint dp) => _root.Eval(dp);
+	public double Eval(DataPoint dataPoint) => _root.Eval(dataPoint);
 
 	/**
      * Retrieve all leaf nodes in the tree

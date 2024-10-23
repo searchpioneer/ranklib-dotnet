@@ -16,7 +16,7 @@ public class Combiner
 		{
 			var files = Directory.GetFiles(directory);
 			using var writer = new StreamWriter(outputFile, false, Encoding.ASCII);
-			writer.WriteLine("## " + new RFRanker().Name);
+			writer.WriteLine("## " + RFRanker.RankerName);
 
 			foreach (var file in files)
 			{

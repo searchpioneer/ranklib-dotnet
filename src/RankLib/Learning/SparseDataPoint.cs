@@ -24,8 +24,6 @@ public class SparseDataPoint : DataPoint
 	private int _lastMinId = -1;
 	private int _lastMinPos = -1;
 
-	public SparseDataPoint(string text) : base(text) { }
-
 	public SparseDataPoint(ReadOnlySpan<char> span) : base(span) { }
 
 	public SparseDataPoint(SparseDataPoint dp)
@@ -50,26 +48,18 @@ public class SparseDataPoint : DataPoint
 				_lastMinPos = -1;
 			}
 			while (_lastMinPos < _knownFeatures && _lastMinId < fid)
-			{
 				_lastMinId = _fIds[++_lastMinPos];
-			}
 			if (_lastMinId == fid)
-			{
 				return _lastMinPos;
-			}
 		}
 		else if (SearchPattern == AccessPattern.Random)
 		{
 			var pos = Array.BinarySearch(_fIds, fid);
 			if (pos >= 0)
-			{
 				return pos;
-			}
 		}
 		else
-		{
 			logger.LogWarning("Invalid search pattern specified for sparse data points.");
-		}
 
 		return -1;
 	}

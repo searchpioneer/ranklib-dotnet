@@ -9,6 +9,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// Factory for creating <see cref="IRanker"/>s
+/// </summary>
 public class RankerFactory
 {
 	private readonly ILoggerFactory _loggerFactory;
@@ -84,9 +87,7 @@ public class RankerFactory
 		ranker.Samples = samples;
 		ranker.Scorer = scorer;
 		if (parameters != null)
-		{
 			ranker.Parameters = parameters;
-		}
 
 		return ranker;
 	}
@@ -118,65 +119,38 @@ public class RankerFactory
 	public IRanker CreateRanker(RankerType type, List<RankList> samples, int[] features, MetricScorer scorer, IRankerParameters? parameters = default) =>
 		CreateRanker(type.GetRankerType(), samples, features, scorer, parameters);
 
-	public IRanker CreateRanker(string typeName)
-	{
-		if (Enum.TryParse(typeName, out RankerType rankerType))
-		{
-			return CreateRanker(rankerType);
-		}
-
-		try
-		{
-			var type = Type.GetType(typeName);
-			if (type is null)
-			{
-				throw new InvalidOperationException($"Ranker of type '{typeName}' cannot be found.");
-			}
-
-			return CreateRanker(type);
-		}
-		catch (TypeLoadException e)
-		{
-			throw RankLibException.Create($"Could not find the type \"{typeName}\" specified. Make sure the assembly is referenced.", e);
-		}
-		catch (MissingMethodException e)
-		{
-			throw RankLibException.Create($"Cannot create an instance from the type \"{typeName}\".", e);
-		}
-		catch (InvalidCastException e)
-		{
-			throw RankLibException.Create($"The class \"{typeName}\" does not derive from \"{typeof(Ranker).FullName}\".", e);
-		}
-	}
-
-
 	public IRanker LoadRankerFromFile(string modelFile)
 	{
 		var fullText = FileUtils.Read(modelFile, Encoding.ASCII);
 		return LoadRankerFromString(fullText);
 	}
 
-	public IRanker LoadRankerFromString(string fullText)
+	public IRanker LoadRankerFromString(string model)
 	{
-		try
-		{
-			using var reader = new StringReader(fullText);
-			var rankerName = reader.ReadLine().Replace("## ", "").Trim(); // read the first line to get the ranker name
-			_logger.LogInformation("Model: {RankerName}", rankerName);
+		// read the first line to get the ranker name
+		var modelSpan = model.AsSpan();
+		var endOfLine = modelSpan.IndexOfAny('\r', '\n');
 
-			if (!_map.TryGetValue(rankerName, out var rankerType))
-				throw new ArgumentException($"Ranker with name '{rankerName}' is not registered.");
+		if (endOfLine == -1)
+			throw new ArgumentException($"Invalid model '{model}'.");
 
-			if (!_rankers.TryGetValue(rankerType, out var factory))
-				throw new ArgumentException($"Ranker of type '{rankerName}' is not registered.");
+		var firstLine = modelSpan.Slice(0, endOfLine);
+		var lastHash = firstLine.LastIndexOf('#');
 
-			var r = factory(_loggerFactory);
-			r.LoadFromString(fullText);
-			return r;
-		}
-		catch (Exception ex)
-		{
-			throw RankLibException.Create(ex);
-		}
+		if (lastHash == -1)
+			throw new ArgumentException($"Expected to find model name on first line, but found '{firstLine}'.");
+
+		var rankerName = firstLine.Slice(lastHash + 1).Trim().ToString();
+		_logger.LogInformation("Model: {RankerName}", rankerName);
+
+		if (!_map.TryGetValue(rankerName, out var rankerType))
+			throw new ArgumentException($"Ranker with name '{rankerName}' is not registered.");
+
+		if (!_rankers.TryGetValue(rankerType, out var factory))
+			throw new ArgumentException($"Ranker of type '{rankerName}' is not registered.");
+
+		var ranker = factory(_loggerFactory);
+		ranker.LoadFromString(model);
+		return ranker;
 	}
 }

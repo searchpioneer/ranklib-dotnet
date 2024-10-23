@@ -124,7 +124,7 @@ public class Evaluator
 				Normalize(test, features);
 		}
 
-		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
+		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters).ConfigureAwait(false);
 
 		if (test != null)
 		{
@@ -167,7 +167,7 @@ public class Evaluator
 		if (_normalize && validation != null)
 			Normalize(validation, features);
 
-		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
+		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters).ConfigureAwait(false);
 		var rankScore = Evaluate(ranker, test);
 		_logger.LogInformation($"{_testScorer.Name} on test data: {Math.Round(rankScore, 4)}");
 
@@ -206,7 +206,7 @@ public class Evaluator
 		if (_normalize && test != null)
 			Normalize(test, features);
 
-		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
+		var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters).ConfigureAwait(false);
 
 		if (test != null)
 		{
@@ -283,7 +283,7 @@ public class Evaluator
 			var validation = tvs > 0 ? validationData[i] : null;
 			var test = testData[i];
 
-			var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters);
+			var (ranker, _) = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters).ConfigureAwait(false);
 
 			var testScore = Evaluate(ranker, test);
 			scoreOnTrain += ranker.GetScoreOnTrainingData();
