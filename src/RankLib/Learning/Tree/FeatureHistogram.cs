@@ -393,8 +393,8 @@ public class FeatureHistogram
 		var varRight = rh._sqSumResponse - rh._sumResponse * rh._sumResponse / right.Length;
 
 		sp.Set(_features[best.FeatureIdx], _thresholds[best.FeatureIdx][best.ThresholdIdx], var);
-		sp.SetLeft(new Split(left, lh, varLeft, sumLeft));
-		sp.SetRight(new Split(right, rh, varRight, sumRight));
+		sp.Left = new Split(left, lh, varLeft, sumLeft);
+		sp.Right = new Split(right, rh, varRight, sumRight);
 		sp.ClearSamples();
 
 		return true;

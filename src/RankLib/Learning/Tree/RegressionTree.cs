@@ -53,8 +53,8 @@ public class RegressionTree
 		// Ensure inserts occur only after successful splits
 		if (await _root.TrySplitAsync(_trainingLabels, _minLeafSupport).ConfigureAwait(false))
 		{
-			Insert(queue, _root.GetLeft());
-			Insert(queue, _root.GetRight());
+			Insert(queue, _root.Left);
+			Insert(queue, _root.Right);
 		}
 
 		var taken = 0;
@@ -74,8 +74,8 @@ public class RegressionTree
 				taken++;
 			else
 			{
-				Insert(queue, leaf.GetLeft());
-				Insert(queue, leaf.GetRight());
+				Insert(queue, leaf.Left);
+				Insert(queue, leaf.Right);
 			}
 		}
 		_leaves = _root.Leaves();

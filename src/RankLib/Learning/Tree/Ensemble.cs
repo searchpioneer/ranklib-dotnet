@@ -135,8 +135,8 @@ public class Ensemble
 			fids[fid] = 0;
 			var threshold = float.Parse(childNodes[1].FirstChild.Value.Trim()); // <threshold>
 			s = new Split(fid, threshold, 0);
-			s.SetLeft(Create(childNodes[2], fids));
-			s.SetRight(Create(childNodes[3], fids));
+			s.Left = Create(childNodes[2], fids);
+			s.Right = Create(childNodes[3], fids);
 		}
 		else // this is a stump
 		{

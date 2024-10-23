@@ -13,19 +13,32 @@ public class Split
 	private int _featureId = -1;
 	private float _threshold;
 	private double _avgLabel;
+	private Split _left;
+	private Split _right;
 
 	// Intermediate variables (ONLY used during learning)
 	//*DO NOT* attempt to access them once the training is done
 	private readonly double _sumLabel;
 	private readonly double _sqSumLabel;
-	private Split _left;
-	private Split _right;
 	private double _deviance; // Mean squared error "S"
 	private int[][]? _sortedSampleIDs;
 	private int[] _samples = [];
+
 	public FeatureHistogram? Histogram { get; private set; }
 
 	public bool IsRoot { get; set; }
+
+	public Split Left
+	{
+		get => _left;
+		set => _left = value;
+	}
+
+	public Split Right
+	{
+		get => _right;
+		set => _right = value;
+	}
 
 	public Split() { }
 
@@ -61,15 +74,7 @@ public class Split
 		_deviance = deviance;
 	}
 
-	public void SetLeft(Split s) => _left = s;
-
-	public void SetRight(Split s) => _right = s;
-
 	public void SetOutput(float output) => _avgLabel = output;
-
-	public Split GetLeft() => _left;
-
-	public Split GetRight() => _right;
 
 	public double GetDeviance() => _deviance;
 
