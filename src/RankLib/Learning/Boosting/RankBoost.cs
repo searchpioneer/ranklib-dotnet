@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -323,7 +323,12 @@ public class RankBoost : Ranker<RankBoostParameters>
 	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn([7, 8, 9, 9, 9, 9], ["#iter", "Sel. F.", "Threshold", "Error", Scorer.Name + "-T", Scorer.Name + "-V"
+		PrintLogLn([7, 8, 9, 9, 9, 9], ["#iter",
+			"Sel. F.",
+			"Threshold",
+			"Error",
+			Scorer.Name + "-T",
+			Scorer.Name + "-V"
 		]);
 
 		for (var t = 1; t <= Parameters.NIteration; t++)

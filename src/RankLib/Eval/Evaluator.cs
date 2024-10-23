@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Features;
@@ -237,7 +237,7 @@ public class Evaluator
 		string featureDefFile,
 		int nFold,
 		string modelDir,
-		string modelFile ,
+		string modelFile,
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>

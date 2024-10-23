@@ -68,7 +68,7 @@ public class Neuron
 			else
 			{
 				weight = param.PairWeight[current][k];
-				pij = (double) (param.TargetValue[current][k] - 1.0 / (1.0 + Math.Exp(-(_outputs[current] - _outputs[j]))));
+				pij = (double)(param.TargetValue[current][k] - 1.0 / (1.0 + Math.Exp(-(_outputs[current] - _outputs[j]))));
 			}
 
 			var lambda = weight * pij;

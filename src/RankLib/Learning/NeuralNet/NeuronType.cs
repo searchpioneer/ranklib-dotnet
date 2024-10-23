@@ -1,4 +1,4 @@
-﻿namespace RankLib.Learning.NeuralNet;
+namespace RankLib.Learning.NeuralNet;
 
 public enum NeuronType
 {

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using RankLib.Learning.Tree;
 using RankLib.Utilities;
 

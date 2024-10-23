@@ -1,4 +1,4 @@
-﻿namespace RankLib.Utilities;
+namespace RankLib.Utilities;
 
 public static class ParallelExecutor
 {

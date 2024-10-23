@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using RankLib.Eval;
@@ -394,7 +394,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			logger.LogInformation("Test metric: {TestMetric}", testMetric);
 
 			if (trainMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase)
-			    || (testMetric != null && testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase)))
+				|| (testMetric != null && testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase)))
 				logger.LogInformation("Highest relevance label (to compute ERR): {HighRelevanceLabel}", (int)SimpleMath.LogBase2(ERRScorer.DefaultMax));
 
 			if (options.QRel != null)

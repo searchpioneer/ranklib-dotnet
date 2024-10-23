@@ -94,7 +94,7 @@ public class Ensemble
 	{
 		float s = 0;
 		for (var i = 0; i < _trees.Count; i++)
-			s = (float) (s + _trees[i].Eval(dataPoint) * _weights[i]);
+			s = (float)(s + _trees[i].Eval(dataPoint) * _weights[i]);
 
 		return s;
 	}

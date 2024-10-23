@@ -1,4 +1,4 @@
-﻿using Meziantou.Extensions.Logging.Xunit;
+using Meziantou.Extensions.Logging.Xunit;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 

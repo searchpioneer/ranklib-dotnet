@@ -29,7 +29,7 @@ public abstract class DataPoint
 	private static string GetValue(string pair) => pair.Substring(pair.LastIndexOf(':') + 1);
 
 	private static ReadOnlySpan<char> GetKey(ReadOnlySpan<char> pair) => pair.Slice(0, pair.IndexOf(':'));
-	private static ReadOnlySpan<char>  GetValue(ReadOnlySpan<char> pair) => pair.Slice(pair.LastIndexOf(':') + 1);
+	private static ReadOnlySpan<char> GetValue(ReadOnlySpan<char> pair) => pair.Slice(pair.LastIndexOf(':') + 1);
 
 	/// <summary>
 	/// Parse the given line of text to construct a dense array of feature values and reset metadata.

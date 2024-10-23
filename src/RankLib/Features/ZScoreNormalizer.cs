@@ -88,7 +88,7 @@ public class ZScoreNormalizer : Normalizer
 				{
 					var p = rankList[i];
 					var x = (p.GetFeatureValue(fids[j]) - means[j]) / std; // standard normal (0, 1)
-					p.SetFeatureValue(fids[j], (float) x);
+					p.SetFeatureValue(fids[j], (float)x);
 				}
 			}
 		}

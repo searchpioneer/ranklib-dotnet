@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -453,8 +453,8 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			for (var j = 0; j < idx.Length; j++)
 			{
 				var k = idx[j];
-				s1 = (float) (s1 + PseudoResponses[k]);
-				s2 = (float) (s2 + _weights[k]);
+				s1 = (float)(s1 + PseudoResponses[k]);
+				s2 = (float)(s2 + _weights[k]);
 			}
 
 			if (s2 == 0)
@@ -493,7 +493,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		var c = current;
 		for (var i = start; i <= end; i++)
 		{
-			s = (float) (s + Scorer.Score(Rank(i, c)));
+			s = (float)(s + Scorer.Score(Rank(i, c)));
 			c += Samples[i].Count;
 		}
 		return s;
@@ -507,7 +507,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		for (var i = start; i <= end; i++)
 		{
 			var idx = MergeSorter.Sort(_modelScoresOnValidation[i], false);
-			score = (float) (score + Scorer.Score(new RankList(ValidationSamples![i], idx)));
+			score = (float)(score + Scorer.Score(new RankList(ValidationSamples![i], idx)));
 		}
 		return score;
 	}

@@ -1,4 +1,4 @@
-﻿namespace RankLib.Features;
+namespace RankLib.Features;
 
 public enum NormalizerType
 {

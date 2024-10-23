@@ -124,8 +124,8 @@ public class FeatureManager
 		var maxFeatureCount = samples.Max(rl => rl.FeatureCount);
 		var features = new int[maxFeatureCount];
 
-		for(var i=1; i <= maxFeatureCount; i++)
-			features[i-1] = i;
+		for (var i = 1; i <= maxFeatureCount; i++)
+			features[i - 1] = i;
 
 		return features;
 	}

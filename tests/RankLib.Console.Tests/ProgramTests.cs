@@ -1,4 +1,4 @@
-﻿using Meziantou.Extensions.Logging.Xunit;
+using Meziantou.Extensions.Logging.Xunit;
 using Microsoft.Extensions.Logging;
 using RankLib.Console.Tests.Utilities;
 using RankLib.Learning;

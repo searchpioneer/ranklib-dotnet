@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -15,12 +15,12 @@ namespace RankLib.Learning;
 public class CoorAscentParameters : IRankerParameters
 {
 	public int nRestart { get; set; } = 5;
-	public int nMaxIteration { get; set; }  = 25;
-	public double stepBase { get; set; }  = 0.05;
-	public double stepScale { get; set; }  = 2.0;
-	public double tolerance { get; set; }  = 0.001;
+	public int nMaxIteration { get; set; } = 25;
+	public double stepBase { get; set; } = 0.05;
+	public double stepScale { get; set; } = 2.0;
+	public double tolerance { get; set; } = 0.001;
 	public bool regularized { get; set; }
-	public double slack { get; set; }  = 0.001;
+	public double slack { get; set; } = 0.001;
 
 	public void Log(ILogger logger)
 	{
@@ -144,7 +144,9 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 								bestTotalStep = totalStep;
 								succeeds = true;
 								var bw = Weight[shuffledFeatures[i]] > 0 ? "+" : "";
-								PrintLogLn([7, 8, 7], [Features[shuffledFeatures[i]].ToString(), $"{bw}{Math.Round(Weight[shuffledFeatures[i]], 4)}", Math.Round(bestScore, 4).ToString(CultureInfo.InvariantCulture)
+								PrintLogLn([7, 8, 7], [Features[shuffledFeatures[i]].ToString(),
+									$"{bw}{Math.Round(Weight[shuffledFeatures[i]], 4)}",
+									Math.Round(bestScore, 4).ToString(CultureInfo.InvariantCulture)
 								]);
 							}
 

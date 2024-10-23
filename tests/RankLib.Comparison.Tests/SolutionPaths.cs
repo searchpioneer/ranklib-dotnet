@@ -1,4 +1,4 @@
-﻿namespace RankLib.Comparison.Tests;
+namespace RankLib.Comparison.Tests;
 
 public class SolutionPaths
 {

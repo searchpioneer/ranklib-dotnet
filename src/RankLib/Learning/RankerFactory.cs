@@ -31,18 +31,18 @@ public class RankerFactory
 		[LinearRegRank.RankerName] = typeof(LinearRegRank),
 	};
 
-	private readonly Dictionary<Type, Func<ILoggerFactory,IRanker>> _rankers = new()
+	private readonly Dictionary<Type, Func<ILoggerFactory, IRanker>> _rankers = new()
 	{
 		[typeof(MART)] = (loggerFactory) => new MART(loggerFactory.CreateLogger<MART>()),
 		[typeof(RankNet)] = (loggerFactory) => new RankNet(loggerFactory.CreateLogger<RankNet>()),
-		[typeof(RankBoost)] =  (loggerFactory) => new RankBoost(loggerFactory.CreateLogger<RankBoost>()),
-		[typeof(AdaRank)] =  (loggerFactory) => new AdaRank(loggerFactory.CreateLogger<AdaRank>()),
-		[typeof(CoorAscent)] =  (loggerFactory) => new CoorAscent(loggerFactory.CreateLogger<CoorAscent>()),
-		[typeof(LambdaRank)] =  (loggerFactory) => new LambdaRank(loggerFactory.CreateLogger<LambdaRank>()),
-		[typeof(LambdaMART)] =  (loggerFactory) => new LambdaMART(loggerFactory.CreateLogger<LambdaMART>()),
-		[typeof(ListNet)] =  (loggerFactory) => new ListNet(loggerFactory.CreateLogger<ListNet>()),
-		[typeof(RFRanker)] =  (loggerFactory) => new RFRanker(loggerFactory),
-		[typeof(LinearRegRank)] =  (loggerFactory) => new LinearRegRank(loggerFactory.CreateLogger<LinearRegRank>()),
+		[typeof(RankBoost)] = (loggerFactory) => new RankBoost(loggerFactory.CreateLogger<RankBoost>()),
+		[typeof(AdaRank)] = (loggerFactory) => new AdaRank(loggerFactory.CreateLogger<AdaRank>()),
+		[typeof(CoorAscent)] = (loggerFactory) => new CoorAscent(loggerFactory.CreateLogger<CoorAscent>()),
+		[typeof(LambdaRank)] = (loggerFactory) => new LambdaRank(loggerFactory.CreateLogger<LambdaRank>()),
+		[typeof(LambdaMART)] = (loggerFactory) => new LambdaMART(loggerFactory.CreateLogger<LambdaMART>()),
+		[typeof(ListNet)] = (loggerFactory) => new ListNet(loggerFactory.CreateLogger<ListNet>()),
+		[typeof(RFRanker)] = (loggerFactory) => new RFRanker(loggerFactory),
+		[typeof(LinearRegRank)] = (loggerFactory) => new LinearRegRank(loggerFactory.CreateLogger<LinearRegRank>()),
 	};
 
 	public RankerFactory(ILoggerFactory? loggerFactory = null)

@@ -1,4 +1,4 @@
-﻿using RankLib.Features;
+using RankLib.Features;
 using Xunit;
 
 namespace RankLib.Tests.Features;

@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using Microsoft.Extensions.Logging;
 using RankLib.Features;
 using RankLib.Learning;
@@ -25,7 +25,7 @@ public class PrepareCommand : Command<PrepareCommandOptions, PrepareCommandOptio
 {
 	public PrepareCommand()
 	: base("prepare", "Split the input sample set into k chunks (folds) of roughly equal " +
-	                  "size and create train/ test data for each fold")
+					  "size and create train/ test data for each fold")
 	{
 		AddOption(new Option<IEnumerable<FileInfo>>("--input", "Source data (ranked lists)") { IsRequired = true });
 		AddOption(new Option<DirectoryInfo>("--output", "The output directory") { IsRequired = true });

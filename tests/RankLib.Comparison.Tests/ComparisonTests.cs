@@ -1,4 +1,4 @@
-﻿using RankLib.Learning;
+using RankLib.Learning;
 using Xunit;
 using Xunit.Abstractions;
 

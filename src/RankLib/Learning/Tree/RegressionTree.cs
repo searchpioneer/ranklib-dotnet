@@ -126,9 +126,9 @@ public class RegressionTree
 	private static void Insert(List<Split> ls, Split s)
 	{
 		var i = 0;
-		while(i < ls.Count)
+		while (i < ls.Count)
 		{
-			if(ls[i].GetDeviance() > s.GetDeviance())
+			if (ls[i].GetDeviance() > s.GetDeviance())
 				i++;
 			else
 				break;
