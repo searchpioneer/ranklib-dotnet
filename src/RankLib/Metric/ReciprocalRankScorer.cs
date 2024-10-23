@@ -14,9 +14,7 @@ public class ReciprocalRankScorer : MetricScorer
 		for (var i = 0; i < size && firstRank == -1; i++)
 		{
 			if (rankList[i].Label > 0)
-			{
 				firstRank = i + 1;
-			}
 		}
 
 		return firstRank == -1
@@ -34,16 +32,12 @@ public class ReciprocalRankScorer : MetricScorer
 
 		for (var i = 0; i < size; i++)
 		{
-			if (rankList[i].Label > 0.0)
+			if (rankList[i].Label > 0)
 			{
 				if (firstRank == -1)
-				{
 					firstRank = i;
-				}
 				else if (secondRank == -1)
-				{
 					secondRank = i;
-				}
 			}
 		}
 
@@ -65,13 +59,9 @@ public class ReciprocalRankScorer : MetricScorer
 				if (rankList[j].Label == 0)
 				{
 					if (secondRank == -1 || j < secondRank)
-					{
 						changes[firstRank][j] = changes[j][firstRank] = 1.0 / (j + 1) - rr;
-					}
 					else
-					{
 						changes[firstRank][j] = changes[j][firstRank] = 1.0 / (secondRank + 1) - rr;
-					}
 				}
 			}
 
@@ -80,20 +70,14 @@ public class ReciprocalRankScorer : MetricScorer
 				if (rankList[j].Label == 0)
 				{
 					if (secondRank == -1)
-					{
 						changes[firstRank][j] = changes[j][firstRank] = -rr;
-					}
 					else
-					{
 						changes[firstRank][j] = changes[j][firstRank] = 1.0 / (secondRank + 1) - rr;
-					}
 				}
 			}
 		}
 		else
-		{
 			firstRank = size;
-		}
 
 		// Consider swapping documents below firstRank with those earlier in the list
 		for (var i = 0; i < firstRank; i++)
@@ -101,9 +85,7 @@ public class ReciprocalRankScorer : MetricScorer
 			for (var j = firstRank; j < rankList.Count; j++)
 			{
 				if (rankList[j].Label > 0)
-				{
 					changes[i][j] = changes[j][i] = 1.0 / (i + 1) - rr;
-				}
 			}
 		}
 

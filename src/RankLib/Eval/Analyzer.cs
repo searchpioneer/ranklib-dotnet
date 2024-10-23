@@ -13,9 +13,9 @@ public partial class Analyzer
 	private const int IndexOfZero = 4;
 
 	private readonly ILogger<Analyzer> _logger;
-	private readonly SignificanceTest _test;
+	private readonly ISignificanceTest _test;
 
-	public Analyzer(SignificanceTest test, ILogger<Analyzer>? logger = null)
+	public Analyzer(ISignificanceTest test, ILogger<Analyzer>? logger = null)
 	{
 		_test = test;
 		_logger = logger ?? NullLogger<Analyzer>.Instance;

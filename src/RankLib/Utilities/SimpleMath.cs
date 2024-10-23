@@ -18,9 +18,8 @@ public static class SimpleMath
 	{
 		var precision = 1;
 		for (var i = 0; i < n; i++)
-		{
 			precision *= 10;
-		}
+
 		return Math.Floor(val * precision + 0.5) / precision;
 	}
 }

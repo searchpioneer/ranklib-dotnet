@@ -18,9 +18,7 @@ public class PrecisionScorer : MetricScorer
 		for (var i = 0; i < size; i++)
 		{
 			if (rankList[i].Label > 0.0)
-			{
 				count++;
-			}
 		}
 
 		return (double)count / size;
@@ -53,5 +51,5 @@ public class PrecisionScorer : MetricScorer
 		return changes;
 	}
 
-	private int GetBinaryRelevance(float label) => label > 0.0 ? 1 : 0;
+	private static int GetBinaryRelevance(float label) => label > 0 ? 1 : 0;
 }

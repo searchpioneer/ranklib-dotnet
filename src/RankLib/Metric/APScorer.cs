@@ -80,10 +80,7 @@ public class APScorer : MetricScorer
 			? relCount
 			: count;
 
-		if (rdCount == 0)
-			return 0.0;
-
-		return ap / rdCount;
+		return rdCount == 0 ? 0 : ap / rdCount;
 	}
 
 	public override string Name => "MAP";
@@ -103,22 +100,18 @@ public class APScorer : MetricScorer
 				count++;
 			}
 			else
-			{
 				labels[i] = 0;
-			}
+
 			relCount[i] = count;
 		}
 
-		var rdCount = 0; // total number of relevant documents
+		// total number of relevant documents
+		int rdCount;
 
 		if (_relevantDocCount != null && _relevantDocCount.TryGetValue(rankList.Id, out var relCountInList))
-		{
 			rdCount = relCountInList;
-		}
 		else
-		{
 			rdCount = count;
-		}
 
 		var changes = new double[rankList.Count][];
 		for (var i = 0; i < rankList.Count; i++)
@@ -128,9 +121,7 @@ public class APScorer : MetricScorer
 		}
 
 		if (rdCount == 0 || count == 0)
-		{
 			return changes; // all "0"
-		}
 
 		for (var i = 0; i < rankList.Count - 1; i++)
 		{
@@ -145,12 +136,10 @@ public class APScorer : MetricScorer
 					for (var k = i + 1; k <= j - 1; k++)
 					{
 						if (labels[k] > 0)
-						{
-							change += ((double)diff) / (k + 1);
-						}
+							change += (double)diff / (k + 1);
 					}
 
-					change += ((double)(-relCount[j] * diff)) / (j + 1);
+					change += (double)(-relCount[j] * diff) / (j + 1);
 				}
 				changes[j][i] = changes[i][j] = change / rdCount;
 			}

@@ -25,9 +25,7 @@ public class BestAtKScorer : MetricScorer
 	{
 		var size = k;
 		if (size < 0 || size > rl.Count - 1)
-		{
 			size = rl.Count - 1;
-		}
 
 		var max = -1.0;
 		var maxI = 0;
@@ -47,7 +45,7 @@ public class BestAtKScorer : MetricScorer
 
 	public override double[][] SwapChange(RankList rankList)
 	{
-		//FIXME: Not sure if this implementation is correct!
+		// TODO: FIXME: Not sure if this implementation is correct!
 		var labels = new int[rankList.Count];
 		var best = new int[rankList.Count];
 		var max = -1;
@@ -78,9 +76,7 @@ public class BestAtKScorer : MetricScorer
 		}
 
 		if (secondMaxVal == -1)
-		{
 			secondMaxVal = 0;
-		}
 
 		var changes = new double[rankList.Count][];
 		for (var i = 0; i < rankList.Count; i++)
@@ -89,32 +85,22 @@ public class BestAtKScorer : MetricScorer
 			Array.Fill(changes[i], 0);
 		}
 
-		//FIXME: THIS IS VERY *INEFFICIENT*
+		// TODO: FIXME: THIS IS VERY *INEFFICIENT*
 		for (var i = 0; i < rankList.Count - 1; i++)
 		{
 			for (var j = i + 1; j < rankList.Count; j++)
 			{
 				double change = 0;
 				if (j < K || i >= K)
-				{
 					change = 0;
-				}
 				else if (labels[i] == labels[j] || labels[j] == labels[best[K - 1]])
-				{
 					change = 0;
-				}
 				else if (labels[j] > labels[best[K - 1]])
-				{
 					change = labels[j] - labels[best[i]];
-				}
 				else if (labels[i] < labels[best[K - 1]] || maxCount > 1)
-				{
 					change = 0;
-				}
 				else
-				{
 					change = maxVal - Math.Max(secondMaxVal, labels[j]);
-				}
 				changes[i][j] = changes[j][i] = change;
 			}
 		}

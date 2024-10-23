@@ -9,7 +9,9 @@ namespace RankLib.Metric;
 /// Normalized Discounted Cumulative Gain scorer
 /// </summary>
 /// <remarks>
-/// https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG
+/// <a href="https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG">
+/// Wikipedia article on NDCG.
+/// </a>
 /// </remarks>
 public class NDCGScorer : DCGScorer
 {
@@ -85,9 +87,7 @@ public class NDCGScorer : DCGScorer
 	public override double Score(RankList rankList)
 	{
 		if (rankList.Count == 0)
-		{
 			return 0;
-		}
 
 		var size = K > rankList.Count || K <= 0
 			? rankList.Count
@@ -96,9 +96,7 @@ public class NDCGScorer : DCGScorer
 
 		double ideal;
 		if (_idealGains.TryGetValue(rankList.Id, out var cachedIdeal))
-		{
 			ideal = cachedIdeal;
-		}
 		else
 		{
 			ideal = GetIdealDCG(rel, size);
@@ -132,9 +130,7 @@ public class NDCGScorer : DCGScorer
 			for (var j = i + 1; j < rankList.Count; j++)
 			{
 				if (ideal > 0)
-				{
 					changes[j][i] = changes[i][j] = (Discount(i) - Discount(j)) * (Gain(rel[i]) - Gain(rel[j])) / ideal;
-				}
 			}
 		}
 
@@ -149,9 +145,7 @@ public class NDCGScorer : DCGScorer
 		double dcg = 0;
 
 		for (var i = 0; i < topK; i++)
-		{
 			dcg += Gain(rel[idx[i]]) * Discount(i);
-		}
 
 		return dcg;
 	}

@@ -1,5 +1,8 @@
 namespace RankLib.Utilities;
 
+/// <summary>
+/// Enumerates spans of chars from a span of chars split on whitespace.
+/// </summary>
 internal ref struct WhitespaceSplitEnumerator
 {
 	private ReadOnlySpan<char> _remaining;

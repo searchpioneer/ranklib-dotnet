@@ -2,6 +2,12 @@ namespace RankLib.Stats;
 
 public static class BasicStats
 {
+	/// <summary>
+	/// Computes the arithmetic mean for an array of values.
+	/// </summary>
+	/// <param name="values">The values</param>
+	/// <returns>The arithmetic mean</returns>
+	/// <exception cref="ArgumentException"><paramref name="values"/> is empty.</exception>
 	public static double Mean(double[] values)
 	{
 		if (values.Length == 0)

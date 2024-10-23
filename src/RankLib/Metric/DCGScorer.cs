@@ -7,27 +7,34 @@ namespace RankLib.Metric;
 /// Discounted Cumulative Gain scorer
 /// </summary>
 /// <remarks>
-/// https://en.wikipedia.org/wiki/Discounted_cumulative_gain
+/// <a href="https://en.wikipedia.org/wiki/Discounted_cumulative_gain">
+/// Wikipedia article on DCG.
+/// </a>
 /// </remarks>
 public class DCGScorer : MetricScorer
 {
-	protected static readonly Lazy<double[]> DiscountCache = new(() =>
+	private static volatile double[]? DiscountCache;
+	private static volatile double[]? GainCache;
+	private static readonly object DiscountLock = new();
+	private static readonly object GainLock = new();
+
+	private static readonly Lazy<double[]> LazyDiscountCache = new(() =>
 	{
 		var discount = new double[5000];
 		for (var i = 0; i < discount.Length; i++)
-		{
 			discount[i] = 1.0 / SimpleMath.LogBase2(i + 2);
-		}
+
+		DiscountCache = discount;
 		return discount;
 	});
 
-	protected static readonly Lazy<double[]> GainCache = new(() =>
+	private static readonly Lazy<double[]> LazyGainCache = new(() =>
 	{
 		var gain = new double[6];
 		for (var i = 0; i < gain.Length; i++)
-		{
 			gain[i] = (1 << i) - 1;
-		}
+
+		GainCache = gain;
 		return gain;
 	});
 
@@ -44,9 +51,7 @@ public class DCGScorer : MetricScorer
 	public override double Score(RankList rankList)
 	{
 		if (rankList.Count == 0)
-		{
 			return 0;
-		}
 
 		var topK = K > rankList.Count || K <= 0
 			? rankList.Count
@@ -62,16 +67,12 @@ public class DCGScorer : MetricScorer
 		var size = (rankList.Count > K) ? K : rankList.Count;
 		var changes = new double[rankList.Count][];
 		for (var i = 0; i < rankList.Count; i++)
-		{
 			changes[i] = new double[rankList.Count];
-		}
 
 		for (var i = 0; i < size; i++)
 		{
 			for (var j = i + 1; j < rankList.Count; j++)
-			{
 				changes[j][i] = changes[i][j] = (Discount(i) - Discount(j)) * (Gain(rel[i]) - Gain(rel[j]));
-			}
 		}
 
 		return changes;
@@ -83,61 +84,62 @@ public class DCGScorer : MetricScorer
 	{
 		double dcg = 0;
 		for (var i = 0; i < topK; i++)
-		{
 			dcg += Gain(rel[i]) * Discount(i);
-		}
+
 		return dcg;
 	}
 
-	// Lazy caching for discount
 	protected double Discount(int index)
 	{
-		var discount = DiscountCache.Value;
+		var currentCache = DiscountCache ?? LazyDiscountCache.Value;
 
-		if (index < discount.Length)
-		{
-			return discount[index];
-		}
+		if (index < currentCache.Length)
+			return currentCache[index];
 
-		// We need to expand our cache
-		var cacheSize = discount.Length + 1000;
-		while (cacheSize <= index)
+		lock (DiscountLock)
 		{
-			cacheSize += 1000;
+			currentCache = DiscountCache!;
+			if (index < currentCache.Length)
+				return currentCache[index];
+
+			var cacheSize = Math.Max(currentCache.Length + 1000, index + 1000);
+			var newCache = new double[cacheSize];
+			Array.Copy(currentCache, newCache, currentCache.Length);
+
+			for (var i = currentCache.Length; i < newCache.Length; i++)
+				newCache[i] = 1.0 / SimpleMath.LogBase2(i + 2);
+
+			Thread.MemoryBarrier();
+			DiscountCache = newCache;
+			return newCache[index];
 		}
-		var tmp = new double[cacheSize];
-		Array.Copy(discount, tmp, discount.Length);
-		for (var i = discount.Length; i < tmp.Length; i++)
-		{
-			tmp[i] = 1.0 / SimpleMath.LogBase2(i + 2);
-		}
-		discount = tmp;
-		return discount[index];
 	}
 
-	// Lazy caching for gain
 	protected double Gain(int rel)
 	{
-		var gain = GainCache.Value;
+		var currentCache = GainCache ?? LazyGainCache.Value;
+		if (rel < currentCache.Length)
+			return currentCache[rel];
 
-		if (rel < gain.Length)
+		lock (GainLock)
 		{
-			return gain[rel];
-		}
+			currentCache = GainCache!;
+			if (rel < currentCache.Length)
+				return currentCache[rel];
 
-		// We need to expand our cache
-		var cacheSize = gain.Length + 10;
-		while (cacheSize <= rel)
-		{
-			cacheSize += 10;
+			var cacheSize = Math.Max(currentCache.Length + 10, rel + 10);
+			var newCache = new double[cacheSize];
+			Array.Copy(currentCache, newCache, currentCache.Length);
+
+			for (var i = currentCache.Length; i < newCache.Length; i++)
+				newCache[i] = (1 << i) - 1;
+
+			Thread.MemoryBarrier();
+			GainCache = newCache;
+			return newCache[rel];
 		}
-		var tmp = new double[cacheSize];
-		Array.Copy(gain, tmp, gain.Length);
-		for (var i = gain.Length; i < tmp.Length; i++)
-		{
-			tmp[i] = (1 << i) - 1; // 2^i - 1
-		}
-		gain = tmp;
-		return gain[rel];
 	}
 }
+
+
+

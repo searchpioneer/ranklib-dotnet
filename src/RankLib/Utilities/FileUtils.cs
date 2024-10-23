@@ -12,9 +12,7 @@ public static class FileUtils
 		Stream input = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
 
 		if (inputFile.EndsWith(".gz"))
-		{
 			input = new GZipStream(input, CompressionMode.Decompress);
-		}
 
 		return new StreamReader(input, encoding);
 	}
@@ -43,6 +41,4 @@ public static class FileUtils
 			throw RankLibException.Create("Error writing to file", e);
 		}
 	}
-
-	public static string GetFileName(string pathName) => Path.GetFileName(pathName);
 }

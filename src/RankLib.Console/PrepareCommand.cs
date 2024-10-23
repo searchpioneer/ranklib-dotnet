@@ -74,7 +74,7 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 				return Task.FromResult(1);
 			}
 
-			var fn = FileUtils.GetFileName(rankingFiles[0]);
+			var fn = Path.GetFileName(rankingFiles[0]);
 
 			Directory.CreateDirectory(outputDir);
 

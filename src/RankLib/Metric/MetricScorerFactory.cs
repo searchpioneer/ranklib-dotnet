@@ -5,7 +5,7 @@ using RankLib.Utilities;
 namespace RankLib.Metric;
 
 /// <summary>
-/// Factory for creating <see cref="MetricScorer"/>
+/// Factory for creating <see cref="MetricScorer"/>s.
 /// </summary>
 public class MetricScorerFactory
 {
@@ -52,11 +52,11 @@ public class MetricScorerFactory
 		if (metricSpan.Contains('@'))
 		{
 			var atIndex = metricSpan.IndexOf('@');
-			var m = metricSpan.Slice(0, atIndex).ToString();
-			var k = int.Parse(metricSpan.Slice(atIndex + 1));
+			var metricName = metricSpan[..atIndex].ToString();
+			var k = int.Parse(metricSpan[(atIndex + 1)..]);
 
-			if (!MetricNames.TryGetValue(m, out var value))
-				throw RankLibException.Create($"Could not create scorer for metric '{metric}'");
+			if (!MetricNames.TryGetValue(metricName, out var value))
+				throw new ArgumentException($"Could not create scorer for metric '{metric}'", nameof(metric));
 
 			scorer = CreateScorer(value);
 			scorer.K = k;
@@ -64,7 +64,7 @@ public class MetricScorerFactory
 		else
 		{
 			if (!MetricNames.TryGetValue(metric, out var value))
-				throw RankLibException.Create($"Could not create scorer for metric '{metric}'");
+				throw new ArgumentException($"Could not create scorer for metric '{metric}'", nameof(metric));
 
 			scorer = CreateScorer(value);
 		}

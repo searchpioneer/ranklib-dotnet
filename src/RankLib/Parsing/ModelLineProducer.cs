@@ -8,13 +8,11 @@ public class ModelLineProducer
 	private const int CarriageReturn = '\r';
 	private const int LineFeed = '\n';
 
-	private readonly StringBuilder _model = new();
-
 	public delegate void LineConsumer(StringBuilder model, bool maybeEndEns);
 
-	public StringBuilder Model => _model;
+	public StringBuilder Model { get; } = new();
 
-	private bool ReadUntil(char[] fullTextChar, int beginOfLineCursor, int endOfLineCursor, StringBuilder model)
+	private bool ReadUntil(string fullTextChar, int beginOfLineCursor, int endOfLineCursor, StringBuilder model)
 	{
 		var isEnsembleEnd = true;
 
@@ -41,32 +39,27 @@ public class ModelLineProducer
 	{
 		try
 		{
-			var fullTextChar = fullText.ToCharArray();
 			var beginOfLineCursor = 0;
-
-			for (var i = 0; i < fullTextChar.Length; i++)
+			for (var i = 0; i < fullText.Length; i++)
 			{
-				int charNum = fullTextChar[i];
-
-				if (charNum == CarriageReturn || charNum == LineFeed)
+				int charNum = fullText[i];
+				if (charNum is CarriageReturn or LineFeed)
 				{
 					// Read current line from beginOfLineCursor -> i
-					if (fullTextChar[beginOfLineCursor] != '#')
+					if (fullText[beginOfLineCursor] != '#')
 					{
 						var eolCursor = i;
 
-						while (eolCursor > beginOfLineCursor && fullTextChar[eolCursor] <= 32)
-						{
+						while (eolCursor > beginOfLineCursor && fullText[eolCursor] <= 32)
 							eolCursor--;
-						}
 
-						modelConsumer(_model, ReadUntil(fullTextChar, beginOfLineCursor, eolCursor, _model));
+						modelConsumer(Model, ReadUntil(fullText, beginOfLineCursor, eolCursor, Model));
 					}
 
 					// Move to the next non-whitespace character
-					while (charNum <= 32 && i < fullTextChar.Length)
+					while (charNum <= 32 && i < fullText.Length)
 					{
-						charNum = fullTextChar[i];
+						charNum = fullText[i];
 						beginOfLineCursor = i;
 						i++;
 					}
@@ -74,7 +67,7 @@ public class ModelLineProducer
 			}
 
 			// Process remaining content after the final newline
-			modelConsumer(_model, ReadUntil(fullTextChar, beginOfLineCursor, fullTextChar.Length - 1, _model));
+			modelConsumer(Model, ReadUntil(fullText, beginOfLineCursor, fullText.Length - 1, Model));
 		}
 		catch (Exception ex)
 		{

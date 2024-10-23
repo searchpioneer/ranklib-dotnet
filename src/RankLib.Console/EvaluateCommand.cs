@@ -17,10 +17,12 @@ public class EvaluateCommandOptions : ICommandOptions
 	public FileInfo? Train { get; set; }
 	public RankerType Ranker { get; set; }
 	public FileInfo? Feature { get; set; }
+
 	/// <summary>
 	/// Train metric
 	/// </summary>
-	public string Metric2t { get; set; }
+	public string Metric2t { get; set; } = default!;
+
 	/// <summary>
 	/// Test metric
 	/// </summary>
@@ -63,7 +65,6 @@ public class EvaluateCommandOptions : ICommandOptions
 	public int? Round { get; set; }
 	public double? Reg { get; set; }
 	public double? Tolerance { get; set; }
-
 	public int? Tree { get; set; }
 	public int? Leaf { get; set; }
 	public float? Shrinkage { get; set; }
@@ -105,7 +106,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<string>("--kcvmn", "Name for model learned in each fold. It will be prefix-ed with the fold-number (default=empty)"));
 
 		AddOption(new Option<IEnumerable<FileInfo>>("--load", "Load saved model file"));
-		AddOption(new Option<int>("--thread", () => Environment.ProcessorCount, "Number of threads to use. If unspecified, will use number of processors"));
+		AddOption(new Option<int>("--thread", () => Environment.ProcessorCount, "Number of threads to use. If unspecified, will use all available processors"));
 		AddOption(new Option<FileInfo>("--rank", "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
 		AddOption(new Option<FileInfo>("--indri", "Indri ranking file").ExistingOnly());
 		AddOption(new Option<bool>("--sparse", "Use sparse representation"));
@@ -137,7 +138,10 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<RankerType?>("--rtype", "RfRanker ranker type to bag. Random Forests only support MART/LambdaMART"));
 		AddOption(new Option<double?>("--L2", "TODO: Lambda"));
 		AddOption(new Option<bool?>("--hr", "TODO: Must Have Relevance Doc"));
-		AddOption(new Option<int?>("--randomSeed", "A seed to use for random number generation. This is useful for internal testing purposes and should not be used for production."));
+		AddOption(new Option<int?>(
+			"--randomSeed",
+			"A seed to use for random number generation. This is useful for internal " +
+			"testing purposes and should not be used for production.") { IsHidden = true });
 	}
 }
 
@@ -154,15 +158,12 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private CoorAscentParameters? _coorAscentParameters;
 	private LinearRegRankParameters? _linearRegRankParameters;
 
-	public EvaluateCommandOptionsHandler(
-		ILoggerFactory loggerFactory,
-		EvaluatorFactory evaluatorFactory)
+	public EvaluateCommandOptionsHandler(ILoggerFactory loggerFactory, EvaluatorFactory evaluatorFactory)
 	{
 		_loggerFactory = loggerFactory;
 		_evaluatorFactory = evaluatorFactory;
 	}
 
-	// TODO: this needs to be passed to any LambdaMART created
 	private LambdaMARTParameters LambdaMARTParameters => _lambdaMARTParameters ??= new LambdaMARTParameters();
 	private RankNetParameters RankNetParameters => _rankNetParameters ??= new RankNetParameters();
 	private ListNetParameters ListNetParameters => _listNetParameters ??= new ListNetParameters();
