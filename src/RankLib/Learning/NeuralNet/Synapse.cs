@@ -1,3 +1,5 @@
+using RankLib.Utilities;
+
 namespace RankLib.Learning.NeuralNet;
 
 public class Synapse
@@ -8,7 +10,7 @@ public class Synapse
 		Target = target;
 		Source.OutLinks.Add(this);
 		Target.InLinks.Add(this);
-		Weight = (Random.Shared.Next(2) == 0 ? 1 : -1) * Random.Shared.NextDouble() / 10;
+		Weight = (ThreadsafeSeedableRandom.Shared.Next(2) == 0 ? 1 : -1) * ThreadsafeSeedableRandom.Shared.NextDouble() / 10;
 	}
 
 	public Neuron Source { get; }

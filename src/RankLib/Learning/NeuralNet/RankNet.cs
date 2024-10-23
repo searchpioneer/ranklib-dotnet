@@ -1,7 +1,7 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using RankLib.Learning.Tree;
 using RankLib.Metric;
 using RankLib.Utilities;
 
@@ -73,9 +73,7 @@ public class RankNet : Ranker<RankNetParameters>
 		for (var i = 0; i < _inputLayer.Count - 1; i++)
 		{
 			for (var j = 0; j < _layers[1].Count; j++)
-			{
 				Connect(0, i, 1, j);
-			}
 		}
 
 		for (var i = 1; i < _layers.Count - 1; i++)
@@ -83,33 +81,24 @@ public class RankNet : Ranker<RankNetParameters>
 			for (var j = 0; j < _layers[i].Count; j++)
 			{
 				for (var k = 0; k < _layers[i + 1].Count; k++)
-				{
 					Connect(i, j, i + 1, k);
-				}
 			}
 		}
 
 		for (var i = 1; i < _layers.Count; i++)
 		{
 			for (var j = 0; j < _layers[i].Count; j++)
-			{
 				Connect(0, _inputLayer.Count - 1, i, j);
-			}
 		}
 	}
 
-	protected void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron)
-	{
-		var tempQualifier = _layers[sourceLayer];
-		_ = new Synapse(tempQualifier[sourceNeuron], _layers[targetLayer][targetNeuron]);
-	}
+	protected void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron) =>
+		_ = new Synapse(_layers[sourceLayer][sourceNeuron], _layers[targetLayer][targetNeuron]);
 
 	protected void AddInput(DataPoint p)
 	{
 		for (var k = 0; k < _inputLayer.Count - 1; k++)
-		{
 			_inputLayer[k].AddOutput(p.GetFeatureValue(Features[k]));
-		}
 
 		var k1 = _inputLayer.Count - 1;
 		_inputLayer[k1].AddOutput(1.0);
@@ -118,9 +107,7 @@ public class RankNet : Ranker<RankNetParameters>
 	protected void Propagate(int i)
 	{
 		for (var k = 1; k < _layers.Count; k++)
-		{
 			_layers[k].ComputeOutput(i);
-		}
 	}
 
 	protected virtual int[][] BatchFeedForward(RankList rankList)
@@ -135,9 +122,7 @@ public class RankNet : Ranker<RankNetParameters>
 			for (var j = 0; j < rankList.Count; j++)
 			{
 				if (rankList[i].Label > rankList[j].Label)
-				{
 					count++;
-				}
 			}
 
 			pairMap[i] = new int[count];
@@ -145,9 +130,7 @@ public class RankNet : Ranker<RankNetParameters>
 			for (var j = 0; j < rankList.Count; j++)
 			{
 				if (rankList[i].Label > rankList[j].Label)
-				{
 					pairMap[i][k++] = j;
-				}
 			}
 		}
 		return pairMap;
@@ -160,24 +143,18 @@ public class RankNet : Ranker<RankNetParameters>
 			var p = new PropParameter(i, pairMap);
 			_outputLayer.ComputeDelta(p);
 			for (var j = _layers.Count - 2; j >= 1; j--)
-			{
 				_layers[j].UpdateDelta(p);
-			}
 
 			_outputLayer.UpdateWeight(p);
 			for (var j = _layers.Count - 2; j >= 1; j--)
-			{
 				_layers[j].UpdateWeight(p);
-			}
 		}
 	}
 
 	protected void ClearNeuronOutputs()
 	{
 		foreach (var layer in _layers)
-		{
 			layer.ClearOutputs();
-		}
 	}
 
 	protected virtual float[][]? ComputePairWeight(int[][] pairMap, RankList rl) => null;
@@ -198,9 +175,7 @@ public class RankNet : Ranker<RankNetParameters>
 				var tempQualifier = _layers[i];
 				var n = tempQualifier[j];
 				for (var k = 0; k < n.OutLinks.Count; k++)
-				{
 					l.Add(n.OutLinks[k].Weight);
-				}
 			}
 		}
 	}
@@ -218,9 +193,7 @@ public class RankNet : Ranker<RankNetParameters>
 					var tempQualifier = _layers[i];
 					var n = tempQualifier[j];
 					for (var k = 0; k < n.OutLinks.Count; k++)
-					{
 						n.OutLinks[k].Weight = l[c++];
-					}
 				}
 			}
 		}
@@ -268,9 +241,8 @@ public class RankNet : Ranker<RankNetParameters>
 
 		SetInputOutput(Features.Length, 1);
 		for (var i = 0; i < Parameters.NHiddenLayer; i++)
-		{
 			AddHiddenLayer(Parameters.NHiddenNodePerLayer);
-		}
+
 		Wire();
 
 		_totalPairs = 0;
@@ -282,9 +254,7 @@ public class RankNet : Ranker<RankNetParameters>
 				for (var k = j + 1; k < correctRanking.Count; k++)
 				{
 					if (correctRanking[j].Label > correctRanking[k].Label)
-					{
 						_totalPairs++;
-					}
 				}
 			}
 		}
@@ -296,9 +266,9 @@ public class RankNet : Ranker<RankNetParameters>
 	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn(new[] { 7, 14, 9, 9 },
-			new[] { "#epoch", "% mis-ordered", Scorer.Name + "-T", Scorer.Name + "-V" });
-		PrintLogLn(new[] { 7, 14, 9, 9 }, new[] { " ", "  pairs", " ", " " });
+		PrintLogLn([7, 14, 9, 9],
+			["#epoch", "% mis-ordered", Scorer.Name + "-T", Scorer.Name + "-V"]);
+		PrintLogLn([7, 14, 9, 9], [" ", "  pairs", " ", " "]);
 
 		for (var i = 1; i <= Parameters.NIteration; i++)
 		{
@@ -314,12 +284,13 @@ public class RankNet : Ranker<RankNetParameters>
 			ScoreOnTrainingData = Scorer.Score(Rank(Samples));
 			EstimateLoss();
 
-			PrintLog(new[] { 7, 14 },
-				new[] { i.ToString(), SimpleMath.Round((double)_misorderedPairs / _totalPairs, 4).ToString() });
+			PrintLog([7, 14],
+				[i.ToString(), SimpleMath.Round((double)_misorderedPairs / _totalPairs, 4).ToString(CultureInfo.InvariantCulture)]);
 
 			if (i % 1 == 0)
 			{
-				PrintLog(new[] { 9 }, new[] { SimpleMath.Round(ScoreOnTrainingData, 4).ToString() });
+				PrintLog([9],
+					[SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
 
 				if (ValidationSamples != null)
 				{
@@ -330,7 +301,7 @@ public class RankNet : Ranker<RankNetParameters>
 						SaveBestModelOnValidation();
 					}
 
-					PrintLog(new[] { 9 }, new[] { SimpleMath.Round(score, 4).ToString() });
+					PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
 				}
 			}
 
@@ -339,9 +310,7 @@ public class RankNet : Ranker<RankNetParameters>
 
 		// Restore the best model if validation data was specified
 		if (ValidationSamples != null)
-		{
 			RestoreBestModelOnValidation();
-		}
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
@@ -368,14 +337,10 @@ public class RankNet : Ranker<RankNetParameters>
 		_inputLayer[k1].SetOutput(1.0);
 
 		for (var k = 1; k < _layers.Count; k++)
-		{
 			_layers[k].ComputeOutput();
-		}
 
 		return _outputLayer[0].GetOutput();
 	}
-
-	public virtual Ranker CreateNew() => new RankNet();
 
 	public override string ToString()
 	{
@@ -384,8 +349,7 @@ public class RankNet : Ranker<RankNetParameters>
 		{
 			for (var j = 0; j < _layers[i].Count; j++)
 			{
-				var tempQualifier = _layers[i];
-				var neuron = tempQualifier[j];
+				var neuron = _layers[i][j];
 				output.AppendLine($"{i} {j} {string.Join(" ", neuron.OutLinks.Select(link => link.Weight))}");
 			}
 		}
@@ -402,21 +366,15 @@ public class RankNet : Ranker<RankNetParameters>
 			output.AppendLine($"## No. of features = {Features.Length}");
 			output.AppendLine($"## No. of hidden layers = {_layers.Count - 2}");
 			for (var i = 1; i < _layers.Count - 1; i++)
-			{
 				output.AppendLine($"## Layer {i}: {_layers[i].Count} neurons");
-			}
 
 			for (var i = 0; i < Features.Length; i++)
-			{
 				output.Append($"{Features[i]}{(i == Features.Length - 1 ? "" : " ")}");
-			}
 
 			output.AppendLine();
 			output.AppendLine($"{_layers.Count - 2}");
 			for (var i = 1; i < _layers.Count - 1; i++)
-			{
 				output.AppendLine($"{_layers[i].Count}");
-			}
 
 			output.AppendLine(ToString());
 
@@ -458,9 +416,7 @@ public class RankNet : Ranker<RankNetParameters>
 			var tempQualifier = _layers[iLayer];
 			var neuron = tempQualifier[iNeuron];
 			for (var k = 0; k < neuron.OutLinks.Count; k++)
-			{
 				neuron.OutLinks[k].Weight = double.Parse(s[k + 2]);
-			}
 		}
 	}
 }

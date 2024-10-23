@@ -1,10 +1,11 @@
 using System.Runtime.CompilerServices;
+using RankLib.Utilities;
 
 namespace RankLib.Features;
 
 internal static class ListExtensions
 {
-	private static readonly Random Random = Random.Shared;
+	private static readonly Random Random = ThreadsafeSeedableRandom.Shared;
 
 	/// <summary>
 	/// Shuffles a list using Fisher-Yates shuffle

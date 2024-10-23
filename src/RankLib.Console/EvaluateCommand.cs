@@ -75,6 +75,7 @@ public class EvaluateCommandOptions : ICommandOptions
 	public RankerType? RType { get; set; }
 	public double? L2 { get; set; }
 	public bool Hr { get; set; }
+	public int? RandomSeed { get; set; }
 }
 
 public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOptionsHandler>
@@ -136,6 +137,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<RankerType?>("--rtype", "RfRanker ranker type to bag. Random Forests only support MART/LambdaMART"));
 		AddOption(new Option<double?>("--L2", "TODO: Lambda"));
 		AddOption(new Option<bool?>("--hr", "TODO: Must Have Relevance Doc"));
+		AddOption(new Option<int?>("--randomSeed", "A seed to use for random number generation. This is useful for internal testing purposes and should not be used for production."));
 	}
 }
 
@@ -172,6 +174,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 	public async Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
+		if (options.RandomSeed != null)
+			ThreadsafeSeedableRandom.Seed = options.RandomSeed.Value;
+
 		var logger = _loggerFactory.CreateLogger<Evaluator>();
 
 		var trainFile = options.Train;
@@ -203,9 +208,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		var scoreFile = options.Score;
 
 		if (options.MissingZero)
-		{
 			DataPoint.MissingZero = true;
-		}
 
 		if (options.GMax != null)
 		{
@@ -220,14 +223,10 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		}
 
 		if (options.Layer != null)
-		{
 			RankNetParameters.NHiddenLayer = options.Layer.Value;
-		}
 
 		if (options.Node != null)
-		{
 			RankNetParameters.NHiddenNodePerLayer = options.Node.Value;
-		}
 
 		if (options.Lr != null)
 		{
@@ -321,7 +320,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.L2 != null)
 			LinearRegRankParameters.Lambda = options.L2.Value;
 
-		LambdaMARTParameters.MaxDegreeOfParallelism = options.Thread;
+		LambdaMARTParameters.MaxDegreeOfParallelism = options.Thread == -1
+			? Environment.ProcessorCount
+			: options.Thread;
 
 		Normalizer? normalizer = null;
 		if (options.Norm != null)

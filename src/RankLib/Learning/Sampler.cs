@@ -1,3 +1,5 @@
+using RankLib.Utilities;
+
 namespace RankLib.Learning;
 
 using System;
@@ -19,7 +21,7 @@ public static class Sampler
 
 			for (var i = 0; i < size; i++)
 			{
-				var selected = Random.Shared.Next(samplingPool.Count);
+				var selected = ThreadsafeSeedableRandom.Shared.Next(samplingPool.Count);
 				samples.Add(samplingPool[selected]);
 				used[selected] = 1;
 			}
@@ -37,7 +39,7 @@ public static class Sampler
 			var indices = Enumerable.Range(0, samplingPool.Count).ToList();
 			for (var i = 0; i < size; i++)
 			{
-				var selected = Random.Shared.Next(indices.Count);
+				var selected = ThreadsafeSeedableRandom.Shared.Next(indices.Count);
 				samples.Add(samplingPool[indices[selected]]);
 				indices.RemoveAt(selected);
 			}

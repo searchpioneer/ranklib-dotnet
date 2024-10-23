@@ -123,7 +123,8 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			var tasks = ParallelExecutor
 				.PartitionEnumerable(Features.Length, Parameters.MaxDegreeOfParallelism)
 				.Select(range => new SortWorker(this, range.Start.Value, range.End.Value));
-			await ParallelExecutor.ExecuteAsync(tasks, Parameters.MaxDegreeOfParallelism);
+
+			await ParallelExecutor.ExecuteAsync(tasks, Parameters.MaxDegreeOfParallelism).ConfigureAwait(false);
 		}
 
 		//Create a table of candidate thresholds (for each feature). Later on, we will select the best tree split from these candidates

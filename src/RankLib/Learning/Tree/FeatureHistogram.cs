@@ -317,7 +317,7 @@ public class FeatureHistogram
 				featurePool.Add(i);
 
 			//do sampling, without replacement
-			var random = Random.Shared;
+			var random = ThreadsafeSeedableRandom.Shared;
 			for (var i = 0; i < size; i++)
 			{
 				var selected = random.Next(featurePool.Count);

@@ -1,4 +1,5 @@
 using System.Text;
+using RankLib.Utilities;
 
 namespace RankLib.Stats;
 
@@ -56,7 +57,7 @@ public class RandomPermutationTest : SignificanceTest
 	/// </summary>
 	private static string RandomBitVector(int size)
 	{
-		var random = Random.Shared;
+		var random = ThreadsafeSeedableRandom.Shared;
 		var output = new StringBuilder(size * 2);
 		for (var i = 0; i < (size / 10) + 1; i++)
 		{

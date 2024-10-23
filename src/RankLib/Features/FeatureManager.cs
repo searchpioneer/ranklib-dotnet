@@ -230,14 +230,10 @@ public class FeatureManager
 		var size = (int)(samples.Count * percentTrain);
 
 		for (var i = 0; i < size; i++)
-		{
 			trainingData.Add(new RankList(samples[i]));
-		}
 
 		for (var i = size; i < samples.Count; i++)
-		{
 			testData.Add(new RankList(samples[i]));
-		}
 	}
 
 	public void Save(List<RankList> samples, string outputFile)
