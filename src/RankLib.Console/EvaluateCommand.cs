@@ -83,7 +83,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 	: base("eval", "evaluate")
 	{
 		AddOption(new Option<FileInfo>("--train", "Training data file").ExistingOnly());
-		AddOption(new Option<RankerType>("--ranker", () => RankerType.COOR_ASCENT, "Ranking algorithm to use"));
+		AddOption(new Option<RankerType>("--ranker", () => RankerType.CoordinateAscent, "Ranking algorithm to use"));
 		AddOption(new Option<string>("--feature", "Feature description file: list features to be considered by the learner, each on a separate line. If not specified, all features will be used."));
 		AddOption(new Option<string>("--metric2t", () => "ERR@10", "Metric to optimize on the training data"));
 		AddOption(new Option<double?>("--gmax", "Highest judged relevance label"));
@@ -309,7 +309,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.RType != null)
 		{
-			if (options.RType != RankerType.MART && options.RType != RankerType.LAMBDAMART)
+			if (options.RType != RankerType.MART && options.RType != RankerType.LambdaMART)
 			{
 				throw RankLibException.Create(
 					$"{options.RType} cannot be bagged. Random Forests only supports MART/LambdaMART.");
@@ -338,15 +338,15 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		var (rankerType, rankerParameters) = options.Ranker switch
 		{
 			RankerType.MART => (typeof(MART), (IRankerParameters)LambdaMARTParameters),
-			RankerType.RANKBOOST => (typeof(RankBoost), RankBoostParameters),
-			RankerType.RANKNET => (typeof(RankNet), RankNetParameters),
-			RankerType.ADARANK => (typeof(AdaRank), AdaRankParameters),
-			RankerType.COOR_ASCENT => (typeof(CoorAscent), CoorAscentParameters),
-			RankerType.LAMBDARANK => (typeof(LambdaRank), RankNetParameters),
-			RankerType.LAMBDAMART => (typeof(LambdaMART), LambdaMARTParameters),
-			RankerType.LISTNET => (typeof(ListNet), ListNetParameters),
-			RankerType.RANDOM_FOREST => (typeof(RFRanker), RfRankerParameters),
-			RankerType.LINEAR_REGRESSION => (typeof(LinearRegRank), LinearRegRankParameters),
+			RankerType.RankBoost => (typeof(RankBoost), RankBoostParameters),
+			RankerType.RankNet => (typeof(RankNet), RankNetParameters),
+			RankerType.AdaRank => (typeof(AdaRank), AdaRankParameters),
+			RankerType.CoordinateAscent => (typeof(CoorAscent), CoorAscentParameters),
+			RankerType.LambdaRank => (typeof(LambdaRank), RankNetParameters),
+			RankerType.LambdaMART => (typeof(LambdaMART), LambdaMARTParameters),
+			RankerType.ListNet => (typeof(ListNet), ListNetParameters),
+			RankerType.RandomForests => (typeof(RFRanker), RfRankerParameters),
+			RankerType.LinearRegression => (typeof(LinearRegRank), LinearRegRankParameters),
 			_ => throw new ArgumentOutOfRangeException()
 		};
 

@@ -29,7 +29,6 @@ public class FeatureManager
 			while (reader.ReadLine() is { } content)
 			{
 				var contentSpan = content.AsSpan().Trim();
-
 				if (contentSpan.IsEmpty || contentSpan[0] == '#')
 					continue;
 
@@ -37,8 +36,8 @@ public class FeatureManager
 					_logger.LogInformation("Reading feature file [{InputFile}]: {CountEntries}...", inputFile, countEntries);
 
 				DataPoint dataPoint = useSparseRepresentation
-					? new SparseDataPoint(contentSpan.ToString())
-					: new DenseDataPoint(contentSpan.ToString());
+					? new SparseDataPoint(contentSpan)
+					: new DenseDataPoint(contentSpan);
 
 				if (!string.IsNullOrEmpty(lastId) && !lastId.Equals(dataPoint.Id, StringComparison.OrdinalIgnoreCase))
 				{

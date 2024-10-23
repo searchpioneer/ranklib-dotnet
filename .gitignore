@@ -44,5 +44,5 @@ packages/
 
 #Test files
 *.testsettings
-
+test_output
 

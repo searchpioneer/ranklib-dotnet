@@ -24,9 +24,9 @@ public class SparseDataPoint : DataPoint
 	private int _lastMinId = -1;
 	private int _lastMinPos = -1;
 
-	public SparseDataPoint(string text) : base(text)
-	{
-	}
+	public SparseDataPoint(string text) : base(text) { }
+
+	public SparseDataPoint(ReadOnlySpan<char> span) : base(span) { }
 
 	public SparseDataPoint(SparseDataPoint dp)
 	{

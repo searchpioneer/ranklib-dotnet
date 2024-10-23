@@ -7,15 +7,15 @@ namespace RankLib.Learning;
 public enum RankerType
 {
 	MART = 0,
-	RANKBOOST,
-	RANKNET,
-	ADARANK,
-	COOR_ASCENT,
-	LAMBDARANK,
-	LAMBDAMART,
-	LISTNET,
-	RANDOM_FOREST,
-	LINEAR_REGRESSION
+	RankNet = 1,
+	RankBoost = 2,
+	AdaRank = 3,
+	CoordinateAscent = 4,
+	LambdaRank = 5,
+	LambdaMART = 6,
+	ListNet = 7,
+	RandomForests = 8,
+	LinearRegression = 9,
 }
 
 public static class RankerTypeExtensions
@@ -24,15 +24,15 @@ public static class RankerTypeExtensions
 		rankerType switch
 		{
 			RankerType.MART => typeof(MART),
-			RankerType.RANKBOOST => typeof(RankBoost),
-			RankerType.RANKNET => typeof(RankNet),
-			RankerType.ADARANK => typeof(AdaRank),
-			RankerType.COOR_ASCENT => typeof(CoorAscent),
-			RankerType.LAMBDARANK => typeof(LambdaRank),
-			RankerType.LAMBDAMART => typeof(LambdaMART),
-			RankerType.LISTNET => typeof(ListNet),
-			RankerType.RANDOM_FOREST => typeof(RFRanker),
-			RankerType.LINEAR_REGRESSION => typeof(LinearRegRank),
+			RankerType.RankBoost => typeof(RankBoost),
+			RankerType.RankNet => typeof(RankNet),
+			RankerType.AdaRank => typeof(AdaRank),
+			RankerType.CoordinateAscent => typeof(CoorAscent),
+			RankerType.LambdaRank => typeof(LambdaRank),
+			RankerType.LambdaMART => typeof(LambdaMART),
+			RankerType.ListNet => typeof(ListNet),
+			RankerType.RandomForests => typeof(RFRanker),
+			RankerType.LinearRegression => typeof(LinearRegRank),
 			_ => throw new ArgumentOutOfRangeException(nameof(rankerType), rankerType, "Unknown ranker type")
 		};
 }

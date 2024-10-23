@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Tests", "tests\Rank
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Console.Tests", "tests\RankLib.Console.Tests\RankLib.Console.Tests.csproj", "{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Comparison.Tests", "tests\RankLib.Comparison.Tests\RankLib.Comparison.Tests.csproj", "{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -4,7 +4,7 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
-public class RankList
+public class RankList : IEnumerable<DataPoint>
 {
 	private readonly DataPoint[] _dataPoints;
 
@@ -93,4 +93,8 @@ public class RankList
 
 	// Override the ToString method
 	public override string ToString() => $"RankList ({Count}, {FeatureCount})";
+
+	public IEnumerator<DataPoint> GetEnumerator() => ((IEnumerable<DataPoint>)_dataPoints).GetEnumerator();
+
+	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
