@@ -12,13 +12,9 @@ public class RegressionTree
 	private readonly int _minLeafSupport = 1;
 	private Split? _root;
 	private List<Split> _leaves;
-	private DataPoint[] _trainingSamples = [];
 	private double[] _trainingLabels = [];
 	private int[] _index = [];
-	private FeatureHistogram _hist = null;
-
-	protected int[] features = [];
-	protected float[][] thresholds = [];
+	private FeatureHistogram _hist;
 
 	public RegressionTree(Split root)
 	{
@@ -29,7 +25,6 @@ public class RegressionTree
 	public RegressionTree(int nLeaves, DataPoint[] trainingSamples, double[] labels, FeatureHistogram hist, int minLeafSupport)
 	{
 		_nodes = nLeaves;
-		_trainingSamples = trainingSamples;
 		_trainingLabels = labels;
 		_hist = hist;
 		_minLeafSupport = minLeafSupport;
@@ -82,24 +77,21 @@ public class RegressionTree
 	}
 
 	/// <summary>
-	/// Get the tree output for the input sample
+	/// Gets the tree output for the input sample
 	/// </summary>
 	public double Eval(DataPoint dataPoint) => _root.Eval(dataPoint);
 
-	/**
-     * Retrieve all leaf nodes in the tree
-     */
+	/// <summary>
+	/// Gets all leaf nodes in the tree
+	/// </summary>
 	public List<Split> Leaves => _leaves;
 
-	/**
-     * Clear samples associated with each leaf (when they are no longer necessary) in order to save memory
-     */
+	/// <summary>
+	/// Clears the samples associated with each leaf (when they are no longer necessary) in order to save memory
+	/// </summary>
 	public void ClearSamples()
 	{
-		_trainingSamples = [];
 		_trainingLabels = [];
-		features = [];
-		thresholds = [];
 		_index = [];
 		_hist = null;
 
@@ -118,21 +110,21 @@ public class RegressionTree
 	{
 		double variance = 0;
 		for (var i = 0; i < _leaves.Count; i++)
-			variance += _leaves[i].GetDeviance();
+			variance += _leaves[i].Deviance;
 
 		return variance;
 	}
 
-	private static void Insert(List<Split> ls, Split s)
+	private static void Insert(List<Split> splits, Split split)
 	{
 		var i = 0;
-		while (i < ls.Count)
+		while (i < splits.Count)
 		{
-			if (ls[i].GetDeviance() > s.GetDeviance())
+			if (splits[i].Deviance > split.Deviance)
 				i++;
 			else
 				break;
 		}
-		ls.Insert(i, s);
+		splits.Insert(i, split);
 	}
 }

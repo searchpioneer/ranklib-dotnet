@@ -303,7 +303,7 @@ public class FeatureHistogram
 
 	public async Task<bool> FindBestSplitAsync(Split sp, double[] labels, int minLeafSupport)
 	{
-		if (sp.GetDeviance() >= 0 && sp.GetDeviance() <= 0)
+		if (sp.Deviance >= 0 && sp.Deviance <= 0)
 			return false; // No need to split
 
 		int[] usedFeatures;

@@ -273,7 +273,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 				var s = leaves[i];
 				var idx = s.GetSamples();
 				for (var j = 0; j < idx.Length; j++)
-					ModelScores[idx[j]] += Parameters.learningRate * s.GetOutput();
+					ModelScores[idx[j]] += Parameters.learningRate * s.Output;
 			}
 
 			//clear references to data that is no longer used
@@ -490,9 +490,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			}
 
 			if (s2 == 0)
-				split.SetOutput(0);
+				split.Output = (float)0;
 			else
-				split.SetOutput(s1 / s2);
+				split.Output = s1 / s2;
 		}
 	}
 

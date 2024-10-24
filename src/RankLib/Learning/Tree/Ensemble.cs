@@ -142,7 +142,7 @@ public class Ensemble
 		{
 			var output = float.Parse(node.FirstChild.FirstChild.Value.Trim());
 			s = new Split();
-			s.SetOutput(output);
+			s.Output = output;
 		}
 		return s;
 	}

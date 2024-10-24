@@ -12,7 +12,7 @@ public class Split
 {
 	private int _featureId = -1;
 	private float _threshold;
-	private double _avgLabel;
+	private double _output;
 	private Split _left;
 	private Split _right;
 
@@ -20,25 +20,9 @@ public class Split
 	//*DO NOT* attempt to access them once the training is done
 	private readonly double _sumLabel;
 	private readonly double _sqSumLabel;
-	private double _deviance; // Mean squared error "S"
+	private double _deviance;
 	private int[][]? _sortedSampleIDs;
 	private int[] _samples = [];
-
-	public FeatureHistogram? Histogram { get; private set; }
-
-	public bool IsRoot { get; set; }
-
-	public Split Left
-	{
-		get => _left;
-		set => _left = value;
-	}
-
-	public Split Right
-	{
-		get => _right;
-		set => _right = value;
-	}
 
 	public Split() { }
 
@@ -55,7 +39,7 @@ public class Split
 		_deviance = deviance;
 		_sumLabel = sumLabel;
 		_sqSumLabel = sqSumLabel;
-		_avgLabel = sumLabel / sortedSampleIDs[0].Length;
+		_output = sumLabel / sortedSampleIDs[0].Length;
 	}
 
 	public Split(int[] samples, FeatureHistogram histogram, double deviance, double sumLabel)
@@ -64,7 +48,7 @@ public class Split
 		Histogram = histogram;
 		_deviance = deviance;
 		_sumLabel = sumLabel;
-		_avgLabel = sumLabel / samples.Length;
+		_output = sumLabel / samples.Length;
 	}
 
 	public void Set(int featureId, float threshold, double deviance)
@@ -74,11 +58,44 @@ public class Split
 		_deviance = deviance;
 	}
 
-	public void SetOutput(float output) => _avgLabel = output;
+	public FeatureHistogram? Histogram { get; private set; }
 
-	public double GetDeviance() => _deviance;
+	/// <summary>
+	/// Whether this split is a root split.
+	/// </summary>
+	public bool IsRoot { get; set; }
 
-	public double GetOutput() => _avgLabel;
+	/// <summary>
+	/// Gets or sets the left split.
+	/// </summary>
+	public Split Left
+	{
+		get => _left;
+		set => _left = value;
+	}
+
+	/// <summary>
+	/// Gets or sets the right split.
+	/// </summary>
+	public Split Right
+	{
+		get => _right;
+		set => _right = value;
+	}
+
+	/// <summary>
+	/// Gets or sets the output.
+	/// </summary>
+	public double Output
+	{
+		get => _output;
+		set => _output = value;
+	}
+
+	/// <summary>
+	/// Gets the deviance (Mean squared error "S").
+	/// </summary>
+	public double Deviance => _deviance;
 
 	public List<Split> Leaves()
 	{
@@ -107,7 +124,7 @@ public class Split
 				? n._left
 				: n._right;
 		}
-		return n._avgLabel;
+		return n._output;
 	}
 
 	public override string ToString() => ToString("");
@@ -125,7 +142,7 @@ public class Split
 	{
 		var builder = new StringBuilder();
 		if (_featureId == -1)
-			builder.Append(indent).Append("<output> ").Append(_avgLabel.ToRankLibString()).Append(" </output>\n");
+			builder.Append(indent).Append("<output> ").Append(_output.ToRankLibString()).Append(" </output>\n");
 		else
 		{
 			builder.Append(indent).Append("<feature> ").Append(_featureId).Append(" </feature>\n");
@@ -153,10 +170,6 @@ public class Split
 	public int[] GetSamples() => _sortedSampleIDs != null ? _sortedSampleIDs[0] : _samples;
 
 	public int[][]? GetSampleSortedIndex() => _sortedSampleIDs;
-
-	public double SumLabel => _sumLabel;
-
-	public double SqSumLabel => _sqSumLabel;
 
 	public void ClearSamples()
 	{

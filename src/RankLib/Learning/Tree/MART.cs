@@ -50,7 +50,7 @@ public class MART : LambdaMART
 				s1 = (float)(s1 + PseudoResponses[k]);
 			}
 
-			split.SetOutput(s1 / idx.Length);
+			split.Output = s1 / idx.Length;
 		}
 	}
 }
