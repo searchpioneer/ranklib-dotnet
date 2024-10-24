@@ -1,21 +1,18 @@
 namespace RankLib.Learning.Boosting;
 
-public class RankBoostWeakRanker
+internal sealed class RankBoostWeakRanker
 {
-	private readonly int _fid;
-	private readonly double _threshold;
-
 	public RankBoostWeakRanker(int fid, double threshold)
 	{
-		_fid = fid;
-		_threshold = threshold;
+		Fid = fid;
+		Threshold = threshold;
 	}
 
-	public int Score(DataPoint p) => p.GetFeatureValue(_fid) > _threshold ? 1 : 0;
+	public int Score(DataPoint dataPoint) => dataPoint.GetFeatureValue(Fid) > Threshold ? 1 : 0;
 
-	public int GetFid() => _fid;
+	public int Fid { get; }
 
-	public double GetThreshold() => _threshold;
+	public double Threshold { get; }
 
-	public override string ToString() => $"{_fid}:{_threshold}";
+	public override string ToString() => $"{Fid}:{Threshold}";
 }

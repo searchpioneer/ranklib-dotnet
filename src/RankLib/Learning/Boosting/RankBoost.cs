@@ -347,8 +347,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 
 			PrintLog([7, 8, 9, 9], [
 				t.ToString(),
-				wr.GetFid().ToString(),
-				SimpleMath.Round(wr.GetThreshold(), 4).ToString(CultureInfo.InvariantCulture),
+				wr.Fid.ToString(),
+				SimpleMath.Round(wr.Threshold, 4).ToString(CultureInfo.InvariantCulture),
 				SimpleMath.Round(_rT, 4).ToString(CultureInfo.InvariantCulture)
 			]);
 
@@ -471,7 +471,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 			Features = new int[_rWeight.Count];
 			for (var i = 0; i < _rWeight.Count; i++)
 			{
-				Features[i] = _wRankers[i].GetFid();
+				Features[i] = _wRankers[i].Fid;
 			}
 		}
 		catch (Exception ex)

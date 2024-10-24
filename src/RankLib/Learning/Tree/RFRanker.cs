@@ -115,7 +115,7 @@ public class RFRanker : Ranker<RFRankerParameters>
 				}
 			}
 			PrintLogLn([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(r.GetScoreOnTrainingData(), 4).ToString(CultureInfo.InvariantCulture)]);
-			Ensembles[i] = r.GetEnsemble();
+			Ensembles[i] = r.Ensemble;
 		}
 
 		// Finishing up

@@ -7,18 +7,18 @@ namespace RankLib.Learning.Tree;
 /// </summary>
 public class RegressionTree
 {
-	private readonly int _nodes = 10; // -1 for unlimited number of nodes (the size of the tree will then be controlled *ONLY* by minLeafSupport)
+	// -1 for unlimited number of nodes (the size of the tree will then be controlled *ONLY* by minLeafSupport)
+	private readonly int _nodes = 10;
 	private readonly int _minLeafSupport = 1;
-
 	private Split? _root;
-	private List<Split> _leaves = null;
-
+	private List<Split> _leaves;
 	private DataPoint[] _trainingSamples = [];
 	private double[] _trainingLabels = [];
-	protected int[] features = [];
-	protected float[][] thresholds = [];
 	private int[] _index = [];
 	private FeatureHistogram _hist = null;
+
+	protected int[] features = [];
+	protected float[][] thresholds = [];
 
 	public RegressionTree(Split root)
 	{

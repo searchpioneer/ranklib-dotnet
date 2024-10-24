@@ -13,23 +13,56 @@ namespace RankLib.Learning.Tree;
 /// </summary>
 public class LambdaMARTParameters : IRankerParameters
 {
-	public int nTrees { get; set; } = 1000; // number of trees
-	public float learningRate { get; set; } = 0.1f; // shrinkage
+	/// <summary>
+	/// Gets or sets the number of trees. Defaults to 1000.
+	/// </summary>
+	public int nTrees { get; set; } = 1000;
+
+	/// <summary>
+	/// Gets or sets the learning rate. Defaults to 0.1.
+	/// </summary>
+	public float learningRate { get; set; } = 0.1f;
+
+	/// <summary>
+	/// Gets or sets the number of thresold candidates. Defaults to 256.
+	/// </summary>
 	public int nThreshold { get; set; } = 256;
+
+	/// <summary>
+	/// Gets or sets the number of rounds top stop on without performance
+	/// gain on validation data. Defaults to 100.
+	/// </summary>
 	public int nRoundToStopEarly { get; set; } = 100;
+
+	/// <summary>
+	/// Gets or sets the number of leaves. Defaults to 10.
+	/// </summary>
 	public int nTreeLeaves { get; set; } = 10;
+
+	/// <summary>
+	/// Gets or sets the minimum leaf support. Defaults to 1.
+	/// </summary>
 	public int minLeafSupport { get; set; } = 1;
+
+	/// <summary>
+	/// Gets or sets the samping rate. Defaults to 1.
+	/// </summary>
 	public float SamplingRate { get; set; } = 1;
+
+	/// <summary>
+	/// Gets or sets the maximum number of concurrent tasks allowed when splitting up workloads
+	/// that can be run on multiple threads. If unspecified, uses all available processors count.
+	/// </summary>
 	public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
 
 	public void Log(ILogger logger)
 	{
-		logger.LogInformation($"No. of trees: {nTrees}");
-		logger.LogInformation($"No. of leaves: {nTreeLeaves}");
-		logger.LogInformation($"No. of threshold candidates: {nThreshold}");
-		logger.LogInformation($"Min leaf support: {minLeafSupport}");
-		logger.LogInformation($"Learning rate: {learningRate}");
-		logger.LogInformation($"Stop early: {nRoundToStopEarly} rounds without performance gain on validation data");
+		logger.LogInformation("No. of trees: {NTrees}" ,nTrees);
+		logger.LogInformation("No. of leaves: {NTreeLeaves}", nTreeLeaves);
+		logger.LogInformation("No. of threshold candidates: {NThreshold}", nThreshold);
+		logger.LogInformation("Min leaf support: {MinLeafSupport}", minLeafSupport);
+		logger.LogInformation("Learning rate: {LearningRate}", learningRate);
+		logger.LogInformation("Stop early: {NRoundToStopEarly} rounds without performance gain on validation data", nRoundToStopEarly);
 	}
 }
 
@@ -53,7 +86,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	private readonly ILogger<LambdaMART> _logger;
 
 	private float[][] _thresholds = [];
-	private Ensemble _ensemble = null;
+	private Ensemble _ensemble;
 	private double[][] _modelScoresOnValidation = [];
 	private int _bestModelOnValidation = int.MaxValue - 2;
 	private int[][] _sortedIdx = [];
@@ -64,8 +97,6 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	protected DataPoint[] MARTSamples = [];
 	protected internal double[] Impacts = [];
 	protected double[] PseudoResponses = [];
-
-	public override string Name => RankerName;
 
 	public LambdaMART(ILogger<LambdaMART>? logger = null) : this(new LambdaMARTParameters(), logger)
 	{
@@ -88,6 +119,10 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		this(new LambdaMARTParameters(), samples, features, scorer, logger)
 	{
 	}
+
+	public override string Name => RankerName;
+
+	public Ensemble Ensemble => _ensemble;
 
 	public override async Task InitAsync()
 	{
@@ -132,9 +167,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		for (var f = 0; f < Features.Length; f++)
 		{
 			//For this feature, keep track of the list of unique values and the max/min
-			var values = new List<float>();
-			var fmax = float.NegativeInfinity;
-			var fmin = float.MaxValue;
+			var values = new List<float>(MARTSamples.Length);
+			var fMax = float.NegativeInfinity;
+			var fMin = float.MaxValue;
 			for (var i = 0; i < MARTSamples.Length; i++)
 			{
 				//get samples sorted with respect to this feature
@@ -142,11 +177,11 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 				var fv = MARTSamples[k].GetFeatureValue(Features[f]);
 				values.Add(fv);
 
-				if (fmax < fv)
-					fmax = fv;
+				if (fMax < fv)
+					fMax = fv;
 
-				if (fmin > fv)
-					fmin = fv;
+				if (fMin > fv)
+					fMin = fv;
 
 				var j = i + 1;
 				while (j < MARTSamples.Length)
@@ -171,9 +206,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			}
 			else
 			{
-				var step = Math.Abs(fmax - fmin) / Parameters.nThreshold;
+				var step = Math.Abs(fMax - fMin) / Parameters.nThreshold;
 				_thresholds[f] = new float[Parameters.nThreshold + 1];
-				_thresholds[f][0] = fmin;
+				_thresholds[f][0] = fMin;
 				for (var j = 1; j < Parameters.nThreshold; j++)
 					_thresholds[f][j] = _thresholds[f][j - 1] + step;
 
@@ -246,7 +281,6 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 
 			//Evaluate the current model
 			ScoreOnTrainingData = ComputeModelScoreOnTraining();
-
 
 			PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
 
@@ -322,8 +356,6 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		_ensemble = Ensemble.Parse(lineByLine.Model.ToString());
 		Features = _ensemble.Features;
 	}
-
-	public Ensemble GetEnsemble() => _ensemble;
 
 	// Helper Methods
 	protected virtual async Task ComputePseudoResponses()
@@ -441,9 +473,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		}
 	}
 
-	protected virtual void UpdateTreeOutput(RegressionTree rt)
+	protected virtual void UpdateTreeOutput(RegressionTree tree)
 	{
-		var leaves = rt.Leaves;
+		var leaves = tree.Leaves;
 		for (var i = 0; i < leaves.Count; i++)
 		{
 			var s1 = 0f;

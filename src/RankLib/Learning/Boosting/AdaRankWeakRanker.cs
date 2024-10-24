@@ -2,7 +2,7 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Boosting;
 
-public class AdaRankWeakRanker
+internal sealed class AdaRankWeakRanker
 {
 	public int Fid { get; }
 

@@ -34,9 +34,7 @@ public class LambdaRank : RankNet
 			for (var j = 0; j < rankList.Count; j++)
 			{
 				if (rankList[i].Label > rankList[j].Label || rankList[i].Label < rankList[j].Label)
-				{
 					count++;
-				}
 			}
 
 			pairMap[i] = new int[count];
@@ -66,16 +64,12 @@ public class LambdaRank : RankNet
 			// Back-propagate
 			_outputLayer.ComputeDelta(p); // Starting at the output layer
 			for (var j = _layers.Count - 2; j >= 1; j--)
-			{
 				_layers[j].UpdateDelta(p);
-			}
 
 			// Weight update
 			_outputLayer.UpdateWeight(p);
 			for (var j = _layers.Count - 2; j >= 1; j--)
-			{
 				_layers[j].UpdateWeight(p);
-			}
 		}
 	}
 
@@ -117,9 +111,7 @@ public class LambdaRank : RankNet
 					{
 						var o2 = Eval(rl[l]);
 						if (o1 < o2)
-						{
 							_misorderedPairs++;
-						}
 					}
 				}
 			}
@@ -128,13 +120,9 @@ public class LambdaRank : RankNet
 		_error = 1.0 - ScoreOnTrainingData;
 
 		if (_error > _lastError)
-		{
 			_straightLoss++;
-		}
 		else
-		{
 			_straightLoss = 0;
-		}
 
 		_lastError = _error;
 	}

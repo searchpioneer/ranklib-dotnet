@@ -11,6 +11,7 @@ public abstract class DataPoint
 	public static int MaxFeature = 51;
 	public static bool MissingZero = false;
 	public static int FeatureIncrease = 10;
+
 	protected const float Unknown = float.NaN;
 
 	// attributes
@@ -23,10 +24,6 @@ public abstract class DataPoint
 	public double Cached { get; set; } = -1.0;
 
 	protected static bool IsUnknown(float fVal) => float.IsNaN(fVal);
-
-	private static string GetKey(string pair) => pair.Substring(0, pair.IndexOf(':'));
-
-	private static string GetValue(string pair) => pair.Substring(pair.LastIndexOf(':') + 1);
 
 	private static ReadOnlySpan<char> GetKey(ReadOnlySpan<char> pair) => pair.Slice(0, pair.IndexOf(':'));
 	private static ReadOnlySpan<char> GetValue(ReadOnlySpan<char> pair) => pair.Slice(pair.LastIndexOf(':') + 1);
@@ -105,13 +102,26 @@ public abstract class DataPoint
 		return fVals;
 	}
 
-	// Abstract methods for feature value operations
+	/// <summary>
+	/// Get the value of the feature with the given feature ID
+	/// </summary>
 	public abstract float GetFeatureValue(int fid);
+
+	/// <summary>
+	/// Sets the value of the feature with the given feature ID
+	/// </summary>
 	public abstract void SetFeatureValue(int fid, float fval);
+
+	/// <summary>
+	/// Sets the value of all features with the provided dense array of feature values
+	/// </summary>
 	protected abstract void SetFeatureVector(float[] dfVals);
+
+	/// <summary>
+	/// Gets the value of all features as a dense array of feature values.
+	/// </summary>
 	protected abstract float[] GetFeatureVector();
 
-	// Default constructor
 	protected DataPoint() { }
 
 	protected DataPoint(ReadOnlySpan<char> span)
