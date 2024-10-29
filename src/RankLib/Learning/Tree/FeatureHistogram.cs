@@ -303,7 +303,7 @@ public class FeatureHistogram
 
 	public async Task<bool> FindBestSplitAsync(Split sp, double[] labels, int minLeafSupport)
 	{
-		if (sp.Deviance >= 0 && sp.Deviance <= 0)
+		if (sp.Deviance == 0)
 			return false; // No need to split
 
 		int[] usedFeatures;
@@ -312,7 +312,7 @@ public class FeatureHistogram
 			var size = (int)(_samplingRate * _features.Length);
 			usedFeatures = new int[size];
 			//put all features into a pool
-			var featurePool = new List<int>();
+			var featurePool = new List<int>(_features.Length);
 			for (var i = 0; i < _features.Length; i++)
 				featurePool.Add(i);
 
