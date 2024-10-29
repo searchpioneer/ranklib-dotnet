@@ -377,16 +377,4 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 		}
 		return sum;
 	}
-
-	public void CopyModel(CoorAscent ranker)
-	{
-		Weight = new double[Features.Length];
-		if (ranker.Weight.Length != Weight.Length)
-			throw RankLibException.Create("These two models use different feature set");
-
-		Array.Copy(ranker.Weight, Weight, ranker.Weight.Length);
-		_logger.LogInformation("Model loaded.");
-	}
-
-	public double Distance(CoorAscent ca) => GetDistance(Weight, ca.Weight);
 }
