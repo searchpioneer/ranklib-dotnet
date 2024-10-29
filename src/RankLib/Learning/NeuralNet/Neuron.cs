@@ -5,12 +5,11 @@ public class Neuron
 	public static double Momentum = 0.9;
 	public static double LearningRate = 0.001;
 
-	protected ITransferFunction _transferFunction = new LogiFunction();
-
-	protected double _output;
+	private readonly ITransferFunction _transferFunction = new LogisticFunction();
+	private double _output;
 	protected List<double> _outputs = new();
-	protected double _delta_i = 0.0;
-	protected double[] _deltas_j = [];
+	private double _delta_i;
+	private double[] _deltas_j = [];
 
 	public List<Synapse> InLinks { get; } = new();
 	public List<Synapse> OutLinks { get; } = new();

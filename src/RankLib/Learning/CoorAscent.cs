@@ -42,7 +42,8 @@ public class CoorAscentParameters : IRankerParameters
 /// </summary>
 /// <remarks>
 /// <a href="https://link.springer.com/content/pdf/10.1007/s10791-006-9019-z.pdf">
-/// D. Metzler and W.B. Croft. Linear feature-based models for information retrieval. Information Retrieval, 10(3): 257-274, 2007.
+/// D. Metzler and W.B. Croft. Linear feature-based models for information retrieval.
+/// Information Retrieval, 10(3): 257-274, 2007.
 /// </a>
 /// </remarks>
 public class CoorAscent : Ranker<CoorAscentParameters>
@@ -118,9 +119,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 						var dir = sign[s];
 						var step = 0.001 * dir;
 						if (origWeight != 0.0 && Math.Abs(step) > 0.5 * Math.Abs(origWeight))
-						{
 							step = Parameters.stepBase * Math.Abs(origWeight);
-						}
 
 						var totalStep = step;
 						var numIter = dir == 0 ? 1 : Parameters.nMaxIteration;
@@ -229,9 +228,8 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 			for (var i = 0; i < rankList.Count; i++)
 			{
 				for (var j = 0; j < Features.Length; j++)
-				{
 					score[i] += Weight[j] * rankList[i].GetFeatureValue(Features[j]);
-				}
+
 				rankList[i].Cached = score[i];
 			}
 		}
@@ -252,9 +250,8 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 	{
 		var score = 0.0;
 		for (var i = 0; i < Features.Length; i++)
-		{
 			score += Weight[i] * dataPoint.GetFeatureValue(Features[i]);
-		}
+
 		return score;
 	}
 
@@ -346,7 +343,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 
 	}
 
-	private double GetDistance(double[] w1, double[] w2)
+	private static double GetDistance(double[] w1, double[] w2)
 	{
 		var s1 = 0.0;
 		var s2 = 0.0;
@@ -364,7 +361,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 		return Math.Sqrt(dist);
 	}
 
-	private double Normalize(double[] weights)
+	private static double Normalize(double[] weights)
 	{
 		var sum = weights.Sum(Math.Abs);
 		if (sum > 0)
@@ -385,9 +382,8 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 	{
 		Weight = new double[Features.Length];
 		if (ranker.Weight.Length != Weight.Length)
-		{
-			throw RankLibException.Create("These two models use different feature set!!");
-		}
+			throw RankLibException.Create("These two models use different feature set");
+
 		Array.Copy(ranker.Weight, Weight, ranker.Weight.Length);
 		_logger.LogInformation("Model loaded.");
 	}

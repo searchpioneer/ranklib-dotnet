@@ -49,10 +49,10 @@ public class ListNet : RankNet
 	{
 		// Back-propagate
 		var p = new PropParameter(labels);
-		_outputLayer.ComputeDelta(p); // Starting at the output layer
+		OutputLayer.ComputeDelta(p); // Starting at the output layer
 
 		// Weight update
-		_outputLayer.UpdateWeight(p);
+		OutputLayer.UpdateWeight(p);
 	}
 
 	protected override void EstimateLoss()

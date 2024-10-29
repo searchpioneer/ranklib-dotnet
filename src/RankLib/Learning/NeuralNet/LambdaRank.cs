@@ -62,12 +62,12 @@ public class LambdaRank : RankNet
 			var p = new PropParameter(i, pairMap, pairWeight, _targetValue);
 
 			// Back-propagate
-			_outputLayer.ComputeDelta(p); // Starting at the output layer
+			OutputLayer.ComputeDelta(p); // Starting at the output layer
 			for (var j = _layers.Count - 2; j >= 1; j--)
 				_layers[j].UpdateDelta(p);
 
 			// Weight update
-			_outputLayer.UpdateWeight(p);
+			OutputLayer.UpdateWeight(p);
 			for (var j = _layers.Count - 2; j >= 1; j--)
 				_layers[j].UpdateWeight(p);
 		}

@@ -35,9 +35,9 @@ public abstract class MetricScorer
 	}
 
 	/// <summary>
-	/// Extracts the relevance labels from the given RankList.
+	/// Extracts the relevance labels from the given rank list.
 	/// </summary>
-	/// <param name="rankList">The RankList to extract relevance labels from.</param>
+	/// <param name="rankList">The rank list to extract relevance labels from.</param>
 	/// <returns>An array of relevance labels.</returns>
 	protected int[] GetRelevanceLabels(RankList rankList)
 	{
@@ -56,13 +56,13 @@ public abstract class MetricScorer
 	public abstract double Score(RankList rankList);
 
 	/// <summary>
-	/// Gets the name of this MetricScorer.
+	/// Gets the name of this scorer.
 	/// </summary>
-	/// <value>The name of this MetricScorer.</value>
+	/// <value>The name of this scorer.</value>
 	public abstract string Name { get; }
 
 	/// <summary>
-	/// Calculates the changes in score caused by swapping elements in the RankList.
+	/// Calculates the changes in score caused by swapping elements in the rank list.
 	/// </summary>
 	/// <param name="rankList">The RankList to calculate score changes for.</param>
 	/// <returns>A 2D array representing the change in score for each swap.</returns>

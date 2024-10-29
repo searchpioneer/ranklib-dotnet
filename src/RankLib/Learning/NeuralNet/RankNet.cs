@@ -7,6 +7,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.NeuralNet;
 
+/// <summary>
+/// Parameters for <see cref="RankNet"/>
+/// </summary>
 public class RankNetParameters : IRankerParameters
 {
 	public int NIteration { get; set; } = 100;
@@ -23,14 +26,19 @@ public class RankNetParameters : IRankerParameters
 	}
 }
 
+/// <summary>
+/// RankNet is a neural network-based ranking algorithm that learns to rank items
+/// by minimizing a pairwise loss function, optimizing the ordering of items
+/// based on their predicted relevance.
+/// </summary>
 public class RankNet : Ranker<RankNetParameters>
 {
 	internal const string RankerName = "RankNet";
 	private readonly ILogger<RankNet> _logger;
 
 	protected readonly List<Layer> _layers = new();
-	protected Layer _inputLayer;
-	protected Layer _outputLayer;
+	private Layer _inputLayer;
+	protected Layer OutputLayer;
 
 	protected List<List<double>> _bestModelOnValidation = new();
 	protected int _totalPairs;
@@ -48,22 +56,22 @@ public class RankNet : Ranker<RankNetParameters>
 		: base(samples, features, scorer, logger) =>
 		_logger = logger ?? NullLogger<RankNet>.Instance;
 
-	protected void SetInputOutput(int nInput, int nOutput)
+	protected void SetInputOutput(int inputCount, int outputCount)
 	{
-		_inputLayer = new Layer(nInput + 1);
-		_outputLayer = new Layer(nOutput);
+		_inputLayer = new Layer(inputCount + 1);
+		OutputLayer = new Layer(outputCount);
 		_layers.Clear();
 		_layers.Add(_inputLayer);
-		_layers.Add(_outputLayer);
+		_layers.Add(OutputLayer);
 	}
 
-	protected void SetInputOutput(int nInput, int nOutput, NeuronType nType)
+	protected void SetInputOutput(int inputCount, int outputCount, NeuronType nType)
 	{
-		_inputLayer = new Layer(nInput + 1, nType);
-		_outputLayer = new Layer(nOutput, nType);
+		_inputLayer = new Layer(inputCount + 1, nType);
+		OutputLayer = new Layer(outputCount, nType);
 		_layers.Clear();
 		_layers.Add(_inputLayer);
-		_layers.Add(_outputLayer);
+		_layers.Add(OutputLayer);
 	}
 
 	protected void AddHiddenLayer(int size) => _layers.Insert(_layers.Count - 1, new Layer(size));
@@ -141,11 +149,11 @@ public class RankNet : Ranker<RankNetParameters>
 		for (var i = 0; i < pairMap.Length; i++)
 		{
 			var p = new PropParameter(i, pairMap);
-			_outputLayer.ComputeDelta(p);
+			OutputLayer.ComputeDelta(p);
 			for (var j = _layers.Count - 2; j >= 1; j--)
 				_layers[j].UpdateDelta(p);
 
-			_outputLayer.UpdateWeight(p);
+			OutputLayer.UpdateWeight(p);
 			for (var j = _layers.Count - 2; j >= 1; j--)
 				_layers[j].UpdateWeight(p);
 		}
@@ -172,8 +180,7 @@ public class RankNet : Ranker<RankNetParameters>
 			l.Clear();
 			for (var j = 0; j < _layers[i].Count; j++)//loop through all neurons on in the current layer
 			{
-				var tempQualifier = _layers[i];
-				var n = tempQualifier[j];
+				var n = _layers[i][j];
 				for (var k = 0; k < n.OutLinks.Count; k++)
 					l.Add(n.OutLinks[k].Weight);
 			}
@@ -190,8 +197,7 @@ public class RankNet : Ranker<RankNetParameters>
 				var c = 0;
 				for (var j = 0; j < _layers[i].Count; j++)//loop through all neurons on in the current layer
 				{
-					var tempQualifier = _layers[i];
-					var n = tempQualifier[j];
+					var n = _layers[i][j];
 					for (var k = 0; k < n.OutLinks.Count; k++)
 						n.OutLinks[k].Weight = l[c++];
 				}
@@ -201,12 +207,6 @@ public class RankNet : Ranker<RankNetParameters>
 		{
 			throw RankLibException.Create(ex);
 		}
-	}
-
-	protected double CrossEntropy(double o1, double o2, double targetValue)
-	{
-		var oij = o1 - o2;
-		return -targetValue * oij + SimpleMath.LogBase2(1 + Math.Exp(oij));
 	}
 
 	protected virtual void EstimateLoss()
@@ -329,9 +329,7 @@ public class RankNet : Ranker<RankNetParameters>
 	public override double Eval(DataPoint dataPoint)
 	{
 		for (var k = 0; k < _inputLayer.Count - 1; k++)
-		{
 			_inputLayer[k].SetOutput(dataPoint.GetFeatureValue(Features[k]));
-		}
 
 		var k1 = _inputLayer.Count - 1;
 		_inputLayer[k1].SetOutput(1.0);
@@ -339,7 +337,7 @@ public class RankNet : Ranker<RankNetParameters>
 		for (var k = 1; k < _layers.Count; k++)
 			_layers[k].ComputeOutput();
 
-		return _outputLayer[0].GetOutput();
+		return OutputLayer[0].GetOutput();
 	}
 
 	public override string ToString()
@@ -385,27 +383,21 @@ public class RankNet : Ranker<RankNetParameters>
 	public override void LoadFromString(string model)
 	{
 		var lines = model.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
-
 		var features = lines[0].Split(' ');
 		Features = new int[features.Length];
 		for (var i = 0; i < features.Length; i++)
-		{
 			Features[i] = int.Parse(features[i]);
-		}
 
 		var nhl = int.Parse(lines[1]);
 		var nn = new int[nhl];
 		var lineIndex = 2;
 		for (; lineIndex < 2 + nhl; lineIndex++)
-		{
 			nn[lineIndex - 2] = int.Parse(lines[lineIndex]);
-		}
 
 		SetInputOutput(Features.Length, 1);
 		for (var j = 0; j < nhl; j++)
-		{
 			AddHiddenLayer(nn[j]);
-		}
+
 		Wire();
 
 		for (; lineIndex < lines.Length; lineIndex++)
@@ -413,10 +405,15 @@ public class RankNet : Ranker<RankNetParameters>
 			var s = lines[lineIndex].Split(' ');
 			var iLayer = int.Parse(s[0]);
 			var iNeuron = int.Parse(s[1]);
-			var tempQualifier = _layers[iLayer];
-			var neuron = tempQualifier[iNeuron];
+			var neuron = _layers[iLayer][iNeuron];
 			for (var k = 0; k < neuron.OutLinks.Count; k++)
 				neuron.OutLinks[k].Weight = double.Parse(s[k + 2]);
 		}
+	}
+
+	private static double CrossEntropy(double o1, double o2, double targetValue)
+	{
+		var oij = o1 - o2;
+		return -targetValue * oij + SimpleMath.LogBase2(1 + Math.Exp(oij));
 	}
 }

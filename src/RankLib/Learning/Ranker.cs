@@ -6,6 +6,10 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// Generic base class for a ranker with typed ranker parameters.
+/// </summary>
+/// <typeparam name="TRankerParameters">The type of ranker parameters</typeparam>
 public abstract class Ranker<TRankerParameters> : Ranker, IRanker<TRankerParameters>
 	where TRankerParameters : IRankerParameters, new()
 {
@@ -27,6 +31,9 @@ public abstract class Ranker<TRankerParameters> : Ranker, IRanker<TRankerParamet
 	}
 }
 
+/// <summary>
+/// Base class for a ranker with ranker parameters
+/// </summary>
 public abstract class Ranker : IRanker
 {
 	private readonly ILogger<Ranker> _logger;
@@ -76,9 +83,7 @@ public abstract class Ranker : IRanker
 	{
 		var scores = new double[rankList.Count];
 		for (var i = 0; i < rankList.Count; i++)
-		{
 			scores[i] = Eval(rankList[i]);
-		}
 
 		var idx = MergeSorter.Sort(scores, false);
 		return new RankList(rankList, idx);
@@ -88,9 +93,8 @@ public abstract class Ranker : IRanker
 	{
 		var rankedRankLists = new List<RankList>(rankLists.Count);
 		for (var i = 0; i < rankLists.Count; i++)
-		{
 			rankedRankLists.Add(Rank(rankLists[i]));
-		}
+
 		return rankedRankLists;
 	}
 
@@ -146,11 +150,39 @@ public abstract class Ranker : IRanker
 		}
 	}
 
+	/// <summary>
+	/// Initializes the ranker for training.
+	/// </summary>
+	/// <returns></returns>
 	public abstract Task InitAsync();
+
+	/// <summary>
+	/// Trains the ranker to learn from the training samples.
+	/// </summary>
+	/// <returns></returns>
 	public abstract Task LearnAsync();
+
+	/// <summary>
+	/// Evaluates a datapoint.
+	/// </summary>
+	/// <param name="dataPoint">The data point.</param>
+	/// <returns>The score for the data point</returns>
 	public abstract double Eval(DataPoint dataPoint);
 	public abstract override string ToString();
+
+	/// <summary>
+	/// Gets the model for the ranker.
+	/// </summary>
 	public abstract string Model { get; }
+
+	/// <summary>
+	/// Loads a ranker from a model.
+	/// </summary>
+	/// <param name="model">The model for the ranker.</param>
 	public abstract void LoadFromString(string model);
+
+	/// <summary>
+	/// Gets the name of the ranker.
+	/// </summary>
 	public abstract string Name { get; }
 }

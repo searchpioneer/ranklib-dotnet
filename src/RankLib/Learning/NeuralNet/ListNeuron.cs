@@ -37,9 +37,7 @@ public class ListNeuron : Neuron
 
 			// Update weights based on the difference between d1 and d2
 			for (var l = 0; l < _d1.Length; l++)
-			{
 				dw += (_d1[l] - _d2[l]) * s.Source.GetOutput(l);
-			}
 
 			dw *= LearningRate;
 			s.UpdateWeight(dw);
