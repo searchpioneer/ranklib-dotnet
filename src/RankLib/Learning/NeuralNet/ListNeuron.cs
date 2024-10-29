@@ -15,20 +15,20 @@ public class ListNeuron : Neuron
 		double sumScoreExp = 0;
 
 		// Calculate sums of exponentiated labels and scores
-		for (var i = 0; i < _outputs.Count; i++)
+		for (var i = 0; i < Outputs.Count; i++)
 		{
 			sumLabelExp += Math.Exp(param.Labels[i]);
-			sumScoreExp += Math.Exp(_outputs[i]);
+			sumScoreExp += Math.Exp(Outputs[i]);
 		}
 
-		_d1 = new double[_outputs.Count];
-		_d2 = new double[_outputs.Count];
+		_d1 = new double[Outputs.Count];
+		_d2 = new double[Outputs.Count];
 
 		// Calculate d1 and d2 based on the above sums
-		for (var i = 0; i < _outputs.Count; i++)
+		for (var i = 0; i < Outputs.Count; i++)
 		{
 			_d1[i] = Math.Exp(param.Labels[i]) / sumLabelExp;
-			_d2[i] = Math.Exp(_outputs[i]) / sumScoreExp;
+			_d2[i] = Math.Exp(Outputs[i]) / sumScoreExp;
 		}
 	}
 
