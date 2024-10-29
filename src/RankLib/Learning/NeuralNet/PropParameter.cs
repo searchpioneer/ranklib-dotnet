@@ -1,14 +1,17 @@
 namespace RankLib.Learning.NeuralNet;
 
+/// <summary>
+/// Propagation parameters
+/// </summary>
 public class PropParameter
 {
 	// RankNet
-	public int Current { get; protected set; } = -1; // index of current data point in the ranked list
-	public int[][] PairMap { get; protected set; } = [];
+	public int Current { get; } = -1; // index of current data point in the ranked list
+	public int[][] PairMap { get; } = [];
 
 	// LambdaRank: RankNet + the following
-	public float[][]? PairWeight { get; protected set; }
-	public float[][] TargetValue { get; protected set; } = [];
+	public float[][]? PairWeight { get; }
+	public float[][] TargetValue { get; } = [];
 
 	// ListNet
 	public float[] Labels { get; } = []; // relevance labels

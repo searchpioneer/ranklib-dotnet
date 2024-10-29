@@ -11,11 +11,11 @@ public class Layer
 	/// Initializes a new instance of <see cref="Layer"/>.
 	/// </summary>
 	/// <param name="count">The number of neurons to add at this layer.</param>
-	public Layer(int count)
+	public Layer(int count, double learningRate)
 	{
 		_neurons = new List<Neuron>(count);
 		for (var i = 0; i < count; i++)
-			_neurons.Add(new Neuron());
+			_neurons.Add(new Neuron(learningRate));
 	}
 
 	/// <summary>
@@ -23,14 +23,14 @@ public class Layer
 	/// </summary>
 	/// <param name="count">The number of neurons to add at this layer.</param>
 	/// <param name="neuronType">The type of neurons to add</param>
-	public Layer(int count, NeuronType neuronType)
+	public Layer(int count, NeuronType neuronType, double learningRate)
 	{
 		_neurons = new List<Neuron>(count);
 		for (var i = 0; i < count; i++)
 		{
 			_neurons.Add(neuronType == NeuronType.Single
-				? new Neuron()
-				: new ListNeuron());
+				? new Neuron(learningRate)
+				: new ListNeuron(learningRate));
 		}
 	}
 

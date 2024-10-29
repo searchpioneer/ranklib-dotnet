@@ -232,7 +232,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.Lr != null)
 		{
 			RankNetParameters.LearningRate = options.Lr.Value;
-			ListNetParameters.LearningRate = Neuron.LearningRate;
+			ListNetParameters.LearningRate = Neuron.DefaultLearningRate;
 		}
 
 		if (options.Tc != null)

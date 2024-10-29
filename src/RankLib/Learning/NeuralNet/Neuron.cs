@@ -2,9 +2,9 @@ namespace RankLib.Learning.NeuralNet;
 
 public class Neuron
 {
-	public static double Momentum = 0.9;
-	public static double LearningRate = 0.001;
+	public const double DefaultLearningRate = 0.001;
 
+	protected readonly double LearningRate;
 	private readonly ITransferFunction _transferFunction = new LogisticFunction();
 	private double _output;
 	protected List<double> _outputs = new();
@@ -14,7 +14,11 @@ public class Neuron
 	public List<Synapse> InLinks { get; } = new();
 	public List<Synapse> OutLinks { get; } = new();
 
-	public Neuron() => _output = 0.0;
+	public Neuron(double learningRate)
+	{
+		LearningRate = learningRate;
+		_output = 0.0;
+	}
 
 	public double GetOutput() => _output;
 

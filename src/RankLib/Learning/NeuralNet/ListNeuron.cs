@@ -5,6 +5,10 @@ public class ListNeuron : Neuron
 	private double[] _d1 = [];
 	private double[] _d2 = [];
 
+	public ListNeuron(double learningRate) : base(learningRate)
+	{
+	}
+
 	public override void ComputeDelta(PropParameter param)
 	{
 		double sumLabelExp = 0;

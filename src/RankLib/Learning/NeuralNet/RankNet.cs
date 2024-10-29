@@ -58,8 +58,8 @@ public class RankNet : Ranker<RankNetParameters>
 
 	protected void SetInputOutput(int inputCount, int outputCount)
 	{
-		_inputLayer = new Layer(inputCount + 1);
-		OutputLayer = new Layer(outputCount);
+		_inputLayer = new Layer(inputCount + 1, Parameters.LearningRate);
+		OutputLayer = new Layer(outputCount, Parameters.LearningRate);
 		_layers.Clear();
 		_layers.Add(_inputLayer);
 		_layers.Add(OutputLayer);
@@ -67,14 +67,14 @@ public class RankNet : Ranker<RankNetParameters>
 
 	protected void SetInputOutput(int inputCount, int outputCount, NeuronType nType)
 	{
-		_inputLayer = new Layer(inputCount + 1, nType);
-		OutputLayer = new Layer(outputCount, nType);
+		_inputLayer = new Layer(inputCount + 1, nType, Parameters.LearningRate);
+		OutputLayer = new Layer(outputCount, nType, Parameters.LearningRate);
 		_layers.Clear();
 		_layers.Add(_inputLayer);
 		_layers.Add(OutputLayer);
 	}
 
-	protected void AddHiddenLayer(int size) => _layers.Insert(_layers.Count - 1, new Layer(size));
+	protected void AddHiddenLayer(int size) => _layers.Insert(_layers.Count - 1, new Layer(size, Parameters.LearningRate));
 
 	protected void Wire()
 	{
@@ -259,7 +259,6 @@ public class RankNet : Ranker<RankNetParameters>
 			}
 		}
 
-		Neuron.LearningRate = Parameters.LearningRate;
 		return Task.CompletedTask;
 	}
 

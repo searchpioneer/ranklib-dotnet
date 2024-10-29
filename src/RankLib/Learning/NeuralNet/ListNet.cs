@@ -33,7 +33,7 @@ public class ListNet : RankNet
 		: base(samples, features, scorer) =>
 		_logger = logger ?? NullLogger<ListNet>.Instance;
 
-	protected float[] FeedForward(RankList rl)
+	private float[] FeedForward(RankList rl)
 	{
 		var labels = new float[rl.Count];
 		for (var i = 0; i < rl.Count; i++)
@@ -45,7 +45,7 @@ public class ListNet : RankNet
 		return labels;
 	}
 
-	protected void BackPropagate(float[] labels)
+	private void BackPropagate(float[] labels)
 	{
 		// Back-propagate
 		var p = new PropParameter(labels);
@@ -93,12 +93,8 @@ public class ListNet : RankNet
 		if (ValidationSamples != null)
 		{
 			for (var i = 0; i < _layers.Count; i++)
-			{
 				_bestModelOnValidation.Add(new List<double>());
-			}
 		}
-
-		Neuron.LearningRate = Parameters.LearningRate;
 
 		return Task.CompletedTask;
 	}
@@ -117,7 +113,7 @@ public class ListNet : RankNet
 				ClearNeuronOutputs();
 			}
 
-			PrintLog(new[] { 7, 14 }, new[] { i.ToString(), SimpleMath.Round(_error, 6).ToString() });
+			PrintLog([7, 14], [i.ToString(), SimpleMath.Round(_error, 6).ToString(CultureInfo.InvariantCulture)]);
 
 			if (i % 1 == 0)
 			{
@@ -140,9 +136,7 @@ public class ListNet : RankNet
 
 		// Restore the best model if validation data is used
 		if (ValidationSamples != null)
-		{
 			RestoreBestModelOnValidation();
-		}
 
 		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
@@ -168,9 +162,7 @@ public class ListNet : RankNet
 
 			// Print used features
 			for (var i = 0; i < Features.Length; i++)
-			{
 				output.Append(Features[i] + (i == Features.Length - 1 ? "" : " "));
-			}
 
 			output.Append('\n');
 
@@ -202,9 +194,7 @@ public class ListNet : RankNet
 			var tmp = l[0].Split(' ');
 			Features = new int[tmp.Length];
 			for (var i = 0; i < tmp.Length; i++)
-			{
 				Features[i] = int.Parse(tmp[i]);
-			}
 
 			// The 2nd line is a scalar indicating the number of hidden layers
 			var nHiddenLayer = int.Parse(l[1]);
@@ -213,16 +203,13 @@ public class ListNet : RankNet
 			// The next @nHiddenLayer lines contain the number of neurons in each layer
 			var index = 2;
 			for (; index < 2 + nHiddenLayer; index++)
-			{
 				nn[index - 2] = int.Parse(l[index]);
-			}
 
 			// Create the network
 			SetInputOutput(Features.Length, 1);
 			for (var j = 0; j < nHiddenLayer; j++)
-			{
 				AddHiddenLayer(nn[j]);
-			}
+
 			Wire();
 
 			// Fill in weights
@@ -234,9 +221,7 @@ public class ListNet : RankNet
 				var tempQualifier = _layers[iLayer];
 				var n = tempQualifier[iNeuron];
 				for (var k = 0; k < n.OutLinks.Count; k++)
-				{
 					n.OutLinks[k].Weight = double.Parse(s[k + 2]);
-				}
 			}
 		}
 		catch (Exception ex)
