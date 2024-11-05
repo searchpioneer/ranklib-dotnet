@@ -202,9 +202,7 @@ public class RFRanker : Ranker<RFRankerParameters>
 			// Obtain used features
 			var fids = ensembles[i].Features;
 			foreach (var fid in fids)
-			{
 				uniqueFeatures.Add(fid);
-			}
 		}
 
 		Features = uniqueFeatures.ToArray();

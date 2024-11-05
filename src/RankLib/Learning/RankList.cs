@@ -96,7 +96,9 @@ public class RankList : IEnumerable<DataPoint>
 	/// <param name="index">The index of the data point to get.</param>
 	public DataPoint this[int index] => _dataPoints[index];
 
-	// Get the correct ranking by label
+	/// <summary>
+	/// Get the correct ranking by label
+	/// </summary>
 	public RankList GetCorrectRanking()
 	{
 		var score = new double[_dataPoints.Length];

@@ -18,8 +18,9 @@ public class NDCGScorer : DCGScorer
 	private readonly ILogger<NDCGScorer> _logger;
 	private readonly Dictionary<string, double> _idealGains = new();
 
-	public NDCGScorer(ILogger<NDCGScorer>? logger = null) =>
-		_logger = logger ?? NullLogger<NDCGScorer>.Instance;
+	public NDCGScorer(ILogger<NDCGScorer>? logger = null) : this(DefaultK, logger)
+	{
+	}
 
 	public NDCGScorer(int k, ILogger<NDCGScorer>? logger = null) : base(k) =>
 		_logger = logger ?? NullLogger<NDCGScorer>.Instance;
@@ -38,9 +39,7 @@ public class NDCGScorer : DCGScorer
 			{
 				content = content.Trim();
 				if (string.IsNullOrEmpty(content))
-				{
 					continue;
-				}
 
 				var parts = content.Split(' ');
 				var qid = parts[0].Trim();
@@ -48,7 +47,7 @@ public class NDCGScorer : DCGScorer
 
 				if (!string.IsNullOrEmpty(lastQid) && !lastQid.Equals(qid, StringComparison.Ordinal))
 				{
-					var size = (rel.Count > K) ? K : rel.Count;
+					var size = rel.Count > K ? K : rel.Count;
 					var r = rel.ToArray();
 					var ideal = GetIdealDCG(r, size);
 					_idealGains[lastQid] = ideal;

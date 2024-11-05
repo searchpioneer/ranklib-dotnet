@@ -12,9 +12,7 @@ public class LinearNormalizer : Normalizer
 		var featureCount = rankList.FeatureCount;
 		var fids = new int[featureCount];
 		for (var i = 1; i <= featureCount; i++)
-		{
 			fids[i - 1] = i;
-		}
 
 		Normalize(rankList, fids);
 	}
@@ -53,9 +51,7 @@ public class LinearNormalizer : Normalizer
 					dataPoint.SetFeatureValue(fids[j], value);
 				}
 				else
-				{
 					dataPoint.SetFeatureValue(fids[j], 0);
-				}
 			}
 		}
 	}

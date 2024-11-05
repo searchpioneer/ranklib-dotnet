@@ -13,6 +13,8 @@ namespace RankLib.Metric;
 /// </remarks>
 public class DCGScorer : MetricScorer
 {
+	public const int DefaultK = 10;
+
 	private static volatile double[]? DiscountCache;
 	private static volatile double[]? GainCache;
 	private static readonly object DiscountLock = new();
@@ -39,7 +41,7 @@ public class DCGScorer : MetricScorer
 	});
 
 
-	public DCGScorer() : this(10)
+	public DCGScorer() : this(DefaultK)
 	{
 	}
 

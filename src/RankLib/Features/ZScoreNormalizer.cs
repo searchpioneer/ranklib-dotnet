@@ -17,9 +17,7 @@ public class ZScoreNormalizer : Normalizer
 		{
 			var dp = rankList[i];
 			for (var j = 1; j <= nFeature; j++)
-			{
 				means[j - 1] += dp.GetFeatureValue(j);
-			}
 		}
 
 		for (var j = 1; j <= nFeature; j++)
@@ -63,9 +61,7 @@ public class ZScoreNormalizer : Normalizer
 		{
 			var dataPoint = rankList[i];
 			for (var j = 0; j < fids.Length; j++)
-			{
 				means[j] += dataPoint.GetFeatureValue(fids[j]);
-			}
 		}
 
 		for (var j = 0; j < fids.Length; j++)

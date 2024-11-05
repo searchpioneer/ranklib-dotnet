@@ -63,7 +63,6 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 			var shuffle = options.Shuffle;
 			var outputDir = options.Output.FullName;
 			var rankingFiles = options.Input.Select(f => f.FullName).ToList();
-			var tts = options.Tts ?? -1;
 			var tvs = options.Tvs ?? -1;
 
 			var samples = _featureManager.ReadInput(rankingFiles);
@@ -87,13 +86,13 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 				_featureManager.Save(samples, Path.Combine(outputDir, fn));
 			}
 
-			if (tts != -1)
+			if (options.Tts.HasValue)
 			{
 				var trains = new List<RankList>();
 				var tests = new List<RankList>();
 
 				logger.LogInformation("Splitting... ");
-				_featureManager.PrepareSplit(samples, tts, trains, tests);
+				_featureManager.PrepareSplit(samples, options.Tts.Value, trains, tests);
 
 				try
 				{

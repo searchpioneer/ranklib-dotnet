@@ -2,9 +2,16 @@ using RankLib.Learning;
 
 namespace RankLib.Metric;
 
+/// <summary>
+/// Best at K scorer
+/// </summary>
 public class BestAtKScorer : MetricScorer
 {
-	public BestAtKScorer() => K = 10;
+	public const int DefaultK = 10;
+
+	public BestAtKScorer() : this(DefaultK)
+	{
+	}
 
 	public BestAtKScorer(int k) => K = k;
 

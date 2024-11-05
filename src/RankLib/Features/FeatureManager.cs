@@ -94,15 +94,11 @@ public class FeatureManager
 			{
 				var contentSpan = content.AsSpan().Trim();
 				if (contentSpan.IsEmpty || contentSpan[0] == '#')
-				{
 					continue;
-				}
 
 				var firstTab = contentSpan.IndexOf('\t');
 				if (firstTab == -1)
-				{
 					throw new ArgumentException("featureDefFile is not a valid feature file.", nameof(featureDefFile));
-				}
 
 				var fid = contentSpan.Slice(0, firstTab).Trim();
 				fids.Add(int.Parse(fid));
@@ -144,18 +140,15 @@ public class FeatureManager
 		{
 			var foldIndexes = new List<int>();
 			for (var i = 0; i < size && start + i < samples.Count; i++)
-			{
 				foldIndexes.Add(start + i);
-			}
+
 			trainSamplesIdx.Add(foldIndexes);
 			total += foldIndexes.Count;
 			start += size;
 		}
 
 		while (total < samples.Count)
-		{
 			trainSamplesIdx[^1].Add(total++);
-		}
 
 		for (var idx = 0; idx < trainSamplesIdx.Count; idx++)
 		{
@@ -168,13 +161,9 @@ public class FeatureManager
 			foreach (var index in Enumerable.Range(0, samples.Count))
 			{
 				if (indexes.Contains(index))
-				{
 					test.Add(new RankList(samples[index]));
-				}
 				else
-				{
 					train.Add(new RankList(samples[index]));
-				}
 			}
 
 			if (tvs > 0)
@@ -191,9 +180,7 @@ public class FeatureManager
 			testData.Add(test);
 
 			if (tvs > 0)
-			{
 				validationData.Add(validation);
-			}
 		}
 
 		_logger.LogInformation("Creating data for {NFold} folds completed.", nFold);
@@ -214,18 +201,14 @@ public class FeatureManager
 		{
 			_logger.LogInformation("{Name} [{RankListIndex}] = ", name, split.IndexOf(rankLists));
 			foreach (var rankList in rankLists)
-			{
 				_logger.LogInformation(" \"{RankListId}\"", rankList.Id);
-			}
 		}
 	}
 
 	public void PrepareSplit(List<RankList> samples, double percentTrain, List<RankList> trainingData, List<RankList> testData)
 	{
 		if (percentTrain is < 0 or > 1)
-		{
 			throw new ArgumentException("percentTrain must be between 0 and 1.", nameof(percentTrain));
-		}
 
 		var size = (int)(samples.Count * percentTrain);
 
@@ -242,9 +225,7 @@ public class FeatureManager
 		{
 			using var writer = new StreamWriter(outputFile);
 			foreach (var sample in samples)
-			{
 				Save(sample, writer);
-			}
 		}
 		catch (Exception ex)
 		{

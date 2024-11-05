@@ -2,9 +2,16 @@ using RankLib.Learning;
 
 namespace RankLib.Metric;
 
+/// <summary>
+/// Precision (P) at K scorer.
+/// </summary>
 public class PrecisionScorer : MetricScorer
 {
-	public PrecisionScorer() => K = 10;
+	public const int DefaultK = 10;
+
+	public PrecisionScorer() : this(DefaultK)
+	{
+	}
 
 	public PrecisionScorer(int k) => K = k;
 

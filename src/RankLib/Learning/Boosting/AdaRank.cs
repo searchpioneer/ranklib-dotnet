@@ -50,7 +50,9 @@ public class AdaRank : Ranker<AdaRankParameters>
 	// For the implementation of tricks
 	private int _lastFeature = -1;
 	private int _lastFeatureConsecutiveCount;
+#pragma warning disable CS0414 // Field is assigned but its value is never used
 	private bool _performanceChanged;
+#pragma warning restore CS0414 // Field is assigned but its value is never used
 	private List<int> _featureQueue = [];
 	private double[] _backupSampleWeight = [];
 	private double _backupTrainScore;
@@ -161,6 +163,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 
 			if (!withEnqueue)
 			{
+				// ReSharper disable once CompareOfFloatsByEqualityOperator
 				if (trainedScore != _lastTrainedScore)
 				{
 					_performanceChanged = true;

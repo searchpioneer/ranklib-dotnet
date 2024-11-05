@@ -2,9 +2,21 @@ using RankLib.Learning;
 
 namespace RankLib.Metric;
 
+/// <summary>
+/// Expected Reciprocal Rank.
+/// Provides a good signal whether the top result is relevant.
+/// </summary>
+/// <remarks>
+/// <a href="https://doi.org/10.1145/1645953.1646033">
+/// Olivier Chapelle, Donald Metlzer, Ya Zhang, and Pierre Grinspan. (2009).
+/// Expected reciprocal rank for graded relevance.
+/// In Proceedings of the 18th ACM conference on Information and knowledge management (CIKM '09).
+/// </a>
+/// </remarks>
 public class ERRScorer : MetricScorer
 {
-	public const double DefaultMax = 16; // By default, we assume the relevance scale of {0, 1, 2, 3, 4} => g_max = 4 => 2^g_max = 16
+	// By default, we assume the relevance scale of {0, 1, 2, 3, 4} => g_max = 4 => 2^g_max = 16
+	public const double DefaultMax = 16;
 	public const int DefaultK = 10;
 
 	private readonly double _max;

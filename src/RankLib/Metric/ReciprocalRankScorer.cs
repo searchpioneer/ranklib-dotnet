@@ -28,7 +28,7 @@ public class ReciprocalRankScorer : MetricScorer
 	{
 		var firstRank = -1;
 		var secondRank = -1;
-		var size = (rankList.Count > K) ? K : rankList.Count;
+		var size = rankList.Count > K ? K : rankList.Count;
 
 		for (var i = 0; i < size; i++)
 		{

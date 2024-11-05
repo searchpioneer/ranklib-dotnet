@@ -1,6 +1,10 @@
 using MathNet.Numerics.Statistics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using RankLib.Learning;
+using RankLib.Learning.Boosting;
+using RankLib.Learning.NeuralNet;
+using RankLib.Learning.Tree;
 
 namespace RankLib.Features;
 
@@ -10,9 +14,9 @@ public class FeatureStats
 
 	private readonly string _modelFileName;
 	private readonly FileInfo _file;
-	private static readonly string[] ModelsThatUseAllFeatures = ["Coordinate Ascent", "LambdaRank", "Linear Regression", "ListNet", "RankNet"];
-	private static readonly string[] FeatureWeightModels = ["AdaRank", "RankBoost"];
-	private static readonly string[] TreeModels = ["LambdaMART", "MART", "Random Forests"];
+	private static readonly string[] ModelsThatUseAllFeatures = [CoorAscent.RankerName, LambdaRank.RankerName, LinearRegRank.RankerName, ListNet.RankerName, RankNet.RankerName];
+	private static readonly string[] FeatureWeightModels = [AdaRank.RankerName, RankBoost.RankerName];
+	private static readonly string[] TreeModels = [LambdaMART.RankerName, MART.RankerName, RFRanker.RankerName];
 
 	public FeatureStats(string modelFileName, ILogger<FeatureStats>? logger = null)
 	{
