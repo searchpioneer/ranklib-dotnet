@@ -248,10 +248,10 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			AdaRankParameters.MaxSelCount = options.Max.Value;
 
 		if (options.R != null)
-			CoorAscentParameters.nRestart = options.R.Value;
+			CoorAscentParameters.RandomRestartCount = options.R.Value;
 
 		if (options.I != null)
-			CoorAscentParameters.nMaxIteration = options.I.Value;
+			CoorAscentParameters.MaxIterationCount = options.I.Value;
 
 		if (options.Round != null)
 		{
@@ -261,14 +261,14 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Reg != null)
 		{
-			CoorAscentParameters.slack = options.Reg.Value;
-			CoorAscentParameters.regularized = true;
+			CoorAscentParameters.Slack = options.Reg.Value;
+			CoorAscentParameters.Regularized = true;
 		}
 
 		if (options.Tolerance != null)
 		{
 			AdaRankParameters.Tolerance = options.Tolerance.Value;
-			CoorAscentParameters.tolerance = options.Tolerance.Value;
+			CoorAscentParameters.Tolerance = options.Tolerance.Value;
 		}
 
 		if (options.Tree != null)

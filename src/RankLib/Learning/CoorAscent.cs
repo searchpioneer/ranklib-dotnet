@@ -14,31 +14,64 @@ namespace RankLib.Learning;
 /// </summary>
 public class CoorAscentParameters : IRankerParameters
 {
-	public int nRestart { get; set; } = 5;
-	public int nMaxIteration { get; set; } = 25;
-	public double stepBase { get; set; } = 0.05;
-	public double stepScale { get; set; } = 2.0;
-	public double tolerance { get; set; } = 0.001;
-	public bool regularized { get; set; }
-	public double slack { get; set; } = 0.001;
+	/// <summary>
+	/// Number of random restarts.
+	/// </summary>
+	public int RandomRestartCount { get; set; } = 5;
+
+	/// <summary>
+	/// Number of iterations to search in each direction.
+	/// </summary>
+	public int MaxIterationCount { get; set; } = 25;
+
+	/// <summary>
+	/// The base step size that the algorithm initially uses for adjusting weights.
+	/// This small base step is scaled to vary the search around the current solution in each iteration.
+	/// </summary>
+	public double StepBase { get; set; } = 0.05;
+
+	/// <summary>
+	/// A scaling factor applied to <see cref="StepBase"/> to increase or decrease the step incrementally.
+	/// It allows the algorithm to take progressively larger or smaller steps in each iteration,
+	/// improving the precision of convergence.
+	/// </summary>
+	public double StepScale { get; set; } = 2.0;
+
+	/// <summary>
+	/// The threshold for the minimal improvement required between iterations to continue the optimization.
+	/// When changes fall below this threshold, the algorithm stops adjusting further, assuming convergence.
+	/// </summary>
+	public double Tolerance { get; set; } = 0.001;
+
+	/// <summary>
+	/// Whether regularization is applied to help avoid overfitting. If <c>true</c>, <see cref="Slack"/> value
+	/// is applied. If <c>false</c>, No regularization is performed.
+	/// </summary>
+	public bool Regularized { get; set; }
+
+	/// <summary>
+	/// The regularization parameter (if regularized is true) that controls the penalty strength.
+	/// A small slack value limits the coefficient magnitude more strictly, enforcing a
+	/// simpler model with smaller weights.
+	/// </summary>
+	public double Slack { get; set; } = 0.001;
 
 	public void Log(ILogger logger)
 	{
-		logger.LogInformation("No. of random restarts: {Restart}", nRestart);
-		logger.LogInformation("No. of iterations to search in each direction: {NMaxIteration}", nMaxIteration);
-		logger.LogInformation("Tolerance: {Tolerance}", tolerance);
-		if (regularized)
-			logger.LogInformation("Reg. param: {Slack}", slack);
+		logger.LogInformation("No. of random restarts: {Restart}", RandomRestartCount);
+		logger.LogInformation("No. of iterations to search in each direction: {NMaxIteration}", MaxIterationCount);
+		logger.LogInformation("Tolerance: {Tolerance}", Tolerance);
+		if (Regularized)
+			logger.LogInformation("Reg. param: {Slack}", Slack);
 		else
 			logger.LogInformation("Regularization: No");
 	}
 }
 
 /// <summary>
-/// Coordinate Ascent is an optimization algorithm for ranking tasks
+/// Coordinate Ascent is a linear ranking model for ranking tasks
 /// that iteratively improves a ranking model by optimizing one parameter
-/// at a time while keeping the others fixed, often used to maximize
-/// metrics like NDCG or MAP.
+/// at a time while keeping the others fixed.
 /// </summary>
 /// <remarks>
 /// <a href="https://link.springer.com/content/pdf/10.1007/s10791-006-9019-z.pdf">
@@ -84,9 +117,9 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 
 		_logger.LogInformation("Training starts...");
 
-		for (var r = 0; r < Parameters.nRestart; r++)
+		for (var r = 0; r < Parameters.RandomRestartCount; r++)
 		{
-			_logger.LogInformation($"[+] Random restart #{r + 1}/{Parameters.nRestart}...");
+			_logger.LogInformation($"[+] Random restart #{r + 1}/{Parameters.RandomRestartCount}...");
 			var consecutiveFails = 0;
 
 			for (var i = 0; i < Weight.Length; i++)
@@ -119,10 +152,10 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 						var dir = sign[s];
 						var step = 0.001 * dir;
 						if (origWeight != 0.0 && Math.Abs(step) > 0.5 * Math.Abs(origWeight))
-							step = Parameters.stepBase * Math.Abs(origWeight);
+							step = Parameters.StepBase * Math.Abs(origWeight);
 
 						var totalStep = step;
-						var numIter = dir == 0 ? 1 : Parameters.nMaxIteration;
+						var numIter = dir == 0 ? 1 : Parameters.MaxIterationCount;
 
 						for (var j = 0; j < numIter; j++)
 						{
@@ -131,9 +164,9 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 							Weight[shuffledFeatures[i]] = newWeight;
 
 							var score = Scorer.Score(Rank(Samples));
-							if (Parameters.regularized)
+							if (Parameters.Regularized)
 							{
-								var penalty = Parameters.slack * GetDistance(Weight, regVector);
+								var penalty = Parameters.Slack * GetDistance(Weight, regVector);
 								score -= penalty;
 							}
 
@@ -149,9 +182,9 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 								]);
 							}
 
-							if (j < Parameters.nMaxIteration - 1)
+							if (j < Parameters.MaxIterationCount - 1)
 							{
-								step *= Parameters.stepScale;
+								step *= Parameters.StepScale;
 								totalStep += step;
 							}
 						}
@@ -187,7 +220,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 					}
 				}
 
-				if (bestScore - startScore < Parameters.tolerance)
+				if (bestScore - startScore < Parameters.Tolerance)
 					break;
 			}
 
@@ -270,13 +303,13 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 		{
 			var output = new StringBuilder();
 			output.AppendLine($"## {Name}");
-			output.AppendLine($"## Restart = {Parameters.nRestart}");
-			output.AppendLine($"## MaxIteration = {Parameters.nMaxIteration}");
-			output.AppendLine($"## StepBase = {Parameters.stepBase.ToRankLibString()}");
-			output.AppendLine($"## StepScale = {Parameters.stepScale.ToRankLibString()}");
-			output.AppendLine($"## Tolerance = {Parameters.tolerance.ToRankLibString()}");
-			output.AppendLine($"## Regularized = {(Parameters.regularized ? "true" : "false")}");
-			output.AppendLine($"## Slack = {Parameters.slack.ToRankLibString()}");
+			output.AppendLine($"## Restart = {Parameters.RandomRestartCount}");
+			output.AppendLine($"## MaxIteration = {Parameters.MaxIterationCount}");
+			output.AppendLine($"## StepBase = {Parameters.StepBase.ToRankLibString()}");
+			output.AppendLine($"## StepScale = {Parameters.StepScale.ToRankLibString()}");
+			output.AppendLine($"## Tolerance = {Parameters.Tolerance.ToRankLibString()}");
+			output.AppendLine($"## Regularized = {(Parameters.Regularized ? "true" : "false")}");
+			output.AppendLine($"## Slack = {Parameters.Slack.ToRankLibString()}");
 			output.AppendLine(ToString());
 			return output.ToString();
 		}

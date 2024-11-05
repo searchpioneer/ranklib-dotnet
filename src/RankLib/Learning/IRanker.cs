@@ -4,7 +4,7 @@ using RankLib.Metric;
 namespace RankLib.Learning;
 
 /// <summary>
-/// Parameters for a ranker
+/// Parameters for an <see cref="IRanker{TParameters}"/>
 /// </summary>
 public interface IRankerParameters
 {
@@ -31,6 +31,9 @@ public interface IRanker
 	void LoadFromString(string model);
 	string Name { get; }
 
+	/// <summary>
+	/// The parameters used for training the ranker.
+	/// </summary>
 	public IRankerParameters Parameters { get; set; }
 
 	RankList Rank(RankList rankList);
@@ -39,9 +42,8 @@ public interface IRanker
 	{
 		var rankedRankLists = new List<RankList>(rankLists.Count);
 		for (var i = 0; i < rankLists.Count; i++)
-		{
 			rankedRankLists.Add(Rank(rankLists[i]));
-		}
+
 		return rankedRankLists;
 	}
 
