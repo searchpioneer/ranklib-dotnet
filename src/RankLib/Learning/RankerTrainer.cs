@@ -7,7 +7,7 @@ using RankLib.Utilities;
 namespace RankLib.Learning;
 
 /// <summary>
-/// Trains a ranker using the provided training samples, and validates training using the validation samples.
+/// Trains <see cref="IRanker"/> instances.
 /// </summary>
 public class RankerTrainer
 {
@@ -20,7 +20,17 @@ public class RankerTrainer
 		_logger = logger;
 	}
 
-	public async Task<(IRanker ranker, TimeSpan trainingTime)> TrainAsync(
+	/// <summary>
+	/// Trains a ranker using the provided training samples, and validates training using the validation samples.
+	/// </summary>
+	/// <param name="rankerType">The type of ranker to train.</param>
+	/// <param name="trainingSamples">The training samples.</param>
+	/// <param name="validationSamples">The validation samples.</param>
+	/// <param name="features">The features</param>
+	/// <param name="scorer"></param>
+	/// <param name="parameters"></param>
+	/// <returns></returns>
+	public async Task<IRanker> TrainAsync(
 		Type rankerType,
 		List<RankList> trainingSamples,
 		List<RankList>? validationSamples,
@@ -30,14 +40,12 @@ public class RankerTrainer
 	{
 		var ranker = _rankerFactory.CreateRanker(rankerType, trainingSamples, features, scorer, parameters);
 		ranker.ValidationSamples = validationSamples;
-		var stopwatch = Stopwatch.StartNew();
 		await ranker.InitAsync().ConfigureAwait(false);
 		await ranker.LearnAsync().ConfigureAwait(false);
-		stopwatch.Stop();
-		return (ranker, stopwatch.Elapsed);
+		return ranker;
 	}
 
-	public async Task<(TRanker ranker, TimeSpan trainingTime)> TrainAsync<TRanker, TRankerParameters>(
+	public async Task<TRanker> TrainAsync<TRanker, TRankerParameters>(
 		List<RankList> trainingSamples,
 		List<RankList>? validationSamples,
 		int[] features,
@@ -48,10 +56,8 @@ public class RankerTrainer
 	{
 		var ranker = _rankerFactory.CreateRanker<TRanker, TRankerParameters>(trainingSamples, features, scorer, parameters);
 		ranker.ValidationSamples = validationSamples;
-		var stopwatch = Stopwatch.StartNew();
 		await ranker.InitAsync().ConfigureAwait(false);
 		await ranker.LearnAsync().ConfigureAwait(false);
-		stopwatch.Stop();
-		return (ranker, stopwatch.Elapsed);
+		return ranker;
 	}
 }

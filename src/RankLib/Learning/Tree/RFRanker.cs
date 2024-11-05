@@ -38,6 +38,10 @@ public class RFRankerParameters : IRankerParameters
 	}
 }
 
+/// <summary>
+/// Random Forests is an ensemble learning method that constructs multiple decision trees during training
+/// and merges their results for more accurate and stable predictions.
+/// </summary>
 public class RFRanker : Ranker<RFRankerParameters>
 {
 	internal const string RankerName = "Random Forests";

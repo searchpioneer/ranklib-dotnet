@@ -1,13 +1,9 @@
 using System.Globalization;
 using RankLib.Utilities;
-
-namespace RankLib.Learning.Tree;
-
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Text;
 using System.Xml;
+
+namespace RankLib.Learning.Tree;
 
 public class Ensemble
 {
@@ -15,7 +11,11 @@ public class Ensemble
 	private readonly List<float> _weights = [];
 	private int[] _features = [];
 
-
+	/// <summary>
+	/// Parses a new instance of <see cref="Ensemble"/> from an XML string.
+	/// </summary>
+	/// <param name="xml">The XML to parse.</param>
+	/// <returns>A new instance of <see cref="Ensemble"/></returns>
 	public static Ensemble Parse(string xml)
 	{
 		try
@@ -26,12 +26,12 @@ public class Ensemble
 			doc.Load(stream);
 			var treeNodes = doc.GetElementsByTagName("tree");
 			var fids = new Dictionary<int, int>();
-			foreach (XmlNode n in treeNodes)
+			foreach (XmlNode node in treeNodes)
 			{
 				// Create a regression tree from this node
-				var root = Create(n.FirstChild, fids);
+				var root = Create(node.FirstChild, fids);
 				// Get the weight for this tree
-				var weight = float.Parse(n.Attributes["weight"].Value);
+				var weight = float.Parse(node.Attributes["weight"].Value);
 				// Add it to the ensemble
 				ensemble.Add(new RegressionTree(root), weight);
 			}
@@ -127,22 +127,21 @@ public class Ensemble
 			var childNodes = node.ChildNodes;
 
 			if (childNodes.Count != 4)
-			{
 				throw new ArgumentException("Invalid feature");
-			}
 
 			var fid = int.Parse(childNodes[0].FirstChild.Value.Trim()); // <feature>
 			fids[fid] = 0;
 			var threshold = float.Parse(childNodes[1].FirstChild.Value.Trim()); // <threshold>
-			s = new Split(fid, threshold, 0);
-			s.Left = Create(childNodes[2], fids);
-			s.Right = Create(childNodes[3], fids);
+			s = new Split(fid, threshold, 0)
+			{
+				Left = Create(childNodes[2], fids),
+				Right = Create(childNodes[3], fids)
+			};
 		}
 		else // this is a stump
 		{
 			var output = float.Parse(node.FirstChild.FirstChild.Value.Trim());
-			s = new Split();
-			s.Output = output;
+			s = new Split { Output = output };
 		}
 		return s;
 	}

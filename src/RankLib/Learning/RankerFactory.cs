@@ -10,7 +10,7 @@ using RankLib.Utilities;
 namespace RankLib.Learning;
 
 /// <summary>
-/// Factory for creating <see cref="IRanker"/>s
+/// Factory for creating <see cref="IRanker"/> instances.
 /// </summary>
 public class RankerFactory
 {
@@ -33,16 +33,16 @@ public class RankerFactory
 
 	private readonly Dictionary<Type, Func<ILoggerFactory, IRanker>> _rankers = new()
 	{
-		[typeof(MART)] = (loggerFactory) => new MART(loggerFactory.CreateLogger<MART>()),
-		[typeof(RankNet)] = (loggerFactory) => new RankNet(loggerFactory.CreateLogger<RankNet>()),
-		[typeof(RankBoost)] = (loggerFactory) => new RankBoost(loggerFactory.CreateLogger<RankBoost>()),
-		[typeof(AdaRank)] = (loggerFactory) => new AdaRank(loggerFactory.CreateLogger<AdaRank>()),
-		[typeof(CoorAscent)] = (loggerFactory) => new CoorAscent(loggerFactory.CreateLogger<CoorAscent>()),
-		[typeof(LambdaRank)] = (loggerFactory) => new LambdaRank(loggerFactory.CreateLogger<LambdaRank>()),
-		[typeof(LambdaMART)] = (loggerFactory) => new LambdaMART(loggerFactory.CreateLogger<LambdaMART>()),
-		[typeof(ListNet)] = (loggerFactory) => new ListNet(loggerFactory.CreateLogger<ListNet>()),
-		[typeof(RFRanker)] = (loggerFactory) => new RFRanker(loggerFactory),
-		[typeof(LinearRegRank)] = (loggerFactory) => new LinearRegRank(loggerFactory.CreateLogger<LinearRegRank>()),
+		[typeof(MART)] = loggerFactory => new MART(loggerFactory.CreateLogger<MART>()),
+		[typeof(RankNet)] = loggerFactory => new RankNet(loggerFactory.CreateLogger<RankNet>()),
+		[typeof(RankBoost)] = loggerFactory => new RankBoost(loggerFactory.CreateLogger<RankBoost>()),
+		[typeof(AdaRank)] = loggerFactory => new AdaRank(loggerFactory.CreateLogger<AdaRank>()),
+		[typeof(CoorAscent)] = loggerFactory => new CoorAscent(loggerFactory.CreateLogger<CoorAscent>()),
+		[typeof(LambdaRank)] = loggerFactory => new LambdaRank(loggerFactory.CreateLogger<LambdaRank>()),
+		[typeof(LambdaMART)] = loggerFactory => new LambdaMART(loggerFactory.CreateLogger<LambdaMART>()),
+		[typeof(ListNet)] = loggerFactory => new ListNet(loggerFactory.CreateLogger<ListNet>()),
+		[typeof(RFRanker)] = loggerFactory => new RFRanker(loggerFactory),
+		[typeof(LinearRegRank)] = loggerFactory => new LinearRegRank(loggerFactory.CreateLogger<LinearRegRank>()),
 	};
 
 	public RankerFactory(ILoggerFactory? loggerFactory = null)
@@ -56,9 +56,7 @@ public class RankerFactory
 		where TRankerParameters : IRankerParameters
 	{
 		if (!_rankers.TryAdd(typeof(TRanker), factory))
-		{
 			throw new ArgumentException($"Ranker of type '{typeof(TRanker).Name}' is already registered.");
-		}
 	}
 
 	public IRanker CreateRanker(RankerType type) => CreateRanker(type.GetRankerType());
@@ -67,14 +65,19 @@ public class RankerFactory
 		where TRanker : IRanker
 	{
 		if (!_rankers.TryGetValue(typeof(TRanker), out var factory))
-			throw new ArgumentException($"Ranker of type '{typeof(TRanker)}' is not registered.");
+			throw new ArgumentException($"Ranker of type '{typeof(TRanker).Name}' is not registered.");
+
 		return (TRanker)factory(_loggerFactory);
 	}
 
 	public IRanker CreateRanker(Type rankerType)
 	{
+		if (!typeof(IRanker).IsAssignableFrom(rankerType))
+			throw new ArgumentException($"Ranker of type '{rankerType.Name}' is not a ranker. It must implement {typeof(IRanker<>).FullName}.", nameof(rankerType));
+
 		if (!_rankers.TryGetValue(rankerType, out var factory))
-			throw new ArgumentException($"Ranker of type '{rankerType}' is not registered.");
+			throw new ArgumentException($"Ranker of type '{rankerType.Name}' is not registered.", nameof(rankerType));
+
 		return factory(_loggerFactory);
 	}
 
@@ -94,10 +97,7 @@ public class RankerFactory
 
 	public IRanker CreateRanker(Type rankerType, List<RankList> samples, int[] features, MetricScorer scorer, IRankerParameters? parameters = default)
 	{
-		if (!_rankers.TryGetValue(rankerType, out var factory))
-			throw new ArgumentException($"Ranker of type '{rankerType.Name}' is not registered.");
-
-		var ranker = factory(_loggerFactory);
+		var ranker = CreateRanker(rankerType);
 		ranker.Features = features;
 		ranker.Samples = samples;
 		ranker.Scorer = scorer;
@@ -132,13 +132,13 @@ public class RankerFactory
 		var endOfLine = modelSpan.IndexOfAny('\r', '\n');
 
 		if (endOfLine == -1)
-			throw new ArgumentException($"Invalid model '{model}'.");
+			throw new ArgumentException($"Invalid model '{model}'.", nameof(model));
 
 		var firstLine = modelSpan.Slice(0, endOfLine);
 		var lastHash = firstLine.LastIndexOf('#');
 
 		if (lastHash == -1)
-			throw new ArgumentException($"Expected to find model name on first line, but found '{firstLine}'.");
+			throw new ArgumentException($"Expected to find model name on first line, but found '{firstLine}'.", nameof(model));
 
 		var rankerName = firstLine.Slice(lastHash + 1).Trim().ToString();
 		_logger.LogInformation("Model: {RankerName}", rankerName);

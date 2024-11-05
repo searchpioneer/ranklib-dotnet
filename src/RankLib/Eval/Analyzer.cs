@@ -26,7 +26,7 @@ public partial class Analyzer
 		public int Status = 0;
 		public int Win = 0;
 		public int Loss = 0;
-		public int[] CountByImprovementRange;
+		public int[] CountByImprovementRange = [];
 	}
 
 	private int LocateSegment(double value)
