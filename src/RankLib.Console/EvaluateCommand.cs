@@ -82,13 +82,13 @@ public class EvaluateCommandOptions : ICommandOptions
 public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOptionsHandler>
 {
 	public EvaluateCommand()
-	: base("eval", "evaluate")
+	: base("eval", "Trains and evaluates a ranker, or evaluates a previously saved ranker model.")
 	{
 		AddOption(new Option<FileInfo>("--train", "Training data file").ExistingOnly());
 		AddOption(new Option<RankerType>("--ranker", () => RankerType.CoordinateAscent, "Ranking algorithm to use"));
 		AddOption(new Option<FileInfo>("--feature", "Feature description file: list features to be considered by the learner, each on a separate line. If not specified, all features will be used.").ExistingOnly());
-		AddOption(new Option<string>("--metric2t", () => "ERR@10", "Metric to optimize on the training data"));
-		AddOption(new Option<double?>("--gmax", "Highest judged relevance label"));
+		AddOption(new Option<string>("--metric2t", () => "ERR@10", "Metric to optimize on the training data. Supported: MAP, NDCG@k, DCG@k, P@k, RR@k, ERR@k."));
+		AddOption(new Option<double?>("--gmax", "Highest judged relevance label. It affects the calculation of ERR (default=4, i.e. 5-point scale {0,1,2,3,4} where value used is 2^gmax)"));
 		AddOption(new Option<FileInfo>("--qrel", "TREC-style relevance judgment file").ExistingOnly());
 		AddOption(new Option<bool>("--missingZero", "Substitute zero for missing feature values rather than throwing an exception."));
 		AddOption(new Option<FileInfo>("--validate", "Specify if you want to tune your system on the validation data (default=unspecified)").ExistingOnly());
@@ -97,7 +97,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 
 		AddOption(new Option<IEnumerable<FileInfo>>("--test", "Specify if you want to evaluate the trained model on this data (default=unspecified)").ExistingOnly());
 		AddOption(new Option<float>("--tts", "Set train-test split to be (x)(1.0-x). -tts will override -tvs"));
-		AddOption(new Option<string>("--metric2T", "Metric to evaluate on the test data (default to the same as specified for -metric2t)"));
+		AddOption(new Option<string>("--metric2T", "Metric to evaluate on the test data (default to the same as specified for --metric2t)"));
 		AddOption(new Option<NormalizerType>("--norm", "Type of normalizer to use to normalize all feature vectors (default=no-normalization)"));
 
 		AddOption(new Option<int>("--kcv", () => -1, "Specify if you want to perform k-fold cross validation using the specified training data (default=NoCV)"));
@@ -109,32 +109,45 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<FileInfo>("--rank", "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
 		AddOption(new Option<FileInfo>("--indri", "Indri ranking file").ExistingOnly());
 		AddOption(new Option<bool>("--sparse", "Use sparse representation"));
-		AddOption(new Option<FileInfo>("--idv", "Per-ranked list model performance (in test metric). Has to be used with -test").ExistingOnly());
-		AddOption(new Option<FileInfo>("--score", "TODO"));
-		AddOption(new Option<int?>("--epoch", "TODO"));
-		AddOption(new Option<int?>("--layer", "TODO: layer count"));
-		AddOption(new Option<int?>("--node", "TODO: node count"));
-		AddOption(new Option<double?>("--lr", "TODO: Learning rate"));
-		AddOption(new Option<int?>("--tc", "TODO: Learning rate"));
+		AddOption(new Option<FileInfo>("--idv", "Per-ranked list model performance (in test metric). Has to be used with --test").ExistingOnly());
+		AddOption(new Option<FileInfo>("--score", "Store ranker's score for each object being ranked (has to be used with --rank)"));
 
+		// RankNet specific parameters
+		AddOption(new Option<int?>("--epoch", "The number of epochs to train"));
+		AddOption(new Option<int?>("--layer", "The number of hidden layers"));
+		AddOption(new Option<int?>("--node", "The number of hidden nodes per layer"));
+		AddOption(new Option<double?>("--lr", "Learning rate"));
 
-		AddOption(new Option<bool?>("--noeq", "TODO: AdaRank train with enqueue"));
-		AddOption(new Option<int?>("--max", "TODO: AdaRank max select count"));
-		AddOption(new Option<int?>("--r", "TODO: CoorAscent restart"));
-		AddOption(new Option<int?>("--i", "TODO: CoorAscent max iteration"));
-		AddOption(new Option<int?>("--round", "TODO: AdaRank / RankBoost NIteration"));
-		AddOption(new Option<double?>("--reg", "TODO: CoorAscent regularization"));
-		AddOption(new Option<double?>("--tolerance", "TODO: AdaRank / CoorAscent tolerance"));
+		// MART / LambdaMART / RankBoost specific parameters
+		AddOption(new Option<int?>("--tc", "Number of threshold candidates to search or for tree splitting. -1 to use all feature values"));
 
-		AddOption(new Option<int?>("--tree", "TODO: Number of trees"));
-		AddOption(new Option<int?>("--leaf", "TODO: Number of leaves"));
-		AddOption(new Option<float?>("--shrinkage", "TODO: Learning Rate"));
-		AddOption(new Option<int?>("--mls", "Min leaf support. minimum #samples each leaf has to contain (default=1)"));
+		// RankBoost / AdaRank specific parameters
+		AddOption(new Option<int?>("--round", "The number of rounds to train"));
+
+		// AdaRank specific parameters
+		AddOption(new Option<bool?>("--noeq", "Train without enqueuing too-strong features"));
+		AddOption(new Option<int?>("--max", "The maximum number of times can a feature be consecutively selected without changing performance"));
+
+		// AdaRank / Coordinate Ascent specific parameters
+		AddOption(new Option<double?>("--tolerance", "Tolerance between two consecutive rounds of learning"));
+
+		// Coordinate Ascent specific parameters
+		AddOption(new Option<int?>("--r", "The number of random restarts"));
+		AddOption(new Option<int?>("--i", "The number of iterations to search in each dimension"));
+		AddOption(new Option<double?>("--reg", "Regularization parameter"));
+
+		// MART / LambdaMART specific parameters
+		AddOption(new Option<int?>("--tree", "Number of trees"));
+		AddOption(new Option<int?>("--leaf", "Number of leaves for each tree"));
+		AddOption(new Option<float?>("--shrinkage", "Shrinkage, or learning rate"));
+		AddOption(new Option<int?>("--mls", "Min leaf support -- minimum #samples each leaf has to contain"));
 		AddOption(new Option<int?>("--estop", "Stop early when no improvement is observed on validation data in e consecutive rounds (default=100)"));
+
+		// Random Forests specific parameters
 		AddOption(new Option<int?>("--bag", "Number of bags (default=300)"));
 		AddOption(new Option<float?>("--srate", () => RFRankerParameters.DefaultSubSamplingRate, "Sub-sampling rate"));
 		AddOption(new Option<float?>("--frate", () => RFRankerParameters.DefaultFeatureSamplingRate, "Feature sampling rate"));
-		AddOption(new Option<RankerType?>("--rtype", "RfRanker ranker type to bag. Random Forests only support MART/LambdaMART"));
+		AddOption(new Option<RankerType?>("--rtype", "Random Forests ranker type to bag. Random Forests only support MART/LambdaMART"));
 		AddOption(new Option<double?>("--L2", "TODO: Lambda"));
 		AddOption(new Option<bool?>("--hr", "TODO: Must Have Relevance Doc"));
 		AddOption(new Option<int?>(
