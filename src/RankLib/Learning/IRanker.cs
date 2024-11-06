@@ -47,7 +47,7 @@ public interface IRanker
 		return rankedRankLists;
 	}
 
-	void Save(string modelFile);
+	Task SaveAsync(string modelFile);
 
 	double GetScoreOnTrainingData();
 }

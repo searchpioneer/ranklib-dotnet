@@ -468,7 +468,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 				//- models won't be saved if kcvModelDir=""   [OBSOLETE]
 				//- Models saved if EITHER kcvmd OR kcvmn defined.  Use default names for missing values.
-				await evaluator.Evaluate(
+				await evaluator.EvaluateAsync(
 					rankerType,
 					trainFile.FullName,
 					featureDescriptionFile?.FullName,
@@ -482,7 +482,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			{
 				if (ttSplit > 0.0)
 				{
-					await evaluator.Evaluate(
+					await evaluator.EvaluateAsync(
 						rankerType,
 						trainFile.FullName,
 						validationFile?.FullName,
@@ -493,7 +493,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				}
 				else if (tvSplit > 0.0)
 				{
-					await evaluator.Evaluate(
+					await evaluator.EvaluateAsync(
 						rankerType,
 						trainFile.FullName,
 						tvSplit,
@@ -504,7 +504,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				}
 				else
 				{
-					await evaluator.Evaluate(
+					await evaluator.EvaluateAsync(
 						rankerType,
 						trainFile.FullName,
 						validationFile?.FullName,

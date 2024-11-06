@@ -105,19 +105,11 @@ public abstract class Ranker : IRanker
 		return rankedRankLists;
 	}
 
-	public void Save(string modelFile)
+	public async Task SaveAsync(string modelFile)
 	{
-		try
-		{
-			var directory = Path.GetDirectoryName(Path.GetFullPath(modelFile));
-			Directory.CreateDirectory(directory!);
-		}
-		catch (Exception e)
-		{
-			throw RankLibException.Create($"Error creating directory for model file '{modelFile}'", e);
-		}
-
-		FileUtils.Write(modelFile, Encoding.ASCII, Model);
+		var directory = Path.GetDirectoryName(Path.GetFullPath(modelFile));
+		Directory.CreateDirectory(directory!);
+		await File.WriteAllTextAsync(modelFile, Model, Encoding.ASCII);
 	}
 
 	/// <summary>

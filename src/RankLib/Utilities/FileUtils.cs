@@ -29,16 +29,4 @@ public static class FileUtils
 			throw new InvalidOperationException("Error reading file", e);
 		}
 	}
-
-	public static void Write(string filename, Encoding encoding, string content)
-	{
-		try
-		{
-			File.WriteAllText(filename, content, encoding);
-		}
-		catch (Exception e)
-		{
-			throw RankLibException.Create("Error writing to file", e);
-		}
-	}
 }

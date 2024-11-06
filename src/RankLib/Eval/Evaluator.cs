@@ -92,7 +92,7 @@ public class Evaluator
 		return _testScorer.Score(rankedList);
 	}
 
-	public async Task Evaluate(
+	public async Task EvaluateAsync(
 		Type rankerType,
 		string trainFile,
 		string? validationFile,
@@ -129,12 +129,12 @@ public class Evaluator
 
 		if (!string.IsNullOrEmpty(modelFile))
 		{
-			ranker.Save(modelFile);
+			await ranker.SaveAsync(modelFile);
 			_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 		}
 	}
 
-	public Task Evaluate<TRanker, TRankerParameters>(
+	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string trainFile,
 		string? validationFile,
 		string? testFile,
@@ -143,9 +143,9 @@ public class Evaluator
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		Evaluate(typeof(TRanker), trainFile, validationFile, testFile, featureDefFile, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), trainFile, validationFile, testFile, featureDefFile, modelFile, parameters);
 
-	public async Task Evaluate(
+	public async Task EvaluateAsync(
 		Type rankerType,
 		string sampleFile,
 		string? validationFile,
@@ -170,12 +170,12 @@ public class Evaluator
 
 		if (!string.IsNullOrEmpty(modelFile))
 		{
-			ranker.Save(modelFile);
+			await ranker.SaveAsync(modelFile);
 			_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 		}
 	}
 
-	public Task Evaluate<TRanker, TRankerParameters>(
+	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string? validationFile,
 		string featureDefFile,
@@ -184,9 +184,9 @@ public class Evaluator
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		Evaluate(typeof(TRanker), sampleFile, validationFile, featureDefFile, percentTrain, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, validationFile, featureDefFile, percentTrain, modelFile, parameters);
 
-	public async Task Evaluate(
+	public async Task EvaluateAsync(
 		Type rankerType,
 		string trainFile,
 		double percentTrain,
@@ -214,12 +214,12 @@ public class Evaluator
 
 		if (!string.IsNullOrEmpty(modelFile))
 		{
-			ranker.Save(modelFile);
+			await ranker.SaveAsync(modelFile);
 			_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 		}
 	}
 
-	public Task Evaluate<TRanker, TRankerParameters>(
+	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string trainFile,
 		double percentTrain,
 		string? testFile,
@@ -228,9 +228,9 @@ public class Evaluator
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		Evaluate(typeof(TRanker), trainFile, percentTrain, testFile, featureDefFile, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), trainFile, percentTrain, testFile, featureDefFile, modelFile, parameters);
 
-	public Task Evaluate<TRanker, TRankerParameters>(
+	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string featureDefFile,
 		int nFold,
@@ -239,9 +239,9 @@ public class Evaluator
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		Evaluate(typeof(TRanker), sampleFile, featureDefFile, nFold, -1, modelDir, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, featureDefFile, nFold, -1, modelDir, modelFile, parameters);
 
-	public async Task Evaluate(
+	public async Task EvaluateAsync(
 		Type rankerType,
 		string sampleFile,
 		string? featureDefFile,
@@ -269,9 +269,10 @@ public class Evaluator
 			}
 		}
 
-		double scoreOnTrain = 0.0, scoreOnTest = 0.0, totalScoreOnTest = 0.0;
+		var scoreOnTrain = 0.0;
+		var scoreOnTest = 0.0;
+		var totalScoreOnTest = 0.0;
 		var totalTestSampleSize = 0;
-
 		var scores = new double[nFold][];
 
 		for (var i = 0; i < nFold; i++)
@@ -296,7 +297,7 @@ public class Evaluator
 			if (!string.IsNullOrEmpty(modelDir))
 			{
 				var foldModelFile = Path.Combine(modelDir, $"f{i + 1}.{modelFile}");
-				ranker.Save(foldModelFile);
+				await ranker.SaveAsync(foldModelFile);
 				_logger.LogInformation($"Fold-{i + 1} model saved to: {foldModelFile}");
 			}
 		}
@@ -311,7 +312,7 @@ public class Evaluator
 		_logger.LogInformation($"Total\t|   \t\t|  {Math.Round(totalScoreOnTest / totalTestSampleSize, 4)}\t");
 	}
 
-	public Task Evaluate<TRanker, TRankerParameters>(
+	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string? featureDefFile,
 		int nFold,
@@ -321,7 +322,7 @@ public class Evaluator
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		Evaluate(typeof(TRanker), sampleFile, featureDefFile, nFold, tvs, modelDir, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, featureDefFile, nFold, tvs, modelDir, modelFile, parameters);
 
 	public void Test(string testFile)
 	{
