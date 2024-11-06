@@ -18,6 +18,12 @@ public class ListNetParameters : RankNetParameters
 	}
 }
 
+/// <summary>
+/// ListNet is a listwise learning-to-rank algorithm that optimizes a neural network by
+/// considering the entire ranked list of documents as a complete instance, rather than
+/// pairs or individual documents. It employs a probabilistic approach using permutation
+/// probability distributions to model the ranking.
+/// </summary>
 public class ListNet : RankNet
 {
 	internal new const string RankerName = "ListNet";
@@ -49,7 +55,9 @@ public class ListNet : RankNet
 	{
 		// Back-propagate
 		var p = new PropParameter(labels);
-		OutputLayer.ComputeDelta(p); // Starting at the output layer
+
+		// Starting at the output layer
+		OutputLayer.ComputeDelta(p);
 
 		// Weight update
 		OutputLayer.UpdateWeight(p);
@@ -115,22 +123,20 @@ public class ListNet : RankNet
 
 			PrintLog([7, 14], [i.ToString(), SimpleMath.Round(_error, 6).ToString(CultureInfo.InvariantCulture)]);
 
-			if (i % 1 == 0)
-			{
-				ScoreOnTrainingData = Scorer.Score(Rank(Samples));
-				PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
+			ScoreOnTrainingData = Scorer.Score(Rank(Samples));
+			PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
 
-				if (ValidationSamples != null)
+			if (ValidationSamples != null)
+			{
+				var score = Scorer.Score(Rank(ValidationSamples));
+				if (score > BestScoreOnValidationData)
 				{
-					var score = Scorer.Score(Rank(ValidationSamples));
-					if (score > BestScoreOnValidationData)
-					{
-						BestScoreOnValidationData = score;
-						SaveBestModelOnValidation();
-					}
-					PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
+					BestScoreOnValidationData = score;
+					SaveBestModelOnValidation();
 				}
+				PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
 			}
+
 			FlushLog();
 		}
 
