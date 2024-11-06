@@ -211,23 +211,17 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.MissingZero)
 			DataPoint.MissingZero = true;
 
-		if (options.GMax != null)
-		{
-			// TODO: Find a way to expose default parameters on Scorer factory
-			// ERRScorer.DefaultMax = Math.Pow(2, options.GMax.Value);
-		}
-
 		if (options.Epoch != null)
 		{
-			RankNetParameters.NIteration = options.Epoch.Value;
-			ListNetParameters.NIteration = options.Epoch.Value;
+			RankNetParameters.IterationCount = options.Epoch.Value;
+			ListNetParameters.IterationCount = options.Epoch.Value;
 		}
 
 		if (options.Layer != null)
-			RankNetParameters.NHiddenLayer = options.Layer.Value;
+			RankNetParameters.HiddenLayerCount = options.Layer.Value;
 
 		if (options.Node != null)
-			RankNetParameters.NHiddenNodePerLayer = options.Node.Value;
+			RankNetParameters.HiddenNodePerLayerCount = options.Node.Value;
 
 		if (options.Lr != null)
 		{
@@ -237,26 +231,26 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Tc != null)
 		{
-			RankBoostParameters.NThreshold = options.Tc.Value;
-			LambdaMARTParameters.nThreshold = options.Tc.Value;
+			RankBoostParameters.Threshold = options.Tc.Value;
+			LambdaMARTParameters.Threshold = options.Tc.Value;
 		}
 
 		if (options.NoEq != null)
 			AdaRankParameters.TrainWithEnqueue = false;
 
 		if (options.Max != null)
-			AdaRankParameters.MaxSelCount = options.Max.Value;
+			AdaRankParameters.MaximumSelectedCount = options.Max.Value;
 
 		if (options.R != null)
 			CoorAscentParameters.RandomRestartCount = options.R.Value;
 
 		if (options.I != null)
-			CoorAscentParameters.MaxIterationCount = options.I.Value;
+			CoorAscentParameters.MaximumIterationCount = options.I.Value;
 
 		if (options.Round != null)
 		{
-			RankBoostParameters.NIteration = options.Round.Value;
-			AdaRankParameters.NIteration = options.Round.Value;
+			RankBoostParameters.IterationCount = options.Round.Value;
+			AdaRankParameters.IterationCount = options.Round.Value;
 		}
 
 		if (options.Reg != null)
@@ -273,39 +267,39 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Tree != null)
 		{
-			LambdaMARTParameters.nTrees = options.Tree.Value;
-			RfRankerParameters.nTrees = LambdaMARTParameters.nTrees;
+			LambdaMARTParameters.TreeCount = options.Tree.Value;
+			RfRankerParameters.TreeCount = LambdaMARTParameters.TreeCount;
 		}
 
 		if (options.Leaf != null)
 		{
-			LambdaMARTParameters.nTreeLeaves = options.Leaf.Value;
-			RfRankerParameters.nTreeLeaves = LambdaMARTParameters.nTreeLeaves;
+			LambdaMARTParameters.TreeLeavesCount = options.Leaf.Value;
+			RfRankerParameters.TreeLeavesCount = LambdaMARTParameters.TreeLeavesCount;
 		}
 
 		if (options.Shrinkage != null)
 		{
-			LambdaMARTParameters.learningRate = options.Shrinkage.Value;
-			RfRankerParameters.learningRate = LambdaMARTParameters.learningRate;
+			LambdaMARTParameters.LearningRate = options.Shrinkage.Value;
+			RfRankerParameters.LearningRate = LambdaMARTParameters.LearningRate;
 		}
 
 		if (options.Mls != null)
 		{
-			LambdaMARTParameters.minLeafSupport = options.Mls.Value;
-			RfRankerParameters.minLeafSupport = LambdaMARTParameters.minLeafSupport;
+			LambdaMARTParameters.MinimumLeafSupport = options.Mls.Value;
+			RfRankerParameters.MinimumLeafSupport = LambdaMARTParameters.MinimumLeafSupport;
 		}
 
 		if (options.EStop != null)
-			LambdaMARTParameters.nRoundToStopEarly = options.EStop.Value;
+			LambdaMARTParameters.StopEarlyRoundCount = options.EStop.Value;
 
 		if (options.Bag != null)
-			RfRankerParameters.nBag = options.Bag.Value;
+			RfRankerParameters.BagCount = options.Bag.Value;
 
 		if (options.SRate != null)
-			RfRankerParameters.subSamplingRate = options.SRate.Value;
+			RfRankerParameters.SubSamplingRate = options.SRate.Value;
 
 		if (options.FRate != null)
-			RfRankerParameters.featureSamplingRate = options.FRate.Value;
+			RfRankerParameters.FeatureSamplingRate = options.FRate.Value;
 
 		if (options.RType != null)
 		{
@@ -315,7 +309,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 					$"{options.RType} cannot be bagged. Random Forests only supports MART/LambdaMART.");
 			}
 
-			RfRankerParameters.rType = options.RType.Value;
+			RfRankerParameters.RankerType = options.RType.Value;
 		}
 
 		if (options.L2 != null)
@@ -328,34 +322,67 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		Normalizer? normalizer = null;
 		if (options.Norm != null)
 		{
-			normalizer = options.Norm switch
+			switch (options.Norm)
 			{
-				NormalizerType.Sum => SumNormalizer.Instance,
-				NormalizerType.ZScore => new ZScoreNormalizer(),
-				NormalizerType.Linear => new LinearNormalizer(),
-				_ => throw RankLibException.Create("Unknown normalizer: " + options.Norm)
-			};
+				case NormalizerType.Sum:
+					normalizer = SumNormalizer.Instance;
+					break;
+				case NormalizerType.ZScore:
+					normalizer = new ZScoreNormalizer();
+					break;
+				case NormalizerType.Linear:
+					normalizer = new LinearNormalizer();
+					break;
+				default:
+					logger.LogCritical("Unknown normalizer: {Normalizer}", options.Norm);
+					return 1;
+			}
 		}
 
-		var (rankerType, rankerParameters) = options.Ranker switch
+		Type? rankerType;
+		IRankerParameters? rankerParameters;
+		switch (options.Ranker)
 		{
-			RankerType.MART => (typeof(MART), (IRankerParameters)LambdaMARTParameters),
-			RankerType.RankBoost => (typeof(RankBoost), RankBoostParameters),
-			RankerType.RankNet => (typeof(RankNet), RankNetParameters),
-			RankerType.AdaRank => (typeof(AdaRank), AdaRankParameters),
-			RankerType.CoordinateAscent => (typeof(CoorAscent), CoorAscentParameters),
-			RankerType.LambdaRank => (typeof(LambdaRank), RankNetParameters),
-			RankerType.LambdaMART => (typeof(LambdaMART), LambdaMARTParameters),
-			RankerType.ListNet => (typeof(ListNet), ListNetParameters),
-			RankerType.RandomForests => (typeof(RFRanker), RfRankerParameters),
-			RankerType.LinearRegression => (typeof(LinearRegRank), LinearRegRankParameters),
-			_ => throw new ArgumentOutOfRangeException()
-		};
+			case RankerType.MART:
+				(rankerType, rankerParameters) = (typeof(MART), LambdaMARTParameters);
+				break;
+			case RankerType.RankBoost:
+				(rankerType, rankerParameters) = (typeof(RankBoost), RankBoostParameters);
+				break;
+			case RankerType.RankNet:
+				(rankerType, rankerParameters) = (typeof(RankNet), RankNetParameters);
+				break;
+			case RankerType.AdaRank:
+				(rankerType, rankerParameters) = (typeof(AdaRank), AdaRankParameters);
+				break;
+			case RankerType.CoordinateAscent:
+				(rankerType, rankerParameters) = (typeof(CoorAscent), CoorAscentParameters);
+				break;
+			case RankerType.LambdaRank:
+				(rankerType, rankerParameters) = (typeof(LambdaRank), RankNetParameters);
+				break;
+			case RankerType.LambdaMART:
+				(rankerType, rankerParameters) = (typeof(LambdaMART), LambdaMARTParameters);
+				break;
+			case RankerType.ListNet:
+				(rankerType, rankerParameters) = (typeof(ListNet), ListNetParameters);
+				break;
+			case RankerType.RandomForests:
+				(rankerType, rankerParameters) = (typeof(RFRanker), RfRankerParameters);
+				break;
+			case RankerType.LinearRegression:
+				(rankerType, rankerParameters) = (typeof(LinearRegRank), LinearRegRankParameters);
+				break;
+			default:
+				logger.LogCritical("Unknown ranker: {Ranker}", options.Ranker);
+				return 1;
+		}
 
 		var evaluator = _evaluatorFactory.CreateEvaluator(
 			trainMetric,
 			testMetric,
 			normalizer,
+			options.GMax,
 			options.Hr,
 			options.Sparse,
 			options.QRel?.FullName);
@@ -513,9 +540,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				}
 				else
 				{
-					throw RankLibException.Create(
-						"This function has been removed. Consider using -score in addition to " +
-						"your current parameters and do the ranking yourself based on these scores.");
+					logger.LogCritical("This function has been removed. Consider using -score in addition to " +
+					                   "your current parameters and do the ranking yourself based on these scores.");
+					return 1;
 				}
 			}
 			else

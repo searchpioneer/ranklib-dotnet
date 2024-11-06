@@ -6,6 +6,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// A datapoint
+/// </summary>
 public abstract class DataPoint
 {
 	public static int MaxFeature = 51;

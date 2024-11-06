@@ -11,6 +11,7 @@ public class Layer
 	/// Initializes a new instance of <see cref="Layer"/>.
 	/// </summary>
 	/// <param name="count">The number of neurons to add at this layer.</param>
+	/// <param name="learningRate">The learning rate</param>
 	public Layer(int count, double learningRate)
 	{
 		_neurons = new List<Neuron>(count);
@@ -23,6 +24,7 @@ public class Layer
 	/// </summary>
 	/// <param name="count">The number of neurons to add at this layer.</param>
 	/// <param name="neuronType">The type of neurons to add</param>
+	/// <param name="learningRate">The learning rate</param>
 	public Layer(int count, NeuronType neuronType, double learningRate)
 	{
 		_neurons = new List<Neuron>(count);

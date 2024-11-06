@@ -100,7 +100,7 @@ public class FeatureStats
 	public void WriteFeatureStats()
 	{
 		SortedDictionary<int, int>? featureFrequencies = null;
-		string? modelName = null;
+		string? modelName;
 
 		try
 		{
@@ -120,9 +120,7 @@ public class FeatureStats
 			};
 
 			if (string.IsNullOrEmpty(modelName))
-			{
 				throw new Exception($"Expected to find model name on first line, but found {modelLine}");
-			}
 
 			// Handle models that use all features
 			if (ModelsThatUseAllFeatures.Contains(modelName))
@@ -133,14 +131,10 @@ public class FeatureStats
 
 			// Feature:Weight models
 			if (FeatureWeightModels.Contains(modelName))
-			{
 				featureFrequencies = GetFeatureWeightFeatureFrequencies(reader);
-			}
 			// Tree models
 			else if (TreeModels.Contains(modelName))
-			{
 				featureFrequencies = GetTreeFeatureFrequencies(reader);
-			}
 		}
 		catch (IOException exception)
 		{
@@ -148,9 +142,7 @@ public class FeatureStats
 		}
 
 		if (featureFrequencies is null)
-		{
 			throw new Exception("No feature frequencies defined.");
-		}
 
 		// Calculate feature statistics
 		var featuresUsed = featureFrequencies.Count;

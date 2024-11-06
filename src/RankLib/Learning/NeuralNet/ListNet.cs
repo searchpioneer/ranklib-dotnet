@@ -12,8 +12,8 @@ public class ListNetParameters : RankNetParameters
 	public ListNetParameters()
 	{
 		// FIXED, it doesn't work with hidden layer
-		NHiddenLayer = 0;
-		NIteration = 1500;
+		HiddenLayerCount = 0;
+		IterationCount = 1500;
 		LearningRate = 0.00001;
 	}
 }
@@ -104,7 +104,7 @@ public class ListNet : RankNet
 		_logger.LogInformation("Training starts...");
 		PrintLogLn([7, 14, 9, 9], ["#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V"]);
 
-		for (var i = 1; i <= Parameters.NIteration; i++)
+		for (var i = 1; i <= Parameters.IterationCount; i++)
 		{
 			for (var j = 0; j < Samples.Count; j++)
 			{
@@ -157,7 +157,7 @@ public class ListNet : RankNet
 		{
 			var output = new StringBuilder();
 			output.Append($"## {Name}\n");
-			output.Append($"## Epochs = {Parameters.NIteration}\n");
+			output.Append($"## Epochs = {Parameters.IterationCount}\n");
 			output.Append($"## No. of features = {Features.Length}\n");
 
 			// Print used features

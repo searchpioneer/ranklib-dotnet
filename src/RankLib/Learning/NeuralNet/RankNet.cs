@@ -12,16 +12,31 @@ namespace RankLib.Learning.NeuralNet;
 /// </summary>
 public class RankNetParameters : IRankerParameters
 {
-	public int NIteration { get; set; } = 100;
-	public int NHiddenLayer { get; set; } = 1;
-	public int NHiddenNodePerLayer { get; set; } = 10;
+	/// <summary>
+	/// Number of iterations (epochs).
+	/// </summary>
+	public int IterationCount { get; set; } = 100;
+
+	/// <summary>
+	/// Number of hidden layers
+	/// </summary>
+	public int HiddenLayerCount { get; set; } = 1;
+
+	/// <summary>
+	/// Number of hidden nodes per layer
+	/// </summary>
+	public int HiddenNodePerLayerCount { get; set; } = 10;
+
+	/// <summary>
+	/// The learning rate.
+	/// </summary>
 	public double LearningRate { get; set; } = 0.00005;
 
 	public void Log(ILogger logger)
 	{
-		logger.LogInformation($"No. of epochs: {NIteration}");
-		logger.LogInformation($"No. of hidden layers: {NHiddenLayer}");
-		logger.LogInformation($"No. of hidden nodes per layer: {NHiddenNodePerLayer}");
+		logger.LogInformation($"No. of epochs: {IterationCount}");
+		logger.LogInformation($"No. of hidden layers: {HiddenLayerCount}");
+		logger.LogInformation($"No. of hidden nodes per layer: {HiddenNodePerLayerCount}");
 		logger.LogInformation($"Learning rate: {LearningRate}");
 	}
 }
@@ -240,8 +255,8 @@ public class RankNet : Ranker<RankNetParameters>
 		_logger.LogInformation("Initializing...");
 
 		SetInputOutput(Features.Length, 1);
-		for (var i = 0; i < Parameters.NHiddenLayer; i++)
-			AddHiddenLayer(Parameters.NHiddenNodePerLayer);
+		for (var i = 0; i < Parameters.HiddenLayerCount; i++)
+			AddHiddenLayer(Parameters.HiddenNodePerLayerCount);
 
 		Wire();
 
@@ -269,7 +284,7 @@ public class RankNet : Ranker<RankNetParameters>
 			["#epoch", "% mis-ordered", Scorer.Name + "-T", Scorer.Name + "-V"]);
 		PrintLogLn([7, 14, 9, 9], [" ", "  pairs", " ", " "]);
 
-		for (var i = 1; i <= Parameters.NIteration; i++)
+		for (var i = 1; i <= Parameters.IterationCount; i++)
 		{
 			for (var j = 0; j < Samples.Count; j++)
 			{
@@ -359,7 +374,7 @@ public class RankNet : Ranker<RankNetParameters>
 		{
 			var output = new StringBuilder();
 			output.AppendLine($"## {Name}");
-			output.AppendLine($"## Epochs = {Parameters.NIteration}");
+			output.AppendLine($"## Epochs = {Parameters.IterationCount}");
 			output.AppendLine($"## No. of features = {Features.Length}");
 			output.AppendLine($"## No. of hidden layers = {_layers.Count - 2}");
 			for (var i = 1; i < _layers.Count - 1; i++)

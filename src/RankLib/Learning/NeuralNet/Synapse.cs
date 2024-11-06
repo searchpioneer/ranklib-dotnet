@@ -21,7 +21,8 @@ public class Synapse
 		Target = target;
 		Source.OutLinks.Add(this);
 		Target.InLinks.Add(this);
-		Weight = (ThreadsafeSeedableRandom.Shared.Next(2) == 0 ? 1 : -1) * ThreadsafeSeedableRandom.Shared.NextDouble() / 10;
+		Weight = (ThreadsafeSeedableRandom.Shared.Next(2) == 0 ? 1 : -1) *
+			ThreadsafeSeedableRandom.Shared.NextDouble() / 10;
 	}
 
 	/// <summary>

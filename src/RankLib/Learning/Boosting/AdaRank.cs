@@ -12,21 +12,32 @@ namespace RankLib.Learning.Boosting;
 /// </summary>
 public class AdaRankParameters : IRankerParameters
 {
-	public int NIteration { get; set; } = 500;
+	/// <summary>
+	/// Number of iterations (rounds).
+	/// </summary>
+	public int IterationCount { get; set; } = 500;
+
+	/// <summary>
+	/// Tolerance
+	/// </summary>
 	public double Tolerance { get; set; } = 0.002;
+
+	/// <summary>
+	/// Whether to train with enqueue
+	/// </summary>
 	public bool TrainWithEnqueue { get; set; } = true;
 
 	/// <summary>
 	/// Max number of times a feature can be selected consecutively before being removed
 	/// </summary>
-	public int MaxSelCount { get; set; } = 5;
+	public int MaximumSelectedCount { get; set; } = 5;
 
 	public void Log(ILogger logger)
 	{
-		logger.LogInformation("No. of rounds: {NIteration}", NIteration);
+		logger.LogInformation("No. of rounds: {NIteration}", IterationCount);
 		logger.LogInformation("Train with 'enqueue': {TrainWithEnqueue}", TrainWithEnqueue ? "Yes" : "No");
 		logger.LogInformation("Tolerance: {Tolerance}", Tolerance);
-		logger.LogInformation("Max Sel. Count: {MaxSelCount}", MaxSelCount);
+		logger.LogInformation("Max Sel. Count: {MaxSelCount}", MaximumSelectedCount);
 	}
 }
 
@@ -107,7 +118,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 	{
 		var t = startIteration;
 
-		for (; t <= Parameters.NIteration; t++)
+		for (; t <= Parameters.IterationCount; t++)
 		{
 			PrintLog([7], [t.ToString()]);
 
@@ -176,7 +187,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 					if (_lastFeature == bestWeakRanker.Fid)
 					{
 						_lastFeatureConsecutiveCount++;
-						if (_lastFeatureConsecutiveCount == Parameters.MaxSelCount)
+						if (_lastFeatureConsecutiveCount == Parameters.MaximumSelectedCount)
 						{
 							status = "F. REM.";
 							_lastFeatureConsecutiveCount = 0;
@@ -313,10 +324,10 @@ public class AdaRank : Ranker<AdaRankParameters>
 		{
 			var output = new StringBuilder();
 			output.Append($"## {Name}\n");
-			output.Append($"## Iteration = {Parameters.NIteration}\n");
+			output.Append($"## Iteration = {Parameters.IterationCount}\n");
 			output.Append($"## Train with enqueue: {(Parameters.TrainWithEnqueue ? "Yes" : "No")}\n");
 			output.Append($"## Tolerance = {Parameters.Tolerance}\n");
-			output.Append($"## Max consecutive selection count = {Parameters.MaxSelCount}\n");
+			output.Append($"## Max consecutive selection count = {Parameters.MaximumSelectedCount}\n");
 			output.Append(ToString());
 			return output.ToString();
 		}

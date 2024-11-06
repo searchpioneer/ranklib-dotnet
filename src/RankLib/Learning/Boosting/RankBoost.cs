@@ -13,13 +13,20 @@ namespace RankLib.Learning.Boosting;
 /// </summary>
 public class RankBoostParameters : IRankerParameters
 {
-	public int NIteration { get; set; } = 300; // Number of rounds
-	public int NThreshold { get; set; } = 10;
+	/// <summary>
+	/// Number of iterations (rounds).
+	/// </summary>
+	public int IterationCount { get; set; } = 300;
+
+	/// <summary>
+	/// Number of threshold candidates
+	/// </summary>
+	public int Threshold { get; set; } = 10;
 
 	public void Log(ILogger logger)
 	{
-		logger.LogInformation("No. of rounds: {Rounds}", NIteration);
-		logger.LogInformation("No. of threshold candidates: {Candidates}", NThreshold);
+		logger.LogInformation("No. of rounds: {Rounds}", IterationCount);
+		logger.LogInformation("No. of threshold candidates: {Threshold}", Threshold);
 	}
 }
 
@@ -69,9 +76,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 	{
 		var score = new double[rankList.Count];
 		for (var i = 0; i < rankList.Count; i++)
-		{
 			score[i] = rankList[i].GetFeatureValue(fid);
-		}
+
 		return MergeSorter.Sort(score, false);
 	}
 
@@ -84,13 +90,11 @@ public class RankBoost : Ranker<RankBoostParameters>
 			{
 				var p = 0.0;
 				for (var k = j + 1; k < rankList.Count; k++)
-				{
 					p += _sweight[i][j][k];
-				}
+
 				for (var k = 0; k < j; k++)
-				{
 					p -= _sweight[i][k][j];
-				}
+
 				_potential[i][j] = p;
 			}
 		}
@@ -109,9 +113,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 			var last = new int[Samples.Count]; // The last "touched" (and taken) position in each sample rank list
 
 			for (var j = 0; j < Samples.Count; j++)
-			{
 				last[j] = -1;
-			}
 
 			var r = 0.0;
 			foreach (var element in idx)
@@ -132,9 +134,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 							last[k] = l;
 						}
 						else
-						{
 							break;
-						}
 					}
 				}
 
@@ -163,19 +163,19 @@ public class RankBoost : Ranker<RankBoostParameters>
 		for (var i = 0; i < Samples.Count; i++)
 		{
 			var rl = Samples[i];
-			var D_t = new double[rl.Count][];
+			var dT = new double[rl.Count][];
 
 			for (var j = 0; j < rl.Count - 1; j++)
 			{
-				D_t[j] = new double[rl.Count];
+				dT[j] = new double[rl.Count];
 
 				for (var k = j + 1; k < rl.Count; k++)
 				{
-					D_t[j][k] = _sweight[i][j][k] * Math.Exp(alphaT * (_wRankers.Last().Score(rl[k]) - _wRankers.Last().Score(rl[j])));
-					_zT += D_t[j][k]; // Sum the new weight for normalization
+					dT[j][k] = _sweight[i][j][k] * Math.Exp(alphaT * (_wRankers.Last().Score(rl[k]) - _wRankers.Last().Score(rl[j])));
+					_zT += dT[j][k]; // Sum the new weight for normalization
 				}
 			}
-			_sweight[i] = D_t;
+			_sweight[i] = dT;
 		}
 
 		// Normalize the weights to make sure it's a valid distribution
@@ -185,9 +185,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 			for (var j = 0; j < rl.Count - 1; j++)
 			{
 				for (var k = j + 1; k < rl.Count; k++)
-				{
 					_sweight[i][j][k] /= _zT; // Normalize by Z_t
-				}
 			}
 		}
 	}
@@ -206,9 +204,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 			for (var j = 0; j < rl.Count - 1; j++)
 			{
 				for (var k = rl.Count - 1; k >= j + 1 && rl[j].Label > rl[k].Label; k--)
-				{
 					_totalCorrectPairs++;
-				}
 			}
 		}
 
@@ -221,31 +217,23 @@ public class RankBoost : Ranker<RankBoostParameters>
 			{
 				_sweight[i][j] = new double[rl.Count];
 				for (var k = j + 1; k < rl.Count; k++)
-				{
 					_sweight[i][j][k] = rl[j].Label > rl[k].Label ? 1.0 / _totalCorrectPairs : 0.0;
-				}
 			}
 		}
 
 		_potential = new double[Samples.Count][];
 		for (var i = 0; i < Samples.Count; i++)
-		{
 			_potential[i] = new double[Samples[i].Count];
-		}
 
-		if (Parameters.NThreshold <= 0)
+		if (Parameters.Threshold <= 0)
 		{
 			var count = 0;
 			for (var i = 0; i < Samples.Count; i++)
-			{
 				count += Samples[i].Count;
-			}
 
 			_thresholds = new double[Features.Length][];
 			for (var i = 0; i < Features.Length; i++)
-			{
 				_thresholds[i] = new double[count];
-			}
 
 			var c = 0;
 			for (var i = 0; i < Samples.Count; i++)
@@ -254,9 +242,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 				for (var j = 0; j < rl.Count; j++)
 				{
 					for (var k = 0; k < Features.Length; k++)
-					{
 						_thresholds[k][c] = rl[j].GetFeatureValue(Features[k]);
-					}
+
 					c++;
 				}
 			}
@@ -290,30 +277,26 @@ public class RankBoost : Ranker<RankBoostParameters>
 			_thresholds = new double[Features.Length][];
 			for (var i = 0; i < Features.Length; i++)
 			{
-				var step = (Math.Abs(fmax[i] - fmin[i])) / Parameters.NThreshold;
-				_thresholds[i] = new double[Parameters.NThreshold + 1];
+				var step = (Math.Abs(fmax[i] - fmin[i])) / Parameters.Threshold;
+				_thresholds[i] = new double[Parameters.Threshold + 1];
 				_thresholds[i][0] = fmax[i];
-				for (var j = 1; j < Parameters.NThreshold; j++)
-				{
+				for (var j = 1; j < Parameters.Threshold; j++)
 					_thresholds[i][j] = _thresholds[i][j - 1] - step;
-				}
-				_thresholds[i][Parameters.NThreshold] = fmin[i] - 1.0E8;
+
+				_thresholds[i][Parameters.Threshold] = fmin[i] - 1.0E8;
 			}
 		}
 
 		_tSortedIdx = new int[Features.Length][];
 		for (var i = 0; i < Features.Length; i++)
-		{
 			_tSortedIdx[i] = MergeSorter.Sort(_thresholds[i], false);
-		}
 
 		for (var i = 0; i < Features.Length; i++)
 		{
 			var idx = new List<int[]>();
 			for (var j = 0; j < Samples.Count; j++)
-			{
 				idx.Add(Reorder(Samples[j], Features[i]));
-			}
+
 			_sortedSamples.Add(idx);
 		}
 
@@ -331,7 +314,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 			Scorer.Name + "-V"
 		]);
 
-		for (var t = 1; t <= Parameters.NIteration; t++)
+		for (var t = 1; t <= Parameters.IterationCount; t++)
 		{
 			UpdatePotential();
 			var wr = LearnWeakRanker();
@@ -397,9 +380,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 	{
 		var score = 0.0;
 		for (var j = 0; j < _wRankers.Count; j++)
-		{
 			score += _rWeight[j] * _wRankers[j].Score(dataPoint);
-		}
+
 		return score;
 	}
 
@@ -407,9 +389,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 	{
 		var output = new StringBuilder();
 		for (var i = 0; i < _wRankers.Count; i++)
-		{
 			output.Append($"{_wRankers[i]}:{_rWeight[i]}{(i == _rWeight.Count - 1 ? "" : " ")}");
-		}
+
 		return output.ToString();
 	}
 
@@ -419,8 +400,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 		{
 			var output = new StringBuilder();
 			output.Append($"## {Name}\n");
-			output.Append($"## Iteration = {Parameters.NIteration}\n");
-			output.Append($"## No. of threshold candidates = {Parameters.NThreshold}\n");
+			output.Append($"## Iteration = {Parameters.IterationCount}\n");
+			output.Append($"## No. of threshold candidates = {Parameters.Threshold}\n");
 			output.Append(ToString());
 			return output.ToString();
 		}
@@ -436,9 +417,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 			{
 				content = content.Trim();
 				if (content.Length == 0 || content.StartsWith("##"))
-				{
 					continue;
-				}
+
 				break;
 			}
 
@@ -470,9 +450,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 
 			Features = new int[_rWeight.Count];
 			for (var i = 0; i < _rWeight.Count; i++)
-			{
 				Features[i] = _wRankers[i].Fid;
-			}
 		}
 		catch (Exception ex)
 		{

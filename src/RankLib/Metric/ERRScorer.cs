@@ -19,7 +19,8 @@ public class ERRScorer : MetricScorer
 	public const double DefaultMax = 16;
 	public const int DefaultK = 10;
 
-	private readonly double _max;
+	public double Max { get; internal set; }
+
 	public ERRScorer() : this(DefaultK)
 	{
 	}
@@ -30,7 +31,7 @@ public class ERRScorer : MetricScorer
 
 	public ERRScorer(int k, double max)
 	{
-		_max = max;
+		Max = max;
 		K = k;
 	}
 
@@ -60,7 +61,7 @@ public class ERRScorer : MetricScorer
 
 	public override string Name => $"ERR@{K}";
 
-	private double R(int rel) => ((1 << rel) - 1) / _max; // (2^rel - 1)/MAX
+	private double R(int rel) => ((1 << rel) - 1) / Max; // (2^rel - 1)/MAX
 
 	public override double[][] SwapChange(RankList rankList)
 	{

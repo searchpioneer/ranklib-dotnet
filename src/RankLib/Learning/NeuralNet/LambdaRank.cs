@@ -3,6 +3,12 @@ using RankLib.Metric;
 
 namespace RankLib.Learning.NeuralNet;
 
+/// <summary>
+/// LambdaRank is a learning-to-rank algorithm that optimizes a neural network using
+/// gradient descent to directly maximize NDCG (Normalized Discounted Cumulative Gain).
+/// It extends <see cref="RankNet"/> by incorporating a weighted lambda gradient that accounts for
+/// the position-dependent NDCG gains between document pairs.
+/// </summary>
 public class LambdaRank : RankNet
 {
 	internal new const string RankerName = "LambdaRank";

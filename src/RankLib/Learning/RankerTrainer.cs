@@ -27,9 +27,9 @@ public class RankerTrainer
 	/// <param name="trainingSamples">The training samples.</param>
 	/// <param name="validationSamples">The validation samples.</param>
 	/// <param name="features">The features</param>
-	/// <param name="scorer"></param>
-	/// <param name="parameters"></param>
-	/// <returns></returns>
+	/// <param name="scorer">The scorer to use</param>
+	/// <param name="parameters">The ranking parameters</param>
+	/// <returns>A new instance of a trained <see cref="IRanker"/></returns>
 	public async Task<IRanker> TrainAsync(
 		Type rankerType,
 		List<RankList> trainingSamples,
@@ -45,6 +45,18 @@ public class RankerTrainer
 		return ranker;
 	}
 
+	/// <summary>
+	/// Trains a ranker using the provided training samples, and validates training using the validation samples.
+	/// </summary>
+	/// <param name="trainingSamples">The training samples.</param>
+	/// <param name="validationSamples">The validation samples.</param>
+	/// <param name="features">The features</param>
+	/// <param name="scorer">The scorer to use</param>
+	/// <param name="parameters">The ranking parameters</param>
+	/// <returns>A new instance of a trained <see cref="IRanker"/></returns>
+	/// <typeparam name="TRanker">The type of ranker</typeparam>
+	/// <typeparam name="TRankerParameters">The type of ranker parameters</typeparam>
+	/// <returns>A new instance of a trained <see cref="TRanker"/></returns>
 	public async Task<TRanker> TrainAsync<TRanker, TRankerParameters>(
 		List<RankList> trainingSamples,
 		List<RankList>? validationSamples,

@@ -7,7 +7,7 @@ public class Neuron
 	protected readonly double LearningRate;
 	protected readonly List<double> Outputs = [];
 
-	private readonly ITransferFunction _transferFunction = new LogisticFunction();
+	private readonly ITransferFunction _transferFunction;
 	private double _output;
 	private double _deltaI;
 	private double[] _deltasJ = [];
@@ -15,9 +15,10 @@ public class Neuron
 	public List<Synapse> InLinks { get; } = [];
 	public List<Synapse> OutLinks { get; } = [];
 
-	public Neuron(double learningRate)
+	public Neuron(double learningRate, ITransferFunction? transferFunction = null)
 	{
 		LearningRate = learningRate;
+		_transferFunction = transferFunction ?? new LogisticFunction();
 		_output = 0.0;
 	}
 

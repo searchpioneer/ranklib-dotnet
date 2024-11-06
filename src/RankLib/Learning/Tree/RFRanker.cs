@@ -8,6 +8,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
 
+/// <summary>
+/// Ranking parameters for <see cref="RFRanker"/>
+/// </summary>
 public class RFRankerParameters : IRankerParameters
 {
 	public const float DefaultFeatureSamplingRate = 0.3f;
@@ -15,26 +18,63 @@ public class RFRankerParameters : IRankerParameters
 
 	// Parameters
 	// [a] general bagging parameters
-	public int nBag { get; set; } = 300;
-	public float subSamplingRate { get; set; } = DefaultSubSamplingRate; // sampling of samples (*WITH* replacement)
-	public float featureSamplingRate { get; set; } = DefaultFeatureSamplingRate; // sampling of features (*WITHOUT* replacement)
+	/// <summary>
+	/// Number of bags
+	/// </summary>
+	public int BagCount { get; set; } = 300;
+
+	/// <summary>
+	/// Sampling of samples rate, with replacement
+	/// </summary>
+	public float SubSamplingRate { get; set; } = DefaultSubSamplingRate;
+
+	/// <summary>
+	/// Feature sampling rate, without replacement
+	/// </summary>
+	public float FeatureSamplingRate { get; set; } = DefaultFeatureSamplingRate;
 
 	// [b] what to do in each bag
-	public RankerType rType { get; set; } = RankerType.MART; // which algorithm to bag
-	public int nTrees { get; set; } = 1; // how many trees in each bag
-	public int nTreeLeaves { get; set; } = 100;
-	public float learningRate { get; set; } = 0.1F; // or shrinkage, only matters if nTrees > 1
-	public int nThreshold { get; set; } = 256;
-	public int minLeafSupport { get; set; } = 1;
+
+	/// <summary>
+	/// Ranking algorithm to use each bag. Only <see cref="RankerType.MART"/>
+	/// and <see cref="RankerType.LambdaMART"/> accepted.
+	/// </summary>
+	public RankerType RankerType { get; set; } = RankerType.MART;
+
+	/// <summary>
+	/// Number of trees in each bag
+	/// </summary>
+	public int TreeCount { get; set; } = 1;
+
+	/// <summary>
+	/// Number of leaves in each tree
+	/// </summary>
+	public int TreeLeavesCount { get; set; } = 100;
+
+	/// <summary>
+	/// The learning rate, or shrinkage, only matters if <see cref="TreeCount"/> > 1
+	/// </summary>
+	public float LearningRate { get; set; } = 0.1F;
+
+	/// <summary>
+	/// The number of threshold candidates.
+	/// </summary>
+	public int Threshold { get; set; } = 256;
+
+	/// <summary>
+	/// Minimum leaf support
+	/// </summary>
+	public int MinimumLeafSupport { get; set; } = 1;
+
 	public void Log(ILogger logger)
 	{
-		logger.LogInformation("No. of bags: " + nBag);
-		logger.LogInformation("Sub-sampling: " + subSamplingRate);
-		logger.LogInformation("Feature-sampling: " + featureSamplingRate);
-		logger.LogInformation("No. of trees: " + nTrees);
-		logger.LogInformation("No. of leaves: " + nTreeLeaves);
-		logger.LogInformation("No. of threshold candidates: " + nThreshold);
-		logger.LogInformation("Learning rate: " + learningRate);
+		logger.LogInformation("No. of bags: " + BagCount);
+		logger.LogInformation("Sub-sampling: " + SubSamplingRate);
+		logger.LogInformation("Feature-sampling: " + FeatureSamplingRate);
+		logger.LogInformation("No. of trees: " + TreeCount);
+		logger.LogInformation("No. of leaves: " + TreeLeavesCount);
+		logger.LogInformation("No. of threshold candidates: " + Threshold);
+		logger.LogInformation("Learning rate: " + LearningRate);
 	}
 }
 
@@ -71,17 +111,18 @@ public class RFRanker : Ranker<RFRankerParameters>
 	public override Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
-		Ensembles = new Ensemble[Parameters.nBag];
+		Ensembles = new Ensemble[Parameters.BagCount];
 		_lambdaMARTParameters = new LambdaMARTParameters
 		{
-			nTrees = Parameters.nTrees,
-			nTreeLeaves = Parameters.nTreeLeaves,
-			learningRate = Parameters.learningRate,
-			nThreshold = Parameters.nThreshold,
-			minLeafSupport = Parameters.minLeafSupport,
-			nRoundToStopEarly = -1, // no early stopping since we're doing bagging
-									// Turn on feature sampling
-			SamplingRate = Parameters.featureSamplingRate,
+			TreeCount = Parameters.TreeCount,
+			TreeLeavesCount = Parameters.TreeLeavesCount,
+			LearningRate = Parameters.LearningRate,
+			Threshold = Parameters.Threshold,
+			MinimumLeafSupport = Parameters.MinimumLeafSupport,
+			// no early stopping since we're doing bagging
+			StopEarlyRoundCount = -1,
+			// Turn on feature sampling
+			SamplingRate = Parameters.FeatureSamplingRate,
 		};
 
 		return Task.CompletedTask;
@@ -96,11 +137,11 @@ public class RFRanker : Ranker<RFRankerParameters>
 		double[]? impacts = null;
 
 		// Start the bagging process
-		for (var i = 0; i < Parameters.nBag; i++)
+		for (var i = 0; i < Parameters.BagCount; i++)
 		{
 			// Create a "bag" of samples by random sampling from the training set
-			var (bag, _) = Sampler.Sample(Samples, Parameters.subSamplingRate, true);
-			var r = (LambdaMART)rankerFactory.CreateRanker(Parameters.rType, bag, Features, Scorer);
+			var (bag, _) = Sampler.Sample(Samples, Parameters.SubSamplingRate, true);
+			var r = (LambdaMART)rankerFactory.CreateRanker(Parameters.RankerType, bag, Features, Scorer);
 
 			r.Parameters = _lambdaMARTParameters;
 			await r.InitAsync().ConfigureAwait(false);
@@ -108,15 +149,11 @@ public class RFRanker : Ranker<RFRankerParameters>
 
 			// Accumulate impacts
 			if (impacts == null)
-			{
 				impacts = r.Impacts;
-			}
 			else
 			{
 				for (var ftr = 0; ftr < impacts.Length; ftr++)
-				{
 					impacts[ftr] += r.Impacts[ftr];
-				}
 			}
 			PrintLogLn([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(r.GetScoreOnTrainingData(), 4).ToString(CultureInfo.InvariantCulture)]);
 			Ensembles[i] = r.Ensemble;
@@ -139,9 +176,7 @@ public class RFRanker : Ranker<RFRankerParameters>
 		{
 			var ftrsSorted = MergeSorter.Sort(impacts!, false);
 			foreach (var ftr in ftrsSorted)
-			{
 				_logger.LogInformation(" Feature " + Features[ftr] + " reduced error " + impacts![ftr]);
-			}
 		}
 	}
 
@@ -149,19 +184,17 @@ public class RFRanker : Ranker<RFRankerParameters>
 	{
 		double s = 0;
 		foreach (var ensemble in Ensembles)
-		{
 			s += ensemble.Eval(dataPoint);
-		}
+
 		return s / Ensembles.Length;
 	}
 
 	public override string ToString()
 	{
 		var builder = new StringBuilder();
-		for (var i = 0; i < Parameters.nBag; i++)
-		{
+		for (var i = 0; i < Parameters.BagCount; i++)
 			builder.Append(Ensembles[i]).Append('\n');
-		}
+
 		return builder.ToString();
 	}
 
@@ -171,13 +204,13 @@ public class RFRanker : Ranker<RFRankerParameters>
 		{
 			var output = new StringBuilder();
 			output.Append("## " + Name + "\n");
-			output.Append("## No. of bags = " + Parameters.nBag + "\n");
-			output.Append("## Sub-sampling = " + Parameters.subSamplingRate + "\n");
-			output.Append("## Feature-sampling = " + Parameters.featureSamplingRate + "\n");
-			output.Append("## No. of trees = " + Parameters.nTrees + "\n");
-			output.Append("## No. of leaves = " + Parameters.nTreeLeaves + "\n");
-			output.Append("## No. of threshold candidates = " + Parameters.nThreshold + "\n");
-			output.Append("## Learning rate = " + Parameters.learningRate + "\n\n");
+			output.Append("## No. of bags = " + Parameters.BagCount + "\n");
+			output.Append("## Sub-sampling = " + Parameters.SubSamplingRate + "\n");
+			output.Append("## Feature-sampling = " + Parameters.FeatureSamplingRate + "\n");
+			output.Append("## No. of trees = " + Parameters.TreeCount + "\n");
+			output.Append("## No. of leaves = " + Parameters.TreeLeavesCount + "\n");
+			output.Append("## No. of threshold candidates = " + Parameters.Threshold + "\n");
+			output.Append("## Learning rate = " + Parameters.LearningRate + "\n\n");
 			output.Append(ToString());
 			return output.ToString();
 		}

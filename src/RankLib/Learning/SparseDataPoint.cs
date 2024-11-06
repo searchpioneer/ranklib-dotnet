@@ -6,8 +6,6 @@ namespace RankLib.Learning;
 
 public class SparseDataPoint : DataPoint
 {
-	private static readonly ILogger<SparseDataPoint> logger = NullLogger<SparseDataPoint>.Instance;
-
 	// Access pattern of the feature values
 	private enum AccessPattern
 	{
@@ -19,7 +17,6 @@ public class SparseDataPoint : DataPoint
 
 	// The feature ids for known values
 	private int[] _fIds;
-
 	// Internal search optimizers. Currently unused.
 	private int _lastMinId = -1;
 	private int _lastMinPos = -1;
@@ -59,7 +56,7 @@ public class SparseDataPoint : DataPoint
 				return pos;
 		}
 		else
-			logger.LogWarning("Invalid search pattern specified for sparse data points.");
+			throw new InvalidOperationException("Invalid search pattern specified for sparse data points.");
 
 		return -1;
 	}
@@ -71,17 +68,14 @@ public class SparseDataPoint : DataPoint
 		if (fid <= 0 || fid > FeatureCount)
 		{
 			if (MissingZero)
-			{
 				return 0f;
-			}
+
 			throw RankLibException.Create("Error in SparseDataPoint::GetFeatureValue(): requesting unspecified feature, fid=" + fid);
 		}
 
 		var pos = Locate(fid);
 		if (pos >= 0)
-		{
 			return FVals[pos];
-		}
 
 		return 0; // Should ideally be returning unknown?
 	}
@@ -89,19 +83,13 @@ public class SparseDataPoint : DataPoint
 	public override void SetFeatureValue(int fid, float fval)
 	{
 		if (fid <= 0 || fid > FeatureCount)
-		{
 			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + fid + ") out of range.");
-		}
 
 		var pos = Locate(fid);
 		if (pos >= 0)
-		{
 			FVals[pos] = fval;
-		}
 		else
-		{
 			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + fid + ") not found.");
-		}
 	}
 
 	protected override void SetFeatureVector(float[] dfVals)
@@ -119,9 +107,7 @@ public class SparseDataPoint : DataPoint
 			}
 		}
 		if (pos != _knownFeatures)
-		{
 			throw new InvalidOperationException("Mismatch in known features count.");
-		}
 	}
 
 	protected override float[] GetFeatureVector()
@@ -129,9 +115,8 @@ public class SparseDataPoint : DataPoint
 		var dfVals = new float[_fIds[_knownFeatures - 1] + 1]; // Adjust for array length
 		Array.Fill(dfVals, Unknown);
 		for (var i = 0; i < _knownFeatures; i++)
-		{
 			dfVals[_fIds[i]] = FVals[i];
-		}
+
 		return dfVals;
 	}
 }

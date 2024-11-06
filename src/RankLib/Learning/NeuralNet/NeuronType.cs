@@ -5,6 +5,13 @@ namespace RankLib.Learning.NeuralNet;
 /// </summary>
 public enum NeuronType
 {
+	/// <summary>
+	/// A single neuron
+	/// </summary>
 	Single = 0,
+
+	/// <summary>
+	/// A list of neurons
+	/// </summary>
 	List = 1
 }

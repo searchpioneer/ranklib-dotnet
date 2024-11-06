@@ -22,7 +22,7 @@ public class CoorAscentParameters : IRankerParameters
 	/// <summary>
 	/// Number of iterations to search in each direction.
 	/// </summary>
-	public int MaxIterationCount { get; set; } = 25;
+	public int MaximumIterationCount { get; set; } = 25;
 
 	/// <summary>
 	/// The base step size that the algorithm initially uses for adjusting weights.
@@ -59,7 +59,7 @@ public class CoorAscentParameters : IRankerParameters
 	public void Log(ILogger logger)
 	{
 		logger.LogInformation("No. of random restarts: {Restart}", RandomRestartCount);
-		logger.LogInformation("No. of iterations to search in each direction: {NMaxIteration}", MaxIterationCount);
+		logger.LogInformation("No. of iterations to search in each direction: {NMaxIteration}", MaximumIterationCount);
 		logger.LogInformation("Tolerance: {Tolerance}", Tolerance);
 		if (Regularized)
 			logger.LogInformation("Reg. param: {Slack}", Slack);
@@ -155,7 +155,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 							step = Parameters.StepBase * Math.Abs(origWeight);
 
 						var totalStep = step;
-						var numIter = dir == 0 ? 1 : Parameters.MaxIterationCount;
+						var numIter = dir == 0 ? 1 : Parameters.MaximumIterationCount;
 
 						for (var j = 0; j < numIter; j++)
 						{
@@ -182,7 +182,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 								]);
 							}
 
-							if (j < Parameters.MaxIterationCount - 1)
+							if (j < Parameters.MaximumIterationCount - 1)
 							{
 								step *= Parameters.StepScale;
 								totalStep += step;
@@ -304,7 +304,7 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 			var output = new StringBuilder();
 			output.AppendLine($"## {Name}");
 			output.AppendLine($"## Restart = {Parameters.RandomRestartCount}");
-			output.AppendLine($"## MaxIteration = {Parameters.MaxIterationCount}");
+			output.AppendLine($"## MaxIteration = {Parameters.MaximumIterationCount}");
 			output.AppendLine($"## StepBase = {Parameters.StepBase.ToRankLibString()}");
 			output.AppendLine($"## StepScale = {Parameters.StepScale.ToRankLibString()}");
 			output.AppendLine($"## Tolerance = {Parameters.Tolerance.ToRankLibString()}");
