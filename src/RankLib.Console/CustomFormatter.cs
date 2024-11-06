@@ -22,11 +22,7 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable
 		IExternalScopeProvider? scopeProvider,
 		TextWriter textWriter)
 	{
-		var message = logEntry.Formatter?.Invoke(logEntry.State, logEntry.Exception);
-
-		if (message is null)
-			return;
-
+		var message = logEntry.Formatter.Invoke(logEntry.State, logEntry.Exception);
 		textWriter.WriteLine(message);
 	}
 

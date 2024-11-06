@@ -2,6 +2,14 @@ namespace RankLib.Utilities;
 
 using System;
 
+/// <summary>
+/// A thread-safe random that can be seeded.
+/// </summary>
+/// <remarks>
+/// If no seed is provided, <see cref="Random.Shared"/> is used, otherwise a <see cref="Random"/> implementation
+/// with locking around methods is used. This exists to allow repeatability for algorithms seeded with some
+/// form of randomness.
+/// </remarks>
 internal class ThreadsafeSeedableRandom : Random
 {
 	private static readonly Lazy<Random> LazyRandom =
@@ -13,7 +21,7 @@ internal class ThreadsafeSeedableRandom : Random
 
 	private readonly object _locker = new();
 
-	internal ThreadsafeSeedableRandom(int seed)
+	private ThreadsafeSeedableRandom(int seed)
 		: base(seed)
 	{
 	}

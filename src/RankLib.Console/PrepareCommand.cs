@@ -27,7 +27,7 @@ public class PrepareCommand : Command<PrepareCommandOptions, PrepareCommandOptio
 	: base("prepare", "Split the input sample set into k chunks (folds) of roughly equal " +
 					  "size and create train/ test data for each fold")
 	{
-		AddOption(new Option<IEnumerable<FileInfo>>("--input", "Source data (ranked lists)") { IsRequired = true });
+		AddOption(new Option<IEnumerable<FileInfo>>("--input", "Source data (ranked lists)") { IsRequired = true }.ExistingOnly());
 		AddOption(new Option<DirectoryInfo>("--output", "The output directory") { IsRequired = true });
 		AddOption(new Option<bool>("--shuffle", "Create a copy of the input file in which the ordering of all ranked lists (e.g. queries) is randomized."));
 		AddOption(new Option<float?>("--tvs", "Train-validation split ratio (x)(1.0-x)"));

@@ -16,7 +16,7 @@ public class StatsCommand : Command<StatsCommandOptions, StatsCommandOptionsHand
 {
 	public StatsCommand()
 	: base("stats", "Feature statistics for the given model") =>
-		AddArgument(new Argument<FileInfo>("model", "The model file name").ExistingOnly());
+		AddArgument(new Argument<FileInfo>("model", "The path to the model file").ExistingOnly());
 }
 
 public class StatsCommandOptionsHandler : ICommandOptionsHandler<StatsCommandOptions>

@@ -168,7 +168,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private RankBoostParameters? _rankBoostParameters;
 	private RFRankerParameters? _rfRankerParameters;
 	private AdaRankParameters? _adaRankParameters;
-	private CoorAscentParameters? _coorAscentParameters;
+	private CoordinateAscentParameters? _coorAscentParameters;
 	private LinearRegRankParameters? _linearRegRankParameters;
 
 	public EvaluateCommandOptionsHandler(ILoggerFactory loggerFactory, EvaluatorFactory evaluatorFactory)
@@ -183,7 +183,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private RankBoostParameters RankBoostParameters => _rankBoostParameters ??= new RankBoostParameters();
 	private RFRankerParameters RfRankerParameters => _rfRankerParameters ??= new RFRankerParameters();
 	private AdaRankParameters AdaRankParameters => _adaRankParameters ??= new AdaRankParameters();
-	private CoorAscentParameters CoorAscentParameters => _coorAscentParameters ??= new CoorAscentParameters();
+	private CoordinateAscentParameters CoordinateAscentParameters => _coorAscentParameters ??= new CoordinateAscentParameters();
 	private LinearRegRankParameters LinearRegRankParameters => _linearRegRankParameters ??= new LinearRegRankParameters();
 
 	public async Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
@@ -255,10 +255,10 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			AdaRankParameters.MaximumSelectedCount = options.Max.Value;
 
 		if (options.R != null)
-			CoorAscentParameters.RandomRestartCount = options.R.Value;
+			CoordinateAscentParameters.RandomRestartCount = options.R.Value;
 
 		if (options.I != null)
-			CoorAscentParameters.MaximumIterationCount = options.I.Value;
+			CoordinateAscentParameters.MaximumIterationCount = options.I.Value;
 
 		if (options.Round != null)
 		{
@@ -268,14 +268,14 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.Reg != null)
 		{
-			CoorAscentParameters.Slack = options.Reg.Value;
-			CoorAscentParameters.Regularized = true;
+			CoordinateAscentParameters.Slack = options.Reg.Value;
+			CoordinateAscentParameters.Regularized = true;
 		}
 
 		if (options.Tolerance != null)
 		{
 			AdaRankParameters.Tolerance = options.Tolerance.Value;
-			CoorAscentParameters.Tolerance = options.Tolerance.Value;
+			CoordinateAscentParameters.Tolerance = options.Tolerance.Value;
 		}
 
 		if (options.Tree != null)
@@ -369,7 +369,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				(rankerType, rankerParameters) = (typeof(AdaRank), AdaRankParameters);
 				break;
 			case RankerType.CoordinateAscent:
-				(rankerType, rankerParameters) = (typeof(CoorAscent), CoorAscentParameters);
+				(rankerType, rankerParameters) = (typeof(CoordinateAscent), CoordinateAscentParameters);
 				break;
 			case RankerType.LambdaRank:
 				(rankerType, rankerParameters) = (typeof(LambdaRank), RankNetParameters);
@@ -447,7 +447,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				logger.LogInformation("Models directory: {KcvModelDir}", kcvModelDir);
 
 			if (!string.IsNullOrEmpty(kcvModelFile))
-				logger.LogInformation($"Models' name: {kcvModelFile}");
+				logger.LogInformation("Models' name: {KcvModelFile}", kcvModelFile);
 
 			if (options.Save != null)
 				logger.LogInformation("Model file: {ModelFile}", options.Save.FullName);
@@ -518,7 +518,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		else
 		{
 			logger.LogInformation("Model file: {SavedModelFile}", string.Join(",", savedModelFiles));
-			logger.LogInformation($"Feature normalization: {(normalizer != null ? normalizer.Name : "No")}");
+			logger.LogInformation("Feature normalization: {Normalization}", normalizer != null ? normalizer.Name : "No");
 
 			if (rankFile != null)
 			{
@@ -562,7 +562,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			{
 				logger.LogInformation("Test metric: {TestMetric}", testMetric);
 				if (testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
-					logger.LogInformation($"Highest relevance label (to compute ERR): {(int)SimpleMath.LogBase2(ERRScorer.DefaultMax)}");
+					logger.LogInformation("Highest relevance label (to compute ERR): {HighestRelevanceLabel}", options.GMax ?? (int)SimpleMath.LogBase2(ERRScorer.DefaultMax));
 
 				if (savedModelFiles.Count > 1)
 				{

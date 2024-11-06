@@ -5,6 +5,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace RankLib.Console;
 
+// From:
+// https://anthonysimmon.com/true-dependency-injection-with-system-commandline/
+// Licensed under CC BY 4.0
+
 internal static class DependencyInjectionMiddleware
 {
 	public static CommandLineBuilder UseDependencyInjection(this CommandLineBuilder builder, Action<ServiceCollection> configureServices) =>

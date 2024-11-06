@@ -2,17 +2,15 @@ using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using RankLib.Features;
-using RankLib.Learning.Tree;
 using RankLib.Metric;
 using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
 /// <summary>
-/// Parameters for <see cref="CoorAscent"/>
+/// Parameters for <see cref="CoordinateAscent"/>
 /// </summary>
-public class CoorAscentParameters : IRankerParameters
+public class CoordinateAscentParameters : IRankerParameters
 {
 	/// <summary>
 	/// Number of random restarts.
@@ -79,11 +77,11 @@ public class CoorAscentParameters : IRankerParameters
 /// Information Retrieval, 10(3): 257-274, 2007.
 /// </a>
 /// </remarks>
-public class CoorAscent : Ranker<CoorAscentParameters>
+public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 {
 	internal const string RankerName = "Coordinate Ascent";
 
-	private readonly ILogger<CoorAscent> _logger;
+	private readonly ILogger<CoordinateAscent> _logger;
 
 	private int _currentFeature = -1;
 	private double _weightChange = -1.0;
@@ -92,11 +90,11 @@ public class CoorAscent : Ranker<CoorAscentParameters>
 
 	public override string Name => RankerName;
 
-	public CoorAscent(ILogger<CoorAscent>? logger = null) => _logger = logger ?? NullLogger<CoorAscent>.Instance;
+	public CoordinateAscent(ILogger<CoordinateAscent>? logger = null) => _logger = logger ?? NullLogger<CoordinateAscent>.Instance;
 
-	public CoorAscent(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<CoorAscent>? logger = null)
+	public CoordinateAscent(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<CoordinateAscent>? logger = null)
 		: base(samples, features, scorer, logger) =>
-		_logger = logger ?? NullLogger<CoorAscent>.Instance;
+		_logger = logger ?? NullLogger<CoordinateAscent>.Instance;
 
 	public override Task InitAsync()
 	{

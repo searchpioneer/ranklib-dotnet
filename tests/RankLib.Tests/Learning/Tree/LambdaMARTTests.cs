@@ -2,7 +2,7 @@ using RankLib.Learning;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RankLib.Tests;
+namespace RankLib.Tests.Learning.Tree;
 
 public class LambdaMARTTests
 {

@@ -38,7 +38,7 @@ public static class RankerTypeExtensions
 			RankerType.RankBoost => typeof(RankBoost),
 			RankerType.RankNet => typeof(RankNet),
 			RankerType.AdaRank => typeof(AdaRank),
-			RankerType.CoordinateAscent => typeof(CoorAscent),
+			RankerType.CoordinateAscent => typeof(CoordinateAscent),
 			RankerType.LambdaRank => typeof(LambdaRank),
 			RankerType.LambdaMART => typeof(LambdaMART),
 			RankerType.ListNet => typeof(ListNet),

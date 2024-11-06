@@ -55,8 +55,8 @@ public class ProgramTests
 		var rankerFactory = new RankerFactory();
 		var model = rankerFactory.LoadRankerFromFile(modelFile.Path);
 
-		Assert.IsType<CoorAscent>(model);
-		var cmodel = (CoorAscent)model;
+		Assert.IsType<CoordinateAscent>(model);
+		var cmodel = (CoordinateAscent)model;
 		_testOutputHelper.WriteLine(string.Join(",", cmodel.Weight));
 
 		Assert.True(cmodel.Weight[0] > cmodel.Weight[1], $"Computed weight vector doesn't make sense with our fake data: {string.Join(",", cmodel.Weight)}");
