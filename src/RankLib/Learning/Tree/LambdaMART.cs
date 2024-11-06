@@ -57,7 +57,7 @@ public class LambdaMARTParameters : IRankerParameters
 
 	public void Log(ILogger logger)
 	{
-		logger.LogInformation("No. of trees: {NTrees}" ,TreeCount);
+		logger.LogInformation("No. of trees: {NTrees}", TreeCount);
 		logger.LogInformation("No. of leaves: {NTreeLeaves}", TreeLeavesCount);
 		logger.LogInformation("No. of threshold candidates: {NThreshold}", Threshold);
 		logger.LogInformation("Min leaf support: {MinLeafSupport}", MinimumLeafSupport);

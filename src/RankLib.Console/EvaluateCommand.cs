@@ -140,7 +140,8 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<int?>(
 			"--randomSeed",
 			"A seed to use for random number generation. This is useful for internal " +
-			"testing purposes and should not be used for production.") { IsHidden = true });
+			"testing purposes and should not be used for production.")
+		{ IsHidden = true });
 	}
 }
 
@@ -540,7 +541,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				else
 				{
 					logger.LogCritical("This function has been removed. Consider using -score in addition to " +
-					                   "your current parameters and do the ranking yourself based on these scores.");
+									   "your current parameters and do the ranking yourself based on these scores.");
 					return 1;
 				}
 			}
