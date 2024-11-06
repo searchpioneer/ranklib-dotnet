@@ -14,9 +14,9 @@ public class FeatureStats
 
 	private readonly string _modelFileName;
 	private readonly FileInfo _file;
-	private static readonly string[] ModelsThatUseAllFeatures = [CoordinateAscent.RankerName, LambdaRank.RankerName, LinearRegRank.RankerName, ListNet.RankerName, RankNet.RankerName];
+	private static readonly string[] ModelsThatUseAllFeatures = [CoordinateAscent.RankerName, LambdaRank.RankerName, LinearRegression.RankerName, ListNet.RankerName, RankNet.RankerName];
 	private static readonly string[] FeatureWeightModels = [AdaRank.RankerName, RankBoost.RankerName];
-	private static readonly string[] TreeModels = [LambdaMART.RankerName, MART.RankerName, RFRanker.RankerName];
+	private static readonly string[] TreeModels = [LambdaMART.RankerName, MART.RankerName, RandomForests.RankerName];
 
 	public FeatureStats(string modelFileName, ILogger<FeatureStats>? logger = null)
 	{

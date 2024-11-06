@@ -9,9 +9,9 @@ using RankLib.Utilities;
 namespace RankLib.Learning.Tree;
 
 /// <summary>
-/// Ranking parameters for <see cref="RFRanker"/>
+/// Ranking parameters for <see cref="RandomForests"/>
 /// </summary>
-public class RFRankerParameters : IRankerParameters
+public class RandomForestsParameters : IRankerParameters
 {
 	public const float DefaultFeatureSamplingRate = 0.3f;
 	public const float DefaultSubSamplingRate = 1.0f;
@@ -82,30 +82,30 @@ public class RFRankerParameters : IRankerParameters
 /// Random Forests is an ensemble learning method that constructs multiple decision trees during training
 /// and merges their results for more accurate and stable predictions.
 /// </summary>
-public class RFRanker : Ranker<RFRankerParameters>
+public class RandomForests : Ranker<RandomForestsParameters>
 {
 	internal const string RankerName = "Random Forests";
 
 	private readonly ILoggerFactory _loggerFactory;
-	private readonly ILogger<RFRanker> _logger;
+	private readonly ILogger<RandomForests> _logger;
 	private LambdaMARTParameters _lambdaMARTParameters;
 
 	public Ensemble[] Ensembles { get; private set; } = [];
 
 	public override string Name => RankerName;
 
-	public RFRanker(ILoggerFactory? loggerFactory = null) : base((loggerFactory ?? NullLoggerFactory.Instance)
-		.CreateLogger<RFRanker>())
+	public RandomForests(ILoggerFactory? loggerFactory = null) : base((loggerFactory ?? NullLoggerFactory.Instance)
+		.CreateLogger<RandomForests>())
 	{
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = _loggerFactory.CreateLogger<RFRanker>();
+		_logger = _loggerFactory.CreateLogger<RandomForests>();
 	}
 
-	public RFRanker(List<RankList> samples, int[] features, MetricScorer scorer, ILoggerFactory? loggerFactory = null)
-		: base(samples, features, scorer, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<RFRanker>())
+	public RandomForests(List<RankList> samples, int[] features, MetricScorer scorer, ILoggerFactory? loggerFactory = null)
+		: base(samples, features, scorer, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<RandomForests>())
 	{
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
-		_logger = _loggerFactory.CreateLogger<RFRanker>();
+		_logger = _loggerFactory.CreateLogger<RandomForests>();
 	}
 
 	public override Task InitAsync()

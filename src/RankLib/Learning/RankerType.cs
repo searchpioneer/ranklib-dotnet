@@ -42,8 +42,8 @@ public static class RankerTypeExtensions
 			RankerType.LambdaRank => typeof(LambdaRank),
 			RankerType.LambdaMART => typeof(LambdaMART),
 			RankerType.ListNet => typeof(ListNet),
-			RankerType.RandomForests => typeof(RFRanker),
-			RankerType.LinearRegression => typeof(LinearRegRank),
+			RankerType.RandomForests => typeof(RandomForests),
+			RankerType.LinearRegression => typeof(LinearRegression),
 			_ => throw new ArgumentOutOfRangeException(nameof(rankerType), rankerType, "Unknown ranker type")
 		};
 }

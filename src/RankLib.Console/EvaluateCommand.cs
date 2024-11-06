@@ -145,8 +145,8 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 
 		// Random Forests specific parameters
 		AddOption(new Option<int?>("--bag", "Number of bags (default=300)"));
-		AddOption(new Option<float?>("--srate", () => RFRankerParameters.DefaultSubSamplingRate, "Sub-sampling rate"));
-		AddOption(new Option<float?>("--frate", () => RFRankerParameters.DefaultFeatureSamplingRate, "Feature sampling rate"));
+		AddOption(new Option<float?>("--srate", () => RandomForestsParameters.DefaultSubSamplingRate, "Sub-sampling rate"));
+		AddOption(new Option<float?>("--frate", () => RandomForestsParameters.DefaultFeatureSamplingRate, "Feature sampling rate"));
 		AddOption(new Option<RankerType?>("--rtype", "Random Forests ranker type to bag. Random Forests only support MART/LambdaMART"));
 		AddOption(new Option<double?>("--L2", "TODO: Lambda"));
 		AddOption(new Option<bool?>("--hr", "TODO: Must Have Relevance Doc"));
@@ -166,10 +166,10 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private RankNetParameters? _rankNetParameters;
 	private ListNetParameters? _listNetParameters;
 	private RankBoostParameters? _rankBoostParameters;
-	private RFRankerParameters? _rfRankerParameters;
+	private RandomForestsParameters? _randomForestsParameters;
 	private AdaRankParameters? _adaRankParameters;
-	private CoordinateAscentParameters? _coorAscentParameters;
-	private LinearRegRankParameters? _linearRegRankParameters;
+	private CoordinateAscentParameters? _coordinateAscentParameters;
+	private LinearRegressionParameters? _linearRegressionParameters;
 
 	public EvaluateCommandOptionsHandler(ILoggerFactory loggerFactory, EvaluatorFactory evaluatorFactory)
 	{
@@ -181,10 +181,10 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 	private RankNetParameters RankNetParameters => _rankNetParameters ??= new RankNetParameters();
 	private ListNetParameters ListNetParameters => _listNetParameters ??= new ListNetParameters();
 	private RankBoostParameters RankBoostParameters => _rankBoostParameters ??= new RankBoostParameters();
-	private RFRankerParameters RfRankerParameters => _rfRankerParameters ??= new RFRankerParameters();
+	private RandomForestsParameters RandomForestsParameters => _randomForestsParameters ??= new RandomForestsParameters();
 	private AdaRankParameters AdaRankParameters => _adaRankParameters ??= new AdaRankParameters();
-	private CoordinateAscentParameters CoordinateAscentParameters => _coorAscentParameters ??= new CoordinateAscentParameters();
-	private LinearRegRankParameters LinearRegRankParameters => _linearRegRankParameters ??= new LinearRegRankParameters();
+	private CoordinateAscentParameters CoordinateAscentParameters => _coordinateAscentParameters ??= new CoordinateAscentParameters();
+	private LinearRegressionParameters LinearRegressionParameters => _linearRegressionParameters ??= new LinearRegressionParameters();
 
 	public async Task<int> HandleAsync(EvaluateCommandOptions options, CancellationToken cancellationToken)
 	{
@@ -281,38 +281,38 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.Tree != null)
 		{
 			LambdaMARTParameters.TreeCount = options.Tree.Value;
-			RfRankerParameters.TreeCount = LambdaMARTParameters.TreeCount;
+			RandomForestsParameters.TreeCount = LambdaMARTParameters.TreeCount;
 		}
 
 		if (options.Leaf != null)
 		{
 			LambdaMARTParameters.TreeLeavesCount = options.Leaf.Value;
-			RfRankerParameters.TreeLeavesCount = LambdaMARTParameters.TreeLeavesCount;
+			RandomForestsParameters.TreeLeavesCount = LambdaMARTParameters.TreeLeavesCount;
 		}
 
 		if (options.Shrinkage != null)
 		{
 			LambdaMARTParameters.LearningRate = options.Shrinkage.Value;
-			RfRankerParameters.LearningRate = LambdaMARTParameters.LearningRate;
+			RandomForestsParameters.LearningRate = LambdaMARTParameters.LearningRate;
 		}
 
 		if (options.Mls != null)
 		{
 			LambdaMARTParameters.MinimumLeafSupport = options.Mls.Value;
-			RfRankerParameters.MinimumLeafSupport = LambdaMARTParameters.MinimumLeafSupport;
+			RandomForestsParameters.MinimumLeafSupport = LambdaMARTParameters.MinimumLeafSupport;
 		}
 
 		if (options.EStop != null)
 			LambdaMARTParameters.StopEarlyRoundCount = options.EStop.Value;
 
 		if (options.Bag != null)
-			RfRankerParameters.BagCount = options.Bag.Value;
+			RandomForestsParameters.BagCount = options.Bag.Value;
 
 		if (options.SRate != null)
-			RfRankerParameters.SubSamplingRate = options.SRate.Value;
+			RandomForestsParameters.SubSamplingRate = options.SRate.Value;
 
 		if (options.FRate != null)
-			RfRankerParameters.FeatureSamplingRate = options.FRate.Value;
+			RandomForestsParameters.FeatureSamplingRate = options.FRate.Value;
 
 		if (options.RType != null)
 		{
@@ -322,11 +322,11 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 					$"{options.RType} cannot be bagged. Random Forests only supports MART/LambdaMART.");
 			}
 
-			RfRankerParameters.RankerType = options.RType.Value;
+			RandomForestsParameters.RankerType = options.RType.Value;
 		}
 
 		if (options.L2 != null)
-			LinearRegRankParameters.Lambda = options.L2.Value;
+			LinearRegressionParameters.Lambda = options.L2.Value;
 
 		LambdaMARTParameters.MaxDegreeOfParallelism = options.Thread == -1
 			? Environment.ProcessorCount
@@ -381,10 +381,10 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				(rankerType, rankerParameters) = (typeof(ListNet), ListNetParameters);
 				break;
 			case RankerType.RandomForests:
-				(rankerType, rankerParameters) = (typeof(RFRanker), RfRankerParameters);
+				(rankerType, rankerParameters) = (typeof(RandomForests), RandomForestsParameters);
 				break;
 			case RankerType.LinearRegression:
-				(rankerType, rankerParameters) = (typeof(LinearRegRank), LinearRegRankParameters);
+				(rankerType, rankerParameters) = (typeof(LinearRegression), LinearRegressionParameters);
 				break;
 			default:
 				logger.LogCritical("Unknown ranker: {Ranker}", options.Ranker);

@@ -16,14 +16,14 @@ public class Combiner
 		{
 			var files = Directory.GetFiles(directory);
 			using var writer = new StreamWriter(outputFile, false, Encoding.ASCII);
-			writer.WriteLine("## " + RFRanker.RankerName);
+			writer.WriteLine("## " + RandomForests.RankerName);
 
 			foreach (var file in files)
 			{
 				if (file.Contains(".progress"))
 					continue;
 
-				var ranker = (RFRanker)_rankerFactory.LoadRankerFromFile(file);
+				var ranker = (RandomForests)_rankerFactory.LoadRankerFromFile(file);
 				var ensemble = ranker.Ensembles[0];
 				writer.Write(ensemble.ToString());
 			}

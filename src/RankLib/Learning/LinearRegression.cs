@@ -7,9 +7,9 @@ using RankLib.Utilities;
 namespace RankLib.Learning;
 
 /// <summary>
-/// Parameters for <see cref="LinearRegRank"/>.
+/// Parameters for <see cref="LinearRegression"/>.
 /// </summary>
-public class LinearRegRankParameters : IRankerParameters
+public class LinearRegressionParameters : IRankerParameters
 {
 	/// <summary>
 	/// L2-norm regularization parameter
@@ -25,20 +25,20 @@ public class LinearRegRankParameters : IRankerParameters
 /// to predict relevance scores for items, using feature weights learned from
 /// training data to produce a ranked list of items based on predicted relevance.
 /// </summary>
-public class LinearRegRank : Ranker<LinearRegRankParameters>
+public class LinearRegression : Ranker<LinearRegressionParameters>
 {
 	internal const string RankerName = "Linear Regression";
 
-	private readonly ILogger<LinearRegRank> _logger;
+	private readonly ILogger<LinearRegression> _logger;
 	private double[] _weight = [];
 
-	public LinearRegRank(ILogger<LinearRegRank>? logger = null) : base(logger) =>
-		_logger = logger ?? NullLogger<LinearRegRank>.Instance;
+	public LinearRegression(ILogger<LinearRegression>? logger = null) : base(logger) =>
+		_logger = logger ?? NullLogger<LinearRegression>.Instance;
 
-	public LinearRegRank(List<RankList> samples, int[] features, MetricScorer scorer,
-		ILogger<LinearRegRank>? logger = null)
+	public LinearRegression(List<RankList> samples, int[] features, MetricScorer scorer,
+		ILogger<LinearRegression>? logger = null)
 		: base(samples, features, scorer, logger) =>
-		_logger = logger ?? NullLogger<LinearRegRank>.Instance;
+		_logger = logger ?? NullLogger<LinearRegression>.Instance;
 
 	public override string Name => RankerName;
 

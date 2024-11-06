@@ -27,8 +27,8 @@ public class RankerFactory
 		[LambdaRank.RankerName] = typeof(LambdaRank),
 		[LambdaMART.RankerName] = typeof(LambdaMART),
 		[ListNet.RankerName] = typeof(ListNet),
-		[RFRanker.RankerName] = typeof(RFRanker),
-		[LinearRegRank.RankerName] = typeof(LinearRegRank),
+		[RandomForests.RankerName] = typeof(RandomForests),
+		[LinearRegression.RankerName] = typeof(LinearRegression),
 	};
 
 	private readonly Dictionary<Type, Func<ILoggerFactory, IRanker>> _rankers = new()
@@ -41,8 +41,8 @@ public class RankerFactory
 		[typeof(LambdaRank)] = loggerFactory => new LambdaRank(loggerFactory.CreateLogger<LambdaRank>()),
 		[typeof(LambdaMART)] = loggerFactory => new LambdaMART(loggerFactory.CreateLogger<LambdaMART>()),
 		[typeof(ListNet)] = loggerFactory => new ListNet(loggerFactory.CreateLogger<ListNet>()),
-		[typeof(RFRanker)] = loggerFactory => new RFRanker(loggerFactory),
-		[typeof(LinearRegRank)] = loggerFactory => new LinearRegRank(loggerFactory.CreateLogger<LinearRegRank>()),
+		[typeof(RandomForests)] = loggerFactory => new RandomForests(loggerFactory),
+		[typeof(LinearRegression)] = loggerFactory => new LinearRegression(loggerFactory.CreateLogger<LinearRegression>()),
 	};
 
 	public RankerFactory(ILoggerFactory? loggerFactory = null)
