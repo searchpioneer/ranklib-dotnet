@@ -5,7 +5,7 @@ using RankLib.Utilities;
 namespace RankLib.Metric;
 
 /// <summary>
-/// Factory for creating <see cref="MetricScorer"/>s.
+/// Factory for creating <see cref="MetricScorer"/> instances.
 /// </summary>
 public class MetricScorerFactory
 {

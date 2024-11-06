@@ -7,7 +7,7 @@ using RankLib.Metric;
 namespace RankLib.Eval;
 
 /// <summary>
-/// Factory for creating <see cref="Evaluator"/>
+/// Factory for creating <see cref="Evaluator"/> instances
 /// </summary>
 public class EvaluatorFactory
 {
