@@ -343,9 +343,9 @@ public class RankBoost : Ranker<RankBoostParameters>
 				if (ValidationSamples != null)
 				{
 					var score = Scorer.Score(Rank(ValidationSamples));
-					if (score > BestScoreOnValidationData)
+					if (score > ValidationDataScore)
 					{
-						BestScoreOnValidationData = score;
+						ValidationDataScore = score;
 						_bestModelRankers.Clear();
 						_bestModelRankers.AddRange(_wRankers);
 						_bestModelWeights.Clear();
@@ -365,14 +365,14 @@ public class RankBoost : Ranker<RankBoostParameters>
 			_rWeight.AddRange(_bestModelWeights);
 		}
 
-		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
+		TrainingDataScore = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation("{ScorerName} on training data: {Score}", Scorer.Name, ScoreOnTrainingData);
+		_logger.LogInformation("{ScorerName} on training data: {Score}", Scorer.Name, TrainingDataScore);
 
 		if (ValidationSamples != null)
 		{
-			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation("{ScorerName} on validation data: {Score}", Scorer.Name, SimpleMath.Round(BestScoreOnValidationData, 4));
+			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation("{ScorerName} on validation data: {Score}", Scorer.Name, SimpleMath.Round(ValidationDataScore, 4));
 		}
 
 		return Task.CompletedTask;

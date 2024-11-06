@@ -39,6 +39,9 @@ public abstract class Ranker : IRanker
 {
 	private MetricScorer? _scorer;
 
+	protected double TrainingDataScore = 0.0;
+	protected double ValidationDataScore = 0.0;
+
 	/// <summary>
 	/// Gets or sets the training samples.
 	/// </summary>
@@ -68,9 +71,6 @@ public abstract class Ranker : IRanker
 
 	IRankerParameters IRanker.Parameters { get; set; } = default!;
 
-	protected double ScoreOnTrainingData = 0.0;
-	protected double BestScoreOnValidationData = 0.0;
-
 	protected Ranker()
 	{
 	}
@@ -82,9 +82,17 @@ public abstract class Ranker : IRanker
 		Scorer = scorer;
 	}
 
-	public double GetScoreOnTrainingData() => ScoreOnTrainingData;
+	/// <summary>
+	/// Gets the score from the training data.
+	/// </summary>
+	/// <returns>The training data score.</returns>
+	public double GetTrainingDataScore() => TrainingDataScore;
 
-	public double GetScoreOnValidationData() => BestScoreOnValidationData;
+	/// <summary>
+	/// Gets the score from the validation data.
+	/// </summary>
+	/// <returns>The validation data score.</returns>
+	public double GetValidationDataScore() => ValidationDataScore;
 
 	public virtual RankList Rank(RankList rankList)
 	{
@@ -105,6 +113,10 @@ public abstract class Ranker : IRanker
 		return rankedRankLists;
 	}
 
+	/// <summary>
+	/// Saves the model to file.
+	/// </summary>
+	/// <param name="modelFile">The file path to save the model to.</param>
 	public async Task SaveAsync(string modelFile)
 	{
 		var directory = Path.GetDirectoryName(Path.GetFullPath(modelFile));

@@ -123,7 +123,7 @@ public class LambdaRank : RankNet
 			}
 		}
 
-		_error = 1.0 - ScoreOnTrainingData;
+		_error = 1.0 - TrainingDataScore;
 
 		if (_error > _lastError)
 			_straightLoss++;

@@ -238,14 +238,14 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 
 		Array.Copy(bestModel!, Weight, bestModel!.Length);
 		_currentFeature = -1;
-		ScoreOnTrainingData = Math.Round(Scorer.Score(Rank(Samples)), 4);
+		TrainingDataScore = Math.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
+		_logger.LogInformation($"{Scorer.Name} on training data: {TrainingDataScore}");
 
 		if (ValidationSamples != null)
 		{
-			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation($"{Scorer.Name} on validation data: {Math.Round(BestScoreOnValidationData, 4)}");
+			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation($"{Scorer.Name} on validation data: {Math.Round(ValidationDataScore, 4)}");
 		}
 
 		return Task.CompletedTask;

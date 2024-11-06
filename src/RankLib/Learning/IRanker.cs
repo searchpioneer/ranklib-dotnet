@@ -49,7 +49,7 @@ public interface IRanker
 
 	Task SaveAsync(string modelFile);
 
-	double GetScoreOnTrainingData();
+	double GetTrainingDataScore();
 }
 
 /// <summary>

@@ -286,12 +286,12 @@ public class Evaluator
 				.ConfigureAwait(false);
 
 			var testScore = Evaluate(ranker, test);
-			scoreOnTrain += ranker.GetScoreOnTrainingData();
+			scoreOnTrain += ranker.GetTrainingDataScore();
 			scoreOnTest += testScore;
 			totalScoreOnTest += testScore * test.Count;
 			totalTestSampleSize += test.Count;
 
-			scores[i][0] = ranker.GetScoreOnTrainingData();
+			scores[i][0] = ranker.GetTrainingDataScore();
 			scores[i][1] = testScore;
 
 			if (!string.IsNullOrEmpty(modelDir))

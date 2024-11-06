@@ -104,14 +104,14 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 
 		_weight = Solve(xTx, xTy);
 
-		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
+		TrainingDataScore = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation("{ScorerName} on training data: {ScoreOnTrainingData}", Scorer.Name, ScoreOnTrainingData);
+		_logger.LogInformation("{ScorerName} on training data: {ScoreOnTrainingData}", Scorer.Name, TrainingDataScore);
 
 		if (ValidationSamples != null)
 		{
-			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation("{ScorerName} on validation data: {BestScoreOnValidationData}", Scorer.Name, SimpleMath.Round(BestScoreOnValidationData, 4));
+			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation("{ScorerName} on validation data: {BestScoreOnValidationData}", Scorer.Name, SimpleMath.Round(ValidationDataScore, 4));
 		}
 
 		return Task.CompletedTask;

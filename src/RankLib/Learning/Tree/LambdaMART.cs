@@ -281,9 +281,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			rt.ClearSamples();
 
 			//Evaluate the current model
-			ScoreOnTrainingData = ComputeModelScoreOnTraining();
+			TrainingDataScore = ComputeModelScoreOnTraining();
 
-			bufferedLogger.PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
+			bufferedLogger.PrintLog([9], [SimpleMath.Round(TrainingDataScore, 4).ToString(CultureInfo.InvariantCulture)]);
 
 			if (ValidationSamples != null)
 			{
@@ -295,9 +295,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 
 				double score = ComputeModelScoreOnValidation();
 				bufferedLogger.PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
-				if (score > BestScoreOnValidationData)
+				if (score > ValidationDataScore)
 				{
-					BestScoreOnValidationData = score;
+					ValidationDataScore = score;
 					_bestModelOnValidation = _ensemble.TreeCount - 1;
 				}
 			}
@@ -311,13 +311,13 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		while (_ensemble.TreeCount > _bestModelOnValidation + 1)
 			_ensemble.RemoveAt(_ensemble.TreeCount - 1);
 
-		ScoreOnTrainingData = Scorer.Score(Rank(Samples));
-		_logger.LogInformation($"Finished successfully. {Scorer.Name} on training data: {SimpleMath.Round(ScoreOnTrainingData, 4)}");
+		TrainingDataScore = Scorer.Score(Rank(Samples));
+		_logger.LogInformation($"Finished successfully. {Scorer.Name} on training data: {SimpleMath.Round(TrainingDataScore, 4)}");
 
 		if (ValidationSamples != null)
 		{
-			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
+			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(ValidationDataScore, 4)}");
 		}
 
 		_logger.LogInformation("-- FEATURE IMPACTS");

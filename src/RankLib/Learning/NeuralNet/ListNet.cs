@@ -125,15 +125,15 @@ public class ListNet : RankNet
 
 			bufferedLogger.PrintLog([7, 14], [i.ToString(), SimpleMath.Round(_error, 6).ToString(CultureInfo.InvariantCulture)]);
 
-			ScoreOnTrainingData = Scorer.Score(Rank(Samples));
-			bufferedLogger.PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
+			TrainingDataScore = Scorer.Score(Rank(Samples));
+			bufferedLogger.PrintLog([9], [SimpleMath.Round(TrainingDataScore, 4).ToString(CultureInfo.InvariantCulture)]);
 
 			if (ValidationSamples != null)
 			{
 				var score = Scorer.Score(Rank(ValidationSamples));
-				if (score > BestScoreOnValidationData)
+				if (score > ValidationDataScore)
 				{
-					BestScoreOnValidationData = score;
+					ValidationDataScore = score;
 					SaveBestModelOnValidation();
 				}
 				bufferedLogger.PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
@@ -146,14 +146,14 @@ public class ListNet : RankNet
 		if (ValidationSamples != null)
 			RestoreBestModelOnValidation();
 
-		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
+		TrainingDataScore = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
+		_logger.LogInformation($"{Scorer.Name} on training data: {TrainingDataScore}");
 
 		if (ValidationSamples != null)
 		{
-			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
+			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(ValidationDataScore, 4)}");
 		}
 
 		return Task.CompletedTask;

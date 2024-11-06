@@ -154,19 +154,19 @@ public class RandomForests : Ranker<RandomForestsParameters>
 				for (var ftr = 0; ftr < impacts.Length; ftr++)
 					impacts[ftr] += r.Impacts[ftr];
 			}
-			_logger.PrintLog([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(r.GetScoreOnTrainingData(), 4).ToString(CultureInfo.InvariantCulture)]);
+			_logger.PrintLog([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(r.GetTrainingDataScore(), 4).ToString(CultureInfo.InvariantCulture)]);
 			Ensembles[i] = r.Ensemble;
 		}
 
 		// Finishing up
-		ScoreOnTrainingData = Scorer.Score(Rank(Samples));
+		TrainingDataScore = Scorer.Score(Rank(Samples));
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation(Scorer.Name + " on training data: " + SimpleMath.Round(ScoreOnTrainingData, 4));
+		_logger.LogInformation(Scorer.Name + " on training data: " + SimpleMath.Round(TrainingDataScore, 4));
 
 		if (ValidationSamples != null)
 		{
-			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation(Scorer.Name + " on validation data: " + SimpleMath.Round(BestScoreOnValidationData, 4));
+			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation(Scorer.Name + " on validation data: " + SimpleMath.Round(ValidationDataScore, 4));
 		}
 
 		// Print feature impacts

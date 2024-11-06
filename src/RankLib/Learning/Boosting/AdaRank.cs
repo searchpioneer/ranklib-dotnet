@@ -134,7 +134,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 					_rankers.RemoveAt(_rankers.Count - 1);
 					_rankerWeights.RemoveAt(_rankerWeights.Count - 1);
 					Array.Copy(_backupSampleWeight, _sampleWeights, _sampleWeights.Length);
-					BestScoreOnValidationData = 0.0;
+					ValidationDataScore = 0.0;
 					_lastTrainedScore = _backupTrainScore;
 					bufferedLogger.PrintLogLn([8, 9, 9, 9], [bestWeakRanker.Fid.ToString(), "", "", "ROLLBACK"]);
 					continue;
@@ -208,9 +208,9 @@ public class AdaRank : Ranker<AdaRankParameters>
 			if (t % 1 == 0 && ValidationSamples != null)
 			{
 				var scoreOnValidation = Scorer.Score(Rank(ValidationSamples));
-				if (scoreOnValidation > BestScoreOnValidationData)
+				if (scoreOnValidation > ValidationDataScore)
 				{
-					BestScoreOnValidationData = scoreOnValidation;
+					ValidationDataScore = scoreOnValidation;
 					UpdateBestModelOnValidation();
 				}
 
@@ -254,7 +254,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 		_rankers = [];
 		_rankerWeights = [];
 		_featureQueue = [];
-		BestScoreOnValidationData = 0.0;
+		ValidationDataScore = 0.0;
 		_bestModelRankers = [];
 		_bestModelWeights = [];
 
@@ -286,14 +286,14 @@ public class AdaRank : Ranker<AdaRankParameters>
 			_rankerWeights.AddRange(_bestModelWeights);
 		}
 
-		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
+		TrainingDataScore = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation($"{Scorer.Name} on training data: {ScoreOnTrainingData}");
+		_logger.LogInformation($"{Scorer.Name} on training data: {TrainingDataScore}");
 
 		if (ValidationSamples != null)
 		{
-			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(BestScoreOnValidationData, 4)}");
+			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(ValidationDataScore, 4)}");
 		}
 
 		return Task.CompletedTask;

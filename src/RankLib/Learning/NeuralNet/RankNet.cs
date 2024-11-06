@@ -297,19 +297,19 @@ public class RankNet : Ranker<RankNetParameters>
 				ClearNeuronOutputs();
 			}
 
-			ScoreOnTrainingData = Scorer.Score(Rank(Samples));
+			TrainingDataScore = Scorer.Score(Rank(Samples));
 			EstimateLoss();
 
 			bufferedLogger.PrintLog([7, 14],
 				[i.ToString(), SimpleMath.Round((double)_misorderedPairs / _totalPairs, 4).ToString(CultureInfo.InvariantCulture)]);
 
-			bufferedLogger.PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
+			bufferedLogger.PrintLog([9], [SimpleMath.Round(TrainingDataScore, 4).ToString(CultureInfo.InvariantCulture)]);
 			if (ValidationSamples != null)
 			{
 				var score = Scorer.Score(Rank(ValidationSamples));
-				if (score > BestScoreOnValidationData)
+				if (score > ValidationDataScore)
 				{
-					BestScoreOnValidationData = score;
+					ValidationDataScore = score;
 					SaveBestModelOnValidation();
 				}
 
@@ -323,14 +323,14 @@ public class RankNet : Ranker<RankNetParameters>
 		if (ValidationSamples != null)
 			RestoreBestModelOnValidation();
 
-		ScoreOnTrainingData = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
+		TrainingDataScore = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation("{Scorer} on training data: {TrainingScore}", Scorer.Name, ScoreOnTrainingData);
+		_logger.LogInformation("{Scorer} on training data: {TrainingScore}", Scorer.Name, TrainingDataScore);
 
 		if (ValidationSamples != null)
 		{
-			BestScoreOnValidationData = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation("{Scorer} on validation data: {ValidationScore}", Scorer.Name, SimpleMath.Round(BestScoreOnValidationData, 4));
+			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
+			_logger.LogInformation("{Scorer} on validation data: {ValidationScore}", Scorer.Name, SimpleMath.Round(ValidationDataScore, 4));
 		}
 
 		return Task.CompletedTask;
