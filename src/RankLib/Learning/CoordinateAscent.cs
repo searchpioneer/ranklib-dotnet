@@ -93,7 +93,7 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 	public CoordinateAscent(ILogger<CoordinateAscent>? logger = null) => _logger = logger ?? NullLogger<CoordinateAscent>.Instance;
 
 	public CoordinateAscent(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<CoordinateAscent>? logger = null)
-		: base(samples, features, scorer, logger) =>
+		: base(samples, features, scorer) =>
 		_logger = logger ?? NullLogger<CoordinateAscent>.Instance;
 
 	public override Task InitAsync()
@@ -134,7 +134,7 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 			{
 				_logger.LogInformation("Shuffling features' order...");
 				_logger.LogInformation("Optimizing weight vector... ");
-				PrintLogLn([7, 8, 7], ["Feature", "weight", Scorer.Name]);
+				_logger.PrintLog([7, 8, 7], ["Feature", "weight", Scorer.Name]);
 
 				var shuffledFeatures = GetShuffledFeatures();
 
@@ -174,7 +174,7 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 								bestTotalStep = totalStep;
 								succeeds = true;
 								var bw = Weight[shuffledFeatures[i]] > 0 ? "+" : "";
-								PrintLogLn([7, 8, 7], [Features[shuffledFeatures[i]].ToString(),
+								_logger.PrintLog([7, 8, 7], [Features[shuffledFeatures[i]].ToString(),
 									$"{bw}{Math.Round(Weight[shuffledFeatures[i]], 4)}",
 									Math.Round(bestScore, 4).ToString(CultureInfo.InvariantCulture)
 								]);

@@ -295,9 +295,9 @@ public class Evaluator
 
 			if (!string.IsNullOrEmpty(modelDir))
 			{
-				var path = Path.Combine(modelDir, $"f{i + 1}.{modelFile}");
-				ranker.Save(path);
-				_logger.LogInformation($"Fold-{i + 1} model saved to: {path}");
+				var foldModelFile = Path.Combine(modelDir, $"f{i + 1}.{modelFile}");
+				ranker.Save(foldModelFile);
+				_logger.LogInformation($"Fold-{i + 1} model saved to: {foldModelFile}");
 			}
 		}
 

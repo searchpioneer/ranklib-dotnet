@@ -110,7 +110,9 @@ public class ListNet : RankNet
 	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn([7, 14, 9, 9], ["#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V"]);
+		_logger.PrintLog([7, 14, 9, 9], ["#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V"]);
+
+		var bufferedLogger = new BufferedLogger(_logger, new StringBuilder());
 
 		for (var i = 1; i <= Parameters.IterationCount; i++)
 		{
@@ -121,10 +123,10 @@ public class ListNet : RankNet
 				ClearNeuronOutputs();
 			}
 
-			PrintLog([7, 14], [i.ToString(), SimpleMath.Round(_error, 6).ToString(CultureInfo.InvariantCulture)]);
+			bufferedLogger.PrintLog([7, 14], [i.ToString(), SimpleMath.Round(_error, 6).ToString(CultureInfo.InvariantCulture)]);
 
 			ScoreOnTrainingData = Scorer.Score(Rank(Samples));
-			PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
+			bufferedLogger.PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
 
 			if (ValidationSamples != null)
 			{
@@ -134,10 +136,10 @@ public class ListNet : RankNet
 					BestScoreOnValidationData = score;
 					SaveBestModelOnValidation();
 				}
-				PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
+				bufferedLogger.PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
 			}
 
-			FlushLog();
+			bufferedLogger.FlushLog();
 		}
 
 		// Restore the best model if validation data is used

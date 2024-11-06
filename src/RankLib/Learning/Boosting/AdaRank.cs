@@ -74,7 +74,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 	public AdaRank(ILogger<AdaRank>? logger = null) => _logger = logger ?? NullLogger<AdaRank>.Instance;
 
 	public AdaRank(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<AdaRank>? logger = null) : base(
-		samples, features, scorer, logger) =>
+		samples, features, scorer) =>
 		_logger = logger ?? NullLogger<AdaRank>.Instance;
 
 	private void UpdateBestModelOnValidation()
@@ -117,10 +117,10 @@ public class AdaRank : Ranker<AdaRankParameters>
 	private int Learn(int startIteration, bool withEnqueue)
 	{
 		var t = startIteration;
-
+		var bufferedLogger = new BufferedLogger(_logger, new StringBuilder());
 		for (; t <= Parameters.IterationCount; t++)
 		{
-			PrintLog([7], [t.ToString()]);
+			bufferedLogger.PrintLog([7], [t.ToString()]);
 
 			var bestWeakRanker = LearnWeakRanker();
 			if (bestWeakRanker == null)
@@ -136,7 +136,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 					Array.Copy(_backupSampleWeight, _sampleWeights, _sampleWeights.Length);
 					BestScoreOnValidationData = 0.0;
 					_lastTrainedScore = _backupTrainScore;
-					PrintLogLn([8, 9, 9, 9], [bestWeakRanker.Fid.ToString(), "", "", "ROLLBACK"]);
+					bufferedLogger.PrintLogLn([8, 9, 9, 9], [bestWeakRanker.Fid.ToString(), "", "", "ROLLBACK"]);
 					continue;
 				}
 
@@ -204,7 +204,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 				_lastFeature = bestWeakRanker.Fid;
 			}
 
-			PrintLog([8, 9], [bestWeakRanker.Fid.ToString(), SimpleMath.Round(trainedScore, 4).ToString(CultureInfo.InvariantCulture)]);
+			bufferedLogger.PrintLog([8, 9], [bestWeakRanker.Fid.ToString(), SimpleMath.Round(trainedScore, 4).ToString(CultureInfo.InvariantCulture)]);
 			if (t % 1 == 0 && ValidationSamples != null)
 			{
 				var scoreOnValidation = Scorer.Score(Rank(ValidationSamples));
@@ -214,13 +214,13 @@ public class AdaRank : Ranker<AdaRankParameters>
 					UpdateBestModelOnValidation();
 				}
 
-				PrintLog([9, 9],
+				bufferedLogger.PrintLog([9, 9],
 					[SimpleMath.Round(scoreOnValidation, 4).ToString(CultureInfo.InvariantCulture), status]);
 			}
 			else
-				PrintLog([9, 9], ["", status]);
+				bufferedLogger.PrintLog([9, 9], ["", status]);
 
-			FlushLog();
+			bufferedLogger.FlushLog();
 
 			if (delta <= 0)
 			{
@@ -264,7 +264,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn([7, 8, 9, 9, 9], ["#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status"]);
+		_logger.PrintLog([7, 8, 9, 9, 9], ["#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status"]);
 
 		if (Parameters.TrainWithEnqueue)
 		{

@@ -1,6 +1,4 @@
 using System.Text;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 using RankLib.Utilities;
 
@@ -13,15 +11,18 @@ namespace RankLib.Learning;
 public abstract class Ranker<TRankerParameters> : Ranker, IRanker<TRankerParameters>
 	where TRankerParameters : IRankerParameters, new()
 {
-	protected Ranker(ILogger<Ranker<TRankerParameters>>? logger = null) : base(logger)
+	protected Ranker()
 	{
 	}
 
-	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<Ranker>? logger = null)
-	: base(samples, features, scorer, logger)
+	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer)
+	: base(samples, features, scorer)
 	{
 	}
 
+	/// <summary>
+	/// Gets or sets the ranker parameters
+	/// </summary>
 	public TRankerParameters Parameters { get; set; } = new();
 
 	IRankerParameters IRanker.Parameters
@@ -36,14 +37,21 @@ public abstract class Ranker<TRankerParameters> : Ranker, IRanker<TRankerParamet
 /// </summary>
 public abstract class Ranker : IRanker
 {
-	private readonly ILogger<Ranker> _logger;
-	private readonly StringBuilder _logBuffer = new();
 	private MetricScorer? _scorer;
 
+	/// <summary>
+	/// Gets or sets the training samples.
+	/// </summary>
 	public List<RankList> Samples { get; set; } = []; // training samples
 
+	/// <summary>
+	/// Gets or sets the validation samples.
+	/// </summary>
 	public List<RankList>? ValidationSamples { get; set; }
 
+	/// <summary>
+	/// Gets or sets the features.
+	/// </summary>
 	public int[] Features { get; set; } = [];
 
 	/// <summary>
@@ -63,17 +71,16 @@ public abstract class Ranker : IRanker
 	protected double ScoreOnTrainingData = 0.0;
 	protected double BestScoreOnValidationData = 0.0;
 
-	protected Ranker(ILogger<Ranker>? logger = null) => _logger = logger ?? NullLogger<Ranker>.Instance;
+	protected Ranker()
+	{
+	}
 
-	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<Ranker>? logger = null)
+	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer)
 	{
 		Samples = samples;
 		Features = features;
-		_scorer = scorer;
-		_logger = logger ?? NullLogger<Ranker>.Instance;
+		Scorer = scorer;
 	}
-
-	// Utility functions
 
 	public double GetScoreOnTrainingData() => ScoreOnTrainingData;
 
@@ -113,43 +120,6 @@ public abstract class Ranker : IRanker
 		FileUtils.Write(modelFile, Encoding.ASCII, Model);
 	}
 
-	protected void PrintLog(int[] len, string[] messages)
-	{
-		if (_logger.IsEnabled(LogLevel.Information))
-		{
-			for (var i = 0; i < messages.Length; i++)
-			{
-				var msg = messages[i];
-				if (msg.Length > len[i])
-					_logBuffer.Append(msg.AsSpan(0, len[i]));
-				else
-					_logBuffer.Append(msg.PadRight(len[i], ' '));
-				_logBuffer.Append(" | ");
-			}
-		}
-	}
-
-	protected void PrintLogLn(int[] len, string[] messages)
-	{
-		if (_logger.IsEnabled(LogLevel.Information))
-		{
-			PrintLog(len, messages);
-			FlushLog();
-		}
-	}
-
-	protected void FlushLog()
-	{
-		if (_logger.IsEnabled(LogLevel.Information))
-		{
-			if (_logBuffer.Length > 0)
-			{
-				_logger.LogInformation("{Message}", _logBuffer.ToString());
-				_logBuffer.Clear();
-			}
-		}
-	}
-
 	/// <summary>
 	/// Initializes the ranker for training.
 	/// </summary>
@@ -168,6 +138,8 @@ public abstract class Ranker : IRanker
 	/// <param name="dataPoint">The data point.</param>
 	/// <returns>The score for the data point</returns>
 	public abstract double Eval(DataPoint dataPoint);
+
+	/// <inheritdoc />
 	public abstract override string ToString();
 
 	/// <summary>

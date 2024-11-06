@@ -32,12 +32,12 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 	private readonly ILogger<LinearRegression> _logger;
 	private double[] _weight = [];
 
-	public LinearRegression(ILogger<LinearRegression>? logger = null) : base(logger) =>
+	public LinearRegression(ILogger<LinearRegression>? logger = null) : base() =>
 		_logger = logger ?? NullLogger<LinearRegression>.Instance;
 
 	public LinearRegression(List<RankList> samples, int[] features, MetricScorer scorer,
 		ILogger<LinearRegression>? logger = null)
-		: base(samples, features, scorer, logger) =>
+		: base(samples, features, scorer) =>
 		_logger = logger ?? NullLogger<LinearRegression>.Instance;
 
 	public override string Name => RankerName;

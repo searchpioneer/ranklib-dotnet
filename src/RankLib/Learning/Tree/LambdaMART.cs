@@ -102,14 +102,14 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	{
 	}
 
-	public LambdaMART(LambdaMARTParameters parameters, ILogger<LambdaMART>? logger = null) : base(logger)
+	public LambdaMART(LambdaMARTParameters parameters, ILogger<LambdaMART>? logger = null) : base()
 	{
 		Parameters = parameters;
 		_logger = logger ?? NullLogger<LambdaMART>.Instance;
 	}
 
 	public LambdaMART(LambdaMARTParameters parameters, List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaMART>? logger = null)
-		: base(samples, features, scorer, logger)
+		: base(samples, features, scorer)
 	{
 		Parameters = parameters;
 		_logger = logger ?? NullLogger<LambdaMART>.Instance;
@@ -239,13 +239,14 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		_logger.LogInformation("Training starts...");
 
 		if (ValidationSamples != null)
-			PrintLogLn([7, 9, 9], ["#iter", Scorer.Name + "-T", Scorer.Name + "-V"]);
+			_logger.PrintLog([7, 9, 9], ["#iter", Scorer.Name + "-T", Scorer.Name + "-V"]);
 		else
-			PrintLogLn([7, 9], ["#iter", Scorer.Name + "-T"]);
+			_logger.PrintLog([7, 9], ["#iter", Scorer.Name + "-T"]);
 
+		var bufferedLogger = new BufferedLogger(_logger, new StringBuilder());
 		for (var m = 0; m < Parameters.TreeCount; m++)
 		{
-			PrintLog([7], [(m + 1).ToString()]);
+			bufferedLogger.PrintLog([7], [(m + 1).ToString()]);
 
 			//Compute lambdas (which act as the "pseudo responses")
 			//Create training instances for MART:
@@ -282,7 +283,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			//Evaluate the current model
 			ScoreOnTrainingData = ComputeModelScoreOnTraining();
 
-			PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
+			bufferedLogger.PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
 
 			if (ValidationSamples != null)
 			{
@@ -293,7 +294,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 				}
 
 				double score = ComputeModelScoreOnValidation();
-				PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
+				bufferedLogger.PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
 				if (score > BestScoreOnValidationData)
 				{
 					BestScoreOnValidationData = score;
@@ -301,7 +302,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 				}
 			}
 
-			FlushLog();
+			bufferedLogger.FlushLog();
 
 			if (m - _bestModelOnValidation > Parameters.StopEarlyRoundCount)
 				break;

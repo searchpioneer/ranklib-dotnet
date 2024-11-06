@@ -65,11 +65,11 @@ public class RankBoost : Ranker<RankBoostParameters>
 
 	public override string Name => RankerName;
 
-	public RankBoost(ILogger<RankBoost>? logger = null) : base(logger) =>
+	public RankBoost(ILogger<RankBoost>? logger = null) : base() =>
 		_logger = logger ?? NullLogger<RankBoost>.Instance;
 
 	public RankBoost(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<RankBoost>? logger = null)
-		: base(samples, features, scorer, logger) =>
+		: base(samples, features, scorer) =>
 		_logger = logger ?? NullLogger<RankBoost>.Instance;
 
 	private int[] Reorder(RankList rankList, int fid)
@@ -306,13 +306,15 @@ public class RankBoost : Ranker<RankBoostParameters>
 	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn([7, 8, 9, 9, 9, 9], ["#iter",
+		_logger.PrintLog([7, 8, 9, 9, 9, 9], ["#iter",
 			"Sel. F.",
 			"Threshold",
 			"Error",
 			Scorer.Name + "-T",
 			Scorer.Name + "-V"
 		]);
+
+		var bufferedLogger = new BufferedLogger(_logger, new StringBuilder());
 
 		for (var t = 1; t <= Parameters.IterationCount; t++)
 		{
@@ -328,7 +330,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 
 			UpdateSampleWeights(alphaT);
 
-			PrintLog([7, 8, 9, 9], [
+			bufferedLogger.PrintLog([7, 8, 9, 9], [
 				t.ToString(),
 				wr.Fid.ToString(),
 				SimpleMath.Round(wr.Threshold, 4).ToString(CultureInfo.InvariantCulture),
@@ -337,7 +339,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 
 			if (t % 1 == 0)
 			{
-				PrintLog([9], [SimpleMath.Round(Scorer.Score(Rank(Samples)), 4).ToString(CultureInfo.InvariantCulture)]);
+				bufferedLogger.PrintLog([9], [SimpleMath.Round(Scorer.Score(Rank(Samples)), 4).ToString(CultureInfo.InvariantCulture)]);
 				if (ValidationSamples != null)
 				{
 					var score = Scorer.Score(Rank(ValidationSamples));
@@ -349,10 +351,10 @@ public class RankBoost : Ranker<RankBoostParameters>
 						_bestModelWeights.Clear();
 						_bestModelWeights.AddRange(_rWeight);
 					}
-					PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
+					bufferedLogger.PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
 				}
 			}
-			FlushLog();
+			bufferedLogger.FlushLog();
 		}
 
 		if (ValidationSamples != null && _bestModelRankers.Count > 0)

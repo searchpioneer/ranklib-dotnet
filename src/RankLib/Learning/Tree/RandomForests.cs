@@ -94,15 +94,14 @@ public class RandomForests : Ranker<RandomForestsParameters>
 
 	public override string Name => RankerName;
 
-	public RandomForests(ILoggerFactory? loggerFactory = null) : base((loggerFactory ?? NullLoggerFactory.Instance)
-		.CreateLogger<RandomForests>())
+	public RandomForests(ILoggerFactory? loggerFactory = null) : base()
 	{
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<RandomForests>();
 	}
 
 	public RandomForests(List<RankList> samples, int[] features, MetricScorer scorer, ILoggerFactory? loggerFactory = null)
-		: base(samples, features, scorer, (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<RandomForests>())
+		: base(samples, features, scorer)
 	{
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<RandomForests>();
@@ -132,7 +131,7 @@ public class RandomForests : Ranker<RandomForestsParameters>
 	{
 		var rankerFactory = new RankerFactory(_loggerFactory);
 		_logger.LogInformation("Training starts...");
-		PrintLogLn([9, 9, 11], ["bag", Scorer.Name + "-B", Scorer.Name + "-OOB"]);
+		_logger.PrintLog([9, 9, 11], ["bag", Scorer.Name + "-B", Scorer.Name + "-OOB"]);
 
 		double[]? impacts = null;
 
@@ -155,7 +154,7 @@ public class RandomForests : Ranker<RandomForestsParameters>
 				for (var ftr = 0; ftr < impacts.Length; ftr++)
 					impacts[ftr] += r.Impacts[ftr];
 			}
-			PrintLogLn([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(r.GetScoreOnTrainingData(), 4).ToString(CultureInfo.InvariantCulture)]);
+			_logger.PrintLog([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(r.GetScoreOnTrainingData(), 4).ToString(CultureInfo.InvariantCulture)]);
 			Ensembles[i] = r.Ensemble;
 		}
 

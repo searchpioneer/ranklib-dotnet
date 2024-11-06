@@ -68,7 +68,7 @@ public class RankNet : Ranker<RankNetParameters>
 		_logger = logger ?? NullLogger<RankNet>.Instance;
 
 	public RankNet(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<RankNet>? logger = null)
-		: base(samples, features, scorer, logger) =>
+		: base(samples, features, scorer) =>
 		_logger = logger ?? NullLogger<RankNet>.Instance;
 
 	protected void SetInputOutput(int inputCount, int outputCount)
@@ -280,9 +280,11 @@ public class RankNet : Ranker<RankNetParameters>
 	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
-		PrintLogLn([7, 14, 9, 9],
+		_logger.PrintLog([7, 14, 9, 9],
 			["#epoch", "% mis-ordered", Scorer.Name + "-T", Scorer.Name + "-V"]);
-		PrintLogLn([7, 14, 9, 9], [" ", "  pairs", " ", " "]);
+		_logger.PrintLog([7, 14, 9, 9], [" ", "  pairs", " ", " "]);
+
+		var bufferedLogger = new BufferedLogger(_logger, new StringBuilder());
 
 		for (var i = 1; i <= Parameters.IterationCount; i++)
 		{
@@ -298,10 +300,10 @@ public class RankNet : Ranker<RankNetParameters>
 			ScoreOnTrainingData = Scorer.Score(Rank(Samples));
 			EstimateLoss();
 
-			PrintLog([7, 14],
+			bufferedLogger.PrintLog([7, 14],
 				[i.ToString(), SimpleMath.Round((double)_misorderedPairs / _totalPairs, 4).ToString(CultureInfo.InvariantCulture)]);
 
-			PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
+			bufferedLogger.PrintLog([9], [SimpleMath.Round(ScoreOnTrainingData, 4).ToString(CultureInfo.InvariantCulture)]);
 			if (ValidationSamples != null)
 			{
 				var score = Scorer.Score(Rank(ValidationSamples));
@@ -311,10 +313,10 @@ public class RankNet : Ranker<RankNetParameters>
 					SaveBestModelOnValidation();
 				}
 
-				PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
+				bufferedLogger.PrintLog([9], [SimpleMath.Round(score, 4).ToString(CultureInfo.InvariantCulture)]);
 			}
 
-			FlushLog();
+			bufferedLogger.FlushLog();
 		}
 
 		// Restore the best model if validation data was specified
