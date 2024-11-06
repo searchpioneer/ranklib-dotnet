@@ -86,26 +86,25 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 	{
 		AddOption(new Option<FileInfo>("--train", "Training data file").ExistingOnly());
 		AddOption(new Option<RankerType>("--ranker", () => RankerType.CoordinateAscent, "Ranking algorithm to use"));
-		AddOption(new Option<string>("--feature", "Feature description file: list features to be considered by the learner, each on a separate line. If not specified, all features will be used."));
+		AddOption(new Option<FileInfo>("--feature", "Feature description file: list features to be considered by the learner, each on a separate line. If not specified, all features will be used.").ExistingOnly());
 		AddOption(new Option<string>("--metric2t", () => "ERR@10", "Metric to optimize on the training data"));
 		AddOption(new Option<double?>("--gmax", "Highest judged relevance label"));
 		AddOption(new Option<FileInfo>("--qrel", "TREC-style relevance judgment file").ExistingOnly());
 		AddOption(new Option<bool>("--missingZero", "Substitute zero for missing feature values rather than throwing an exception."));
-		AddOption(new Option<FileInfo>("--validate", "Specify if you want to tune your system on the validation data (default=unspecified)"));
+		AddOption(new Option<FileInfo>("--validate", "Specify if you want to tune your system on the validation data (default=unspecified)").ExistingOnly());
 		AddOption(new Option<float>("--tvs", "If you don't have separate validation data, use this to set train-validation split to be (x)(1.0-x)"));
 		AddOption(new Option<FileInfo>("--save", "Save the model learned (default=not-save)"));
 
-
-		AddOption(new Option<IEnumerable<FileInfo>>("--test", "Specify if you want to evaluate the trained model on this data (default=unspecified)"));
+		AddOption(new Option<IEnumerable<FileInfo>>("--test", "Specify if you want to evaluate the trained model on this data (default=unspecified)").ExistingOnly());
 		AddOption(new Option<float>("--tts", "Set train-test split to be (x)(1.0-x). -tts will override -tvs"));
 		AddOption(new Option<string>("--metric2T", "Metric to evaluate on the test data (default to the same as specified for -metric2t)"));
-		AddOption(new Option<NormalizerType>("--norm", "Normalize all feature vectors (default=no-normalization)"));
+		AddOption(new Option<NormalizerType>("--norm", "Type of normalizer to use to normalize all feature vectors (default=no-normalization)"));
 
 		AddOption(new Option<int>("--kcv", () => -1, "Specify if you want to perform k-fold cross validation using the specified training data (default=NoCV)"));
 		AddOption(new Option<DirectoryInfo>("--kcvmd", "Directory for models trained via cross-validation (default=not-save)"));
 		AddOption(new Option<string>("--kcvmn", "Name for model learned in each fold. It will be prefix-ed with the fold-number (default=empty)"));
 
-		AddOption(new Option<IEnumerable<FileInfo>>("--load", "Load saved model file"));
+		AddOption(new Option<IEnumerable<FileInfo>>("--load", "Load saved model file").ExistingOnly());
 		AddOption(new Option<int>("--thread", () => Environment.ProcessorCount, "Number of threads to use. If unspecified, will use all available processors"));
 		AddOption(new Option<FileInfo>("--rank", "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
 		AddOption(new Option<FileInfo>("--indri", "Indri ranking file").ExistingOnly());
