@@ -331,23 +331,18 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 
 	public override double Eval(DataPoint dataPoint) => _ensemble.Eval(dataPoint);
 
-	public override string ToString() => _ensemble.ToString();
-
-	public override string Model
+	public override string GetModel()
 	{
-		get
-		{
-			var output = new StringBuilder();
-			output.AppendLine($"## {Name}");
-			output.AppendLine($"## No. of trees = {Parameters.TreeCount}");
-			output.AppendLine($"## No. of leaves = {Parameters.TreeLeavesCount}");
-			output.AppendLine($"## No. of threshold candidates = {Parameters.Threshold}");
-			output.AppendLine($"## Learning rate = {Parameters.LearningRate}");
-			output.AppendLine($"## Stop early = {Parameters.StopEarlyRoundCount}");
-			output.AppendLine();
-			output.AppendLine(ToString());
-			return output.ToString();
-		}
+		var output = new StringBuilder();
+		output.AppendLine($"## {Name}");
+		output.AppendLine($"## No. of trees = {Parameters.TreeCount}");
+		output.AppendLine($"## No. of leaves = {Parameters.TreeLeavesCount}");
+		output.AppendLine($"## No. of threshold candidates = {Parameters.Threshold}");
+		output.AppendLine($"## Learning rate = {Parameters.LearningRate}");
+		output.AppendLine($"## Stop early = {Parameters.StopEarlyRoundCount}");
+		output.AppendLine();
+		output.AppendLine(_ensemble.ToString());
+		return output.ToString();
 	}
 
 	public override void LoadFromString(string model)

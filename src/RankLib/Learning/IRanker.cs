@@ -4,10 +4,14 @@ using RankLib.Metric;
 namespace RankLib.Learning;
 
 /// <summary>
-/// Parameters for an <see cref="IRanker{TParameters}"/>
+/// Parameters for a <see cref="IRanker"/>
 /// </summary>
 public interface IRankerParameters
 {
+	/// <summary>
+	/// Logs the ranker parameters
+	/// </summary>
+	/// <param name="logger">The logger</param>
 	void Log(ILogger logger);
 }
 
@@ -16,40 +20,105 @@ public interface IRankerParameters
 /// </summary>
 public interface IRanker
 {
+	/// <summary>
+	/// Gets or sets the training samples.
+	/// </summary>
 	public List<RankList> Samples { get; set; }
 
+	/// <summary>
+	/// Gets or sets the validation samples.
+	/// </summary>
 	public List<RankList>? ValidationSamples { get; set; }
 
+	/// <summary>
+	/// Gets or sets the features.
+	/// </summary>
 	public int[] Features { get; set; }
 
+	/// <summary>
+	/// Gets or sets the metric scorer
+	/// </summary>
 	public MetricScorer Scorer { get; set; }
 
+	/// <summary>
+	/// Initializes the ranker for training.
+	/// </summary>
+	/// <returns>a new instance of <see cref="Task"/> that can be awaited.</returns>
 	Task InitAsync();
+
+	/// <summary>
+	/// Trains the ranker to learn from the training samples.
+	/// </summary>
+	/// <returns>a new instance of <see cref="Task"/> that can be awaited.</returns>
 	Task LearnAsync();
+
+	/// <summary>
+	/// Evaluates a datapoint.
+	/// </summary>
+	/// <param name="dataPoint">The data point.</param>
+	/// <returns>The score for the data point</returns>
 	double Eval(DataPoint dataPoint);
-	string Model { get; }
+
+	/// <summary>
+	/// Gets the model for the ranker.
+	/// </summary>
+	/// <remarks>
+	/// When a ranker is loaded from a string with <see cref="LoadFromString"/>, contains the ranker model.
+	/// For a ranker trained using an <see cref="Evaluator"/>, contains the model <b>after</b> training.
+	/// </remarks>
+	string GetModel();
+
+	/// <summary>
+	/// Loads a ranker from a model.
+	/// </summary>
+	/// <param name="model">The model for the ranker.</param>
 	void LoadFromString(string model);
+
+	/// <summary>
+	/// Gets the name of the ranker.
+	/// </summary>
 	string Name { get; }
 
 	/// <summary>
-	/// The parameters used for training the ranker.
+	/// Gets or sets the ranker parameters used to train the ranker
 	/// </summary>
 	public IRankerParameters Parameters { get; set; }
 
+	/// <summary>
+	/// Ranks a rank list by evaluating and scoring data points using the ranker's model.
+	/// </summary>
+	/// <param name="rankList">The rank list to rank.</param>
+	/// <returns>A new instance of <see cref="RankList"/> ranked using the ranker's model.</returns>
 	RankList Rank(RankList rankList);
 
-	List<RankList> Rank(List<RankList> rankLists)
-	{
-		var rankedRankLists = new List<RankList>(rankLists.Count);
-		for (var i = 0; i < rankLists.Count; i++)
-			rankedRankLists.Add(Rank(rankLists[i]));
+	/// <summary>
+	/// Ranks a list of rank lists by evaluating and scoring data points using the ranker's model.
+	/// </summary>
+	/// <param name="rankLists">The list of rank list to rank.</param>
+	/// <returns>
+	/// A list of new instances of <see cref="RankList"/> ranked using the ranker's model.
+	/// The order of rank lists matches the input order.
+	/// </returns>
+	List<RankList> Rank(List<RankList> rankLists);
 
-		return rankedRankLists;
-	}
-
+	/// <summary>
+	/// Saves the model to file.
+	/// </summary>
+	/// <param name="modelFile">The file path to save the model to.</param>
+	/// <returns>a new instance of <see cref="Task"/> that can be awaited.</returns>
 	Task SaveAsync(string modelFile);
 
+	/// <summary>
+	/// Gets the score from evaluation on the training data.
+	/// </summary>
+	/// <returns>The training data score</returns>
 	double GetTrainingDataScore();
+
+	/// <summary>
+	/// Gets the score from evaluation on the validation data.
+	/// </summary>
+	/// <returns>The validation data score.</returns>
+	double GetValidationDataScore();
 }
 
 /// <summary>

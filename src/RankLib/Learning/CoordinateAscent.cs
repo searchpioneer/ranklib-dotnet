@@ -286,31 +286,23 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 		return score;
 	}
 
-	public override string ToString()
+	public override string GetModel()
 	{
 		var output = new StringBuilder();
+		output.AppendLine($"## {Name}");
+		output.AppendLine($"## Restart = {Parameters.RandomRestartCount}");
+		output.AppendLine($"## MaxIteration = {Parameters.MaximumIterationCount}");
+		output.AppendLine($"## StepBase = {Parameters.StepBase.ToRankLibString()}");
+		output.AppendLine($"## StepScale = {Parameters.StepScale.ToRankLibString()}");
+		output.AppendLine($"## Tolerance = {Parameters.Tolerance.ToRankLibString()}");
+		output.AppendLine($"## Regularized = {(Parameters.Regularized ? "true" : "false")}");
+		output.AppendLine($"## Slack = {Parameters.Slack.ToRankLibString()}");
+
 		for (var i = 0; i < Weight.Length; i++)
 			output.Append($"{Features[i]}:{Weight[i]}{(i == Weight.Length - 1 ? "" : " ")}");
 
+		output.AppendLine();
 		return output.ToString();
-	}
-
-	public override string Model
-	{
-		get
-		{
-			var output = new StringBuilder();
-			output.AppendLine($"## {Name}");
-			output.AppendLine($"## Restart = {Parameters.RandomRestartCount}");
-			output.AppendLine($"## MaxIteration = {Parameters.MaximumIterationCount}");
-			output.AppendLine($"## StepBase = {Parameters.StepBase.ToRankLibString()}");
-			output.AppendLine($"## StepScale = {Parameters.StepScale.ToRankLibString()}");
-			output.AppendLine($"## Tolerance = {Parameters.Tolerance.ToRankLibString()}");
-			output.AppendLine($"## Regularized = {(Parameters.Regularized ? "true" : "false")}");
-			output.AppendLine($"## Slack = {Parameters.Slack.ToRankLibString()}");
-			output.AppendLine(ToString());
-			return output.ToString();
-		}
 	}
 
 	public override void LoadFromString(string model)

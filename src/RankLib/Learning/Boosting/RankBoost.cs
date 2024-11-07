@@ -387,26 +387,17 @@ public class RankBoost : Ranker<RankBoostParameters>
 		return score;
 	}
 
-	public override string ToString()
+	public override string GetModel()
 	{
 		var output = new StringBuilder();
+		output.Append($"## {Name}\n");
+		output.Append($"## Iteration = {Parameters.IterationCount}\n");
+		output.Append($"## No. of threshold candidates = {Parameters.Threshold}\n");
+
 		for (var i = 0; i < _wRankers.Count; i++)
 			output.Append($"{_wRankers[i]}:{_rWeight[i]}{(i == _rWeight.Count - 1 ? "" : " ")}");
 
 		return output.ToString();
-	}
-
-	public override string Model
-	{
-		get
-		{
-			var output = new StringBuilder();
-			output.Append($"## {Name}\n");
-			output.Append($"## Iteration = {Parameters.IterationCount}\n");
-			output.Append($"## No. of threshold candidates = {Parameters.Threshold}\n");
-			output.Append(ToString());
-			return output.ToString();
-		}
 	}
 
 	public override void LoadFromString(string model)

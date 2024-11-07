@@ -1,30 +1,41 @@
 using System.Text;
+using RankLib.Eval;
 using RankLib.Metric;
 using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
 /// <summary>
-/// Generic base class for a ranker with typed ranker parameters.
+/// Base class for a generic ranker with typed ranker parameters.
 /// </summary>
 /// <typeparam name="TRankerParameters">The type of ranker parameters</typeparam>
 public abstract class Ranker<TRankerParameters> : Ranker, IRanker<TRankerParameters>
 	where TRankerParameters : IRankerParameters, new()
 {
+	/// <summary>
+	/// Initializes a new instance of <see cref="Ranker{TRankerParameters}"/>
+	/// </summary>
 	protected Ranker()
 	{
 	}
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="Ranker{TRankerParameters}"/>
+	/// </summary>
+	/// <param name="samples">The training samples</param>
+	/// <param name="features">The features</param>
+	/// <param name="scorer">The scorer to use for training</param>
 	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer)
 	: base(samples, features, scorer)
 	{
 	}
 
 	/// <summary>
-	/// Gets or sets the ranker parameters
+	/// Gets or sets the ranker parameters used to train the ranker
 	/// </summary>
 	public TRankerParameters Parameters { get; set; } = new();
 
+	/// <inheritdoc />
 	IRankerParameters IRanker.Parameters
 	{
 		get => Parameters;
@@ -33,7 +44,7 @@ public abstract class Ranker<TRankerParameters> : Ranker, IRanker<TRankerParamet
 }
 
 /// <summary>
-/// Base class for a ranker with ranker parameters
+/// Base class for a ranker
 /// </summary>
 public abstract class Ranker : IRanker
 {
@@ -42,23 +53,17 @@ public abstract class Ranker : IRanker
 	protected double TrainingDataScore = 0.0;
 	protected double ValidationDataScore = 0.0;
 
-	/// <summary>
-	/// Gets or sets the training samples.
-	/// </summary>
-	public List<RankList> Samples { get; set; } = []; // training samples
+	/// <inheritdoc />
+	public List<RankList> Samples { get; set; } = [];
 
-	/// <summary>
-	/// Gets or sets the validation samples.
-	/// </summary>
+	/// <inheritdoc />
 	public List<RankList>? ValidationSamples { get; set; }
 
-	/// <summary>
-	/// Gets or sets the features.
-	/// </summary>
+	/// <inheritdoc />
 	public int[] Features { get; set; } = [];
 
 	/// <summary>
-	/// Gets or sets the scorer
+	/// Gets or sets the metric scorer
 	/// </summary>
 	/// <remarks>
 	/// If no scorer is assigned, a new instance of <see cref="APScorer"/> is instantiated on first get
@@ -69,12 +74,22 @@ public abstract class Ranker : IRanker
 		set => _scorer = value;
 	}
 
+	/// <inheritdoc />
 	IRankerParameters IRanker.Parameters { get; set; } = default!;
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="Ranker"/>
+	/// </summary>
 	protected Ranker()
 	{
 	}
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="Ranker"/>
+	/// </summary>
+	/// <param name="samples">The training samples</param>
+	/// <param name="features">The features</param>
+	/// <param name="scorer">The scorer to use for training</param>
 	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer)
 	{
 		Samples = samples;
@@ -82,18 +97,13 @@ public abstract class Ranker : IRanker
 		Scorer = scorer;
 	}
 
-	/// <summary>
-	/// Gets the score from the training data.
-	/// </summary>
-	/// <returns>The training data score.</returns>
+	/// <inheritdoc />
 	public double GetTrainingDataScore() => TrainingDataScore;
 
-	/// <summary>
-	/// Gets the score from the validation data.
-	/// </summary>
-	/// <returns>The validation data score.</returns>
+	/// <inheritdoc />
 	public double GetValidationDataScore() => ValidationDataScore;
 
+	/// <inheritdoc />
 	public virtual RankList Rank(RankList rankList)
 	{
 		var scores = new double[rankList.Count];
@@ -104,6 +114,7 @@ public abstract class Ranker : IRanker
 		return new RankList(rankList, idx);
 	}
 
+	/// <inheritdoc />
 	public List<RankList> Rank(List<RankList> rankLists)
 	{
 		var rankedRankLists = new List<RankList>(rankLists.Count);
@@ -113,52 +124,29 @@ public abstract class Ranker : IRanker
 		return rankedRankLists;
 	}
 
-	/// <summary>
-	/// Saves the model to file.
-	/// </summary>
-	/// <param name="modelFile">The file path to save the model to.</param>
+	/// <inheritdoc />
 	public async Task SaveAsync(string modelFile)
 	{
 		var directory = Path.GetDirectoryName(Path.GetFullPath(modelFile));
 		Directory.CreateDirectory(directory!);
-		await File.WriteAllTextAsync(modelFile, Model, Encoding.ASCII);
+		await File.WriteAllTextAsync(modelFile, GetModel(), Encoding.ASCII);
 	}
 
-	/// <summary>
-	/// Initializes the ranker for training.
-	/// </summary>
-	/// <returns></returns>
+	/// <inheritdoc />
 	public abstract Task InitAsync();
 
-	/// <summary>
-	/// Trains the ranker to learn from the training samples.
-	/// </summary>
-	/// <returns></returns>
+	/// <inheritdoc />
 	public abstract Task LearnAsync();
 
-	/// <summary>
-	/// Evaluates a datapoint.
-	/// </summary>
-	/// <param name="dataPoint">The data point.</param>
-	/// <returns>The score for the data point</returns>
+	/// <inheritdoc />
 	public abstract double Eval(DataPoint dataPoint);
 
 	/// <inheritdoc />
-	public abstract override string ToString();
+	public abstract string GetModel();
 
-	/// <summary>
-	/// Gets the model for the ranker.
-	/// </summary>
-	public abstract string Model { get; }
-
-	/// <summary>
-	/// Loads a ranker from a model.
-	/// </summary>
-	/// <param name="model">The model for the ranker.</param>
+	/// <inheritdoc />
 	public abstract void LoadFromString(string model);
 
-	/// <summary>
-	/// Gets the name of the ranker.
-	/// </summary>
+	/// <inheritdoc />
 	public abstract string Name { get; }
 }

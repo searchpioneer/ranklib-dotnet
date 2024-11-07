@@ -188,31 +188,23 @@ public class RandomForests : Ranker<RandomForestsParameters>
 		return s / Ensembles.Length;
 	}
 
-	public override string ToString()
+	public override string GetModel()
 	{
-		var builder = new StringBuilder();
+		var output = new StringBuilder();
+		output.Append($"## {Name}\n");
+		output.Append($"## No. of bags = {Parameters.BagCount}\n");
+		output.Append($"## Sub-sampling = {Parameters.SubSamplingRate}\n");
+		output.Append($"## Feature-sampling = {Parameters.FeatureSamplingRate}\n");
+		output.Append($"## No. of trees = {Parameters.TreeCount}\n");
+		output.Append($"## No. of leaves = {Parameters.TreeLeavesCount}\n");
+		output.Append($"## No. of threshold candidates = {Parameters.Threshold}\n");
+		output.Append($"## Learning rate = {Parameters.LearningRate}\n\n");
+		output.Append(ToString());
+
 		for (var i = 0; i < Parameters.BagCount; i++)
-			builder.Append(Ensembles[i]).Append('\n');
+			output.Append(Ensembles[i]).Append('\n');
 
-		return builder.ToString();
-	}
-
-	public override string Model
-	{
-		get
-		{
-			var output = new StringBuilder();
-			output.Append("## " + Name + "\n");
-			output.Append("## No. of bags = " + Parameters.BagCount + "\n");
-			output.Append("## Sub-sampling = " + Parameters.SubSamplingRate + "\n");
-			output.Append("## Feature-sampling = " + Parameters.FeatureSamplingRate + "\n");
-			output.Append("## No. of trees = " + Parameters.TreeCount + "\n");
-			output.Append("## No. of leaves = " + Parameters.TreeLeavesCount + "\n");
-			output.Append("## No. of threshold candidates = " + Parameters.Threshold + "\n");
-			output.Append("## Learning rate = " + Parameters.LearningRate + "\n\n");
-			output.Append(ToString());
-			return output.ToString();
-		}
+		return output.ToString();
 	}
 
 	public override void LoadFromString(string model)

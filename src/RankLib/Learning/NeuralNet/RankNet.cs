@@ -351,7 +351,7 @@ public class RankNet : Ranker<RankNetParameters>
 		return OutputLayer[0].GetOutput();
 	}
 
-	public override string ToString()
+	protected string GetModelLayerWeights()
 	{
 		var output = new StringBuilder();
 		for (var i = 0; i < _layers.Count - 1; i++)
@@ -365,30 +365,27 @@ public class RankNet : Ranker<RankNetParameters>
 		return output.ToString();
 	}
 
-	public override string Model
+	public override string GetModel()
 	{
-		get
-		{
-			var output = new StringBuilder();
-			output.AppendLine($"## {Name}");
-			output.AppendLine($"## Epochs = {Parameters.IterationCount}");
-			output.AppendLine($"## No. of features = {Features.Length}");
-			output.AppendLine($"## No. of hidden layers = {_layers.Count - 2}");
-			for (var i = 1; i < _layers.Count - 1; i++)
-				output.AppendLine($"## Layer {i}: {_layers[i].Count} neurons");
+		var output = new StringBuilder();
+		output.AppendLine($"## {Name}");
+		output.AppendLine($"## Epochs = {Parameters.IterationCount}");
+		output.AppendLine($"## No. of features = {Features.Length}");
+		output.AppendLine($"## No. of hidden layers = {_layers.Count - 2}");
+		for (var i = 1; i < _layers.Count - 1; i++)
+			output.AppendLine($"## Layer {i}: {_layers[i].Count} neurons");
 
-			for (var i = 0; i < Features.Length; i++)
-				output.Append($"{Features[i]}{(i == Features.Length - 1 ? "" : " ")}");
+		for (var i = 0; i < Features.Length; i++)
+			output.Append($"{Features[i]}{(i == Features.Length - 1 ? "" : " ")}");
 
-			output.AppendLine();
-			output.AppendLine($"{_layers.Count - 2}");
-			for (var i = 1; i < _layers.Count - 1; i++)
-				output.AppendLine($"{_layers[i].Count}");
+		output.AppendLine();
+		output.AppendLine($"{_layers.Count - 2}");
+		for (var i = 1; i < _layers.Count - 1; i++)
+			output.AppendLine($"{_layers[i].Count}");
 
-			output.AppendLine(ToString());
+		output.AppendLine(GetModelLayerWeights());
 
-			return output.ToString();
-		}
+		return output.ToString();
 	}
 
 	public override void LoadFromString(string model)

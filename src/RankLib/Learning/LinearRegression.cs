@@ -139,16 +139,13 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 		return output.ToString();
 	}
 
-	public override string Model
+	public override string GetModel()
 	{
-		get
-		{
-			var output = new StringBuilder()
-				.AppendLine($"## {Name}")
-				.AppendLine($"## Lambda = {Parameters.Lambda}")
-				.Append(ToString());
-			return output.ToString();
-		}
+		var output = new StringBuilder()
+			.AppendLine($"## {Name}")
+			.AppendLine($"## Lambda = {Parameters.Lambda}")
+			.Append(ToString());
+		return output.ToString();
 	}
 
 	public override void LoadFromString(string model)

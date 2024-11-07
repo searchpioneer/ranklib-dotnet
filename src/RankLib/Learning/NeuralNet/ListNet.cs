@@ -159,27 +159,24 @@ public class ListNet : RankNet
 		return Task.CompletedTask;
 	}
 
-	public override string Model
+	public override string GetModel()
 	{
-		get
-		{
-			var output = new StringBuilder();
-			output.Append($"## {Name}\n");
-			output.Append($"## Epochs = {Parameters.IterationCount}\n");
-			output.Append($"## No. of features = {Features.Length}\n");
+		var output = new StringBuilder();
+		output.Append($"## {Name}\n");
+		output.Append($"## Epochs = {Parameters.IterationCount}\n");
+		output.Append($"## No. of features = {Features.Length}\n");
 
-			// Print used features
-			for (var i = 0; i < Features.Length; i++)
-				output.Append(Features[i] + (i == Features.Length - 1 ? "" : " "));
+		// Print used features
+		for (var i = 0; i < Features.Length; i++)
+			output.Append(Features[i] + (i == Features.Length - 1 ? "" : " "));
 
-			output.Append('\n');
+		output.Append('\n');
 
-			// Print network information
-			output.Append("0\n"); // [# hidden layers, *ALWAYS* 0 since we're using linear net]
-								  // Print learned weights
-			output.Append(ToString());
-			return output.ToString();
-		}
+		// Print network information
+		output.Append("0\n"); // [# hidden layers, *ALWAYS* 0 since we're using linear net]
+		// Print learned weights
+		output.Append(GetModelLayerWeights());
+		return output.ToString();
 	}
 
 	public override void LoadFromString(string model)

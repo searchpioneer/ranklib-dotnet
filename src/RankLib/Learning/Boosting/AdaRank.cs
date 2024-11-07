@@ -309,28 +309,19 @@ public class AdaRank : Ranker<AdaRankParameters>
 		return score;
 	}
 
-	public override string ToString()
+	public override string GetModel()
 	{
 		var output = new StringBuilder();
+		output.Append($"## {Name}\n");
+		output.Append($"## Iteration = {Parameters.IterationCount}\n");
+		output.Append($"## Train with enqueue: {(Parameters.TrainWithEnqueue ? "Yes" : "No")}\n");
+		output.Append($"## Tolerance = {Parameters.Tolerance}\n");
+		output.Append($"## Max consecutive selection count = {Parameters.MaximumSelectedCount}\n");
+
 		for (var i = 0; i < _rankers.Count; i++)
 			output.Append(_rankers[i].Fid + ":" + _rankerWeights[i] + (i == _rankers.Count - 1 ? "" : " "));
 
 		return output.ToString();
-	}
-
-	public override string Model
-	{
-		get
-		{
-			var output = new StringBuilder();
-			output.Append($"## {Name}\n");
-			output.Append($"## Iteration = {Parameters.IterationCount}\n");
-			output.Append($"## Train with enqueue: {(Parameters.TrainWithEnqueue ? "Yes" : "No")}\n");
-			output.Append($"## Tolerance = {Parameters.Tolerance}\n");
-			output.Append($"## Max consecutive selection count = {Parameters.MaximumSelectedCount}\n");
-			output.Append(ToString());
-			return output.ToString();
-		}
 	}
 
 	public override void LoadFromString(string model)
