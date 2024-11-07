@@ -69,11 +69,9 @@ public class LambdaMARTParameters : IRankerParameters
 }
 
 /// <summary>
-/// LambdaMART is a machine learning ranking algorithm that combines LambdaRank and gradient-boosted decision trees (GBDT).
+/// LambdaMART is a ranking algorithm that combines LambdaRank and gradient-boosted decision trees (GBDT).
 /// It optimizes for ranking metrics like NDCG (Normalized Discounted Cumulative Gain) by adjusting the model's weights
-/// based on the relative order of items, rather than just classification or regression errors. LambdaMART is widely used
-/// in information retrieval tasks, such as search engines and recommendation systems, where the goal is to present
-/// results in the most relevant order.
+/// based on the relative order of items, rather than just classification or regression errors.
 /// </summary>
 /// <remarks>
 /// <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/LambdaMART_Final.pdf">
@@ -414,7 +412,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 
 	// We also update down j (which remember should be left relevant than k) by subtracting out the same val:
 	//         pseudoResponse[j] -= current error * importance
-	protected void ComputePseudoResponses(int start, int end, int current)
+	private void ComputePseudoResponses(int start, int end, int current)
 	{
 		var cutoff = Scorer.K;
 		// compute the lambda for each document (a.k.a "pseudo response")
