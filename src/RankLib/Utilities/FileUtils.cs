@@ -3,13 +3,13 @@ using System.Text;
 
 namespace RankLib.Utilities;
 
-public static class FileUtils
+internal static class FileUtils
 {
 	public static StreamReader SmartReader(string inputFile) => SmartReader(inputFile, Encoding.UTF8);
 
 	public static StreamReader SmartReader(string inputFile, Encoding encoding)
 	{
-		Stream input = new FileStream(inputFile, FileMode.Open, FileAccess.Read);
+		Stream input = File.OpenRead(inputFile);
 
 		if (inputFile.EndsWith(".gz"))
 			input = new GZipStream(input, CompressionMode.Decompress);

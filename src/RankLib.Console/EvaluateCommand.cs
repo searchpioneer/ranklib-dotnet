@@ -87,7 +87,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<FileInfo>("--train", "Training data file").ExistingOnly());
 		AddOption(new Option<RankerType>("--ranker", () => RankerType.CoordinateAscent, "Ranking algorithm to use"));
 		AddOption(new Option<FileInfo>("--feature", "Feature description file: list features to be considered by the learner, each on a separate line. If not specified, all features will be used.").ExistingOnly());
-		AddOption(new Option<string>("--metric2t", () => "ERR@10", "Metric to optimize on the training data. Supported: MAP, NDCG@k, DCG@k, P@k, RR@k, ERR@k."));
+		AddOption(new Option<string>("--metric2t", () => "ERR@10", "Metric to optimize on the training data. Supports MAP, NDCG@k, DCG@k, P@k, RR@k, ERR@k."));
 		AddOption(new Option<double?>("--gmax", "Highest judged relevance label. It affects the calculation of ERR (default=4, i.e. 5-point scale {0,1,2,3,4} where value used is 2^gmax)"));
 		AddOption(new Option<FileInfo>("--qrel", "TREC-style relevance judgment file").ExistingOnly());
 		AddOption(new Option<bool>("--missingZero", "Substitute zero for missing feature values rather than throwing an exception."));
@@ -104,13 +104,13 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<DirectoryInfo>("--kcvmd", "Directory for models trained via cross-validation (default=not-save)"));
 		AddOption(new Option<string>("--kcvmn", "Name for model learned in each fold. It will be prefix-ed with the fold-number (default=empty)"));
 
-		AddOption(new Option<IEnumerable<FileInfo>>("--load", "Load saved model file").ExistingOnly());
+		AddOption(new Option<IEnumerable<FileInfo>>("--load", "Load saved model file for evaluation").ExistingOnly());
 		AddOption(new Option<int>("--thread", () => Environment.ProcessorCount, "Number of threads to use. If unspecified, will use all available processors"));
 		AddOption(new Option<FileInfo>("--rank", "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
 		AddOption(new Option<FileInfo>("--indri", "Indri ranking file").ExistingOnly());
-		AddOption(new Option<bool>("--sparse", "Use sparse representation"));
+		AddOption(new Option<bool>("--sparse", "Use data points with sparse representation"));
 		AddOption(new Option<FileInfo>("--idv", "Per-ranked list model performance (in test metric). Has to be used with --test").ExistingOnly());
-		AddOption(new Option<FileInfo>("--score", "Store ranker's score for each object being ranked (has to be used with --rank)"));
+		AddOption(new Option<FileInfo>("--score", "Store ranker's score for each object being ranked. Has to be used with --rank"));
 
 		// RankNet specific parameters
 		AddOption(new Option<int?>("--epoch", "The number of epochs to train"));
@@ -140,16 +140,16 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<int?>("--tree", "Number of trees"));
 		AddOption(new Option<int?>("--leaf", "Number of leaves for each tree"));
 		AddOption(new Option<float?>("--shrinkage", "Shrinkage, or learning rate"));
-		AddOption(new Option<int?>("--mls", "Min leaf support -- minimum #samples each leaf has to contain"));
+		AddOption(new Option<int?>("--mls", "Minimum leaf support. Minimum number of samples each leaf has to contain"));
 		AddOption(new Option<int?>("--estop", "Stop early when no improvement is observed on validation data in e consecutive rounds (default=100)"));
 
 		// Random Forests specific parameters
 		AddOption(new Option<int?>("--bag", "Number of bags (default=300)"));
-		AddOption(new Option<float?>("--srate", () => RandomForestsParameters.DefaultSubSamplingRate, "Sub-sampling rate"));
+		AddOption(new Option<float?>(["--srate", "-srate", "-s"], () => RandomForestsParameters.DefaultSubSamplingRate, "Sub-sampling rate"));
 		AddOption(new Option<float?>("--frate", () => RandomForestsParameters.DefaultFeatureSamplingRate, "Feature sampling rate"));
 		AddOption(new Option<RankerType?>("--rtype", "Random Forests ranker type to bag. Random Forests only support MART/LambdaMART"));
 		AddOption(new Option<double?>("--L2", "TODO: Lambda"));
-		AddOption(new Option<bool?>("--hr", "TODO: Must Have Relevance Doc"));
+		AddOption(new Option<bool?>("--hr", () => false, "Whether to ignore ranked list without any relevant document."));
 		AddOption(new Option<int?>(
 			"--randomSeed",
 			"A seed to use for random number generation. This is useful for internal " +
@@ -212,13 +212,10 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		var kcvModelDir = options.Kcvmd;
 		var kcvModelFile = options.Kcvmn;
-
 		var validationFile = options.Validate;
 		var featureDescriptionFile = options.Feature;
-
 		var indriRankingFile = options.Indri;
 		var prpFile = options.Idv;
-
 		var scoreFile = options.Score;
 
 		if (options.MissingZero)

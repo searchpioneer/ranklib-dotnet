@@ -14,7 +14,7 @@ public class FeatureManager
 
 	public List<RankList> ReadInput(string inputFile) => ReadInput(inputFile, false, false);
 
-	public List<RankList> ReadInput(string inputFile, bool mustHaveRelDoc, bool useSparseRepresentation)
+	public List<RankList> ReadInput(string inputFile, bool mustHaveRelevantDocument, bool useSparseRepresentation)
 	{
 		var samples = new List<RankList>();
 		var countEntries = 0;
@@ -23,7 +23,7 @@ public class FeatureManager
 		{
 			using var reader = FileUtils.SmartReader(inputFile);
 			var lastId = string.Empty;
-			var hasRel = false;
+			var hasRelevantDocument = false;
 			var dataPoints = new List<DataPoint>();
 
 			while (reader.ReadLine() is { } content)
@@ -41,22 +41,22 @@ public class FeatureManager
 
 				if (!string.IsNullOrEmpty(lastId) && !lastId.Equals(dataPoint.Id, StringComparison.OrdinalIgnoreCase))
 				{
-					if (!mustHaveRelDoc || hasRel)
+					if (!mustHaveRelevantDocument || hasRelevantDocument)
 						samples.Add(new RankList(dataPoints));
 
 					dataPoints = new List<DataPoint>();
-					hasRel = false;
+					hasRelevantDocument = false;
 				}
 
 				if (dataPoint.Label > 0)
-					hasRel = true;
+					hasRelevantDocument = true;
 
 				lastId = dataPoint.Id;
 				dataPoints.Add(dataPoint);
 				countEntries++;
 			}
 
-			if (dataPoints.Count != 0 && (!mustHaveRelDoc || hasRel))
+			if (dataPoints.Count > 0 && (!mustHaveRelevantDocument || hasRelevantDocument))
 				samples.Add(new RankList(dataPoints));
 
 			_logger.LogInformation(

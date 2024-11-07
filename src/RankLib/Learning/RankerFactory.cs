@@ -121,8 +121,8 @@ public class RankerFactory
 
 	public IRanker LoadRankerFromFile(string modelFile)
 	{
-		var fullText = FileUtils.Read(modelFile, Encoding.ASCII);
-		return LoadRankerFromString(fullText);
+		var model = FileUtils.Read(modelFile, Encoding.ASCII);
+		return LoadRankerFromString(model);
 	}
 
 	public IRanker LoadRankerFromString(string model)
