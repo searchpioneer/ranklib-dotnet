@@ -1,6 +1,6 @@
 namespace RankLib.Utilities;
 
-public static class ParallelExecutor
+internal static class ParallelExecutor
 {
 	public static async Task<TWorker[]> ExecuteAsync<TWorker>(TWorker worker, int nTasks, int maxDegreeOfParallelism = -1, CancellationToken cancellationToken = default)
 		where TWorker : WorkerThread

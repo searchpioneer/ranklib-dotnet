@@ -1,6 +1,6 @@
 namespace RankLib.Utilities;
 
-public abstract class WorkerThread : RunnableTask
+internal abstract class WorkerThread : RunnableTask
 {
 	protected int start = -1;
 	protected int end = -1;
@@ -14,7 +14,7 @@ public abstract class WorkerThread : RunnableTask
 	public abstract WorkerThread Clone();
 }
 
-public abstract class RunnableTask
+internal abstract class RunnableTask
 {
 	public abstract Task RunAsync();
 }

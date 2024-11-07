@@ -1,6 +1,6 @@
 namespace RankLib.Stats;
 
-public static class BasicStats
+internal static class BasicStats
 {
 	/// <summary>
 	/// Computes the arithmetic mean for an array of values.

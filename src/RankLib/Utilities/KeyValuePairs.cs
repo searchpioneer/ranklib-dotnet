@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace RankLib.Utilities;
 
-public class KeyValuePairs : IReadOnlyList<KeyValuePair<string, string>>
+internal class KeyValuePairs : IReadOnlyList<KeyValuePair<string, string>>
 {
 	private readonly List<KeyValuePair<string, string>> _pairs = [];
 

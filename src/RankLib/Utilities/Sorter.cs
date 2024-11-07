@@ -1,6 +1,6 @@
 namespace RankLib.Utilities;
 
-public static class Sorter
+internal static class Sorter
 {
 	/// <summary>
 	/// Sort a double array using Interchange sort.

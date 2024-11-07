@@ -3,7 +3,7 @@ using RankLib.Utilities;
 
 namespace RankLib.Parsing;
 
-public class ModelLineProducer
+internal class ModelLineProducer
 {
 	private const int CarriageReturn = '\r';
 	private const int LineFeed = '\n';
