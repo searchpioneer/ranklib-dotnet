@@ -30,7 +30,7 @@ public class ComparisonTests
 		// - Random Forests
 
 		var javaExecutable = new JavaExecutable("RankyMcRankFace-0.2.0.jar");
-		var dotnetExecutable = new DotnetExecutable("RankLib.Console.dll");
+		var dotnetExecutable = new DotnetExecutable("RankLib.Cli.dll");
 		var trainFile = "sample_judgments_with_features.txt";
 		var outputDir = Path.Combine(SolutionPaths.Root, "test_output");
 
@@ -75,7 +75,7 @@ public class ComparisonTests
 	{
 		var trainFile = "sample_judgments_with_features.txt";
 		var outputsNotEqual = new List<RankerType>();
-		var dotnetExecutable = new DotnetExecutable("RankLib.Console.dll");
+		var dotnetExecutable = new DotnetExecutable("RankLib.Cli.dll");
 
 		foreach (var rankerType in Enum.GetValues<RankerType>())
 		{

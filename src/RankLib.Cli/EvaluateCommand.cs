@@ -10,7 +10,7 @@ using RankLib.Learning.Tree;
 using RankLib.Metric;
 using RankLib.Utilities;
 
-namespace RankLib.Console;
+namespace RankLib.Cli;
 
 public class EvaluateCommandOptions : ICommandOptions
 {

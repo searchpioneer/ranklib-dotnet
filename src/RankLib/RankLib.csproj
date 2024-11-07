@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).Tests" />
-    <InternalsVisibleTo Include="$(AssemblyName).Console" />
+    <InternalsVisibleTo Include="$(AssemblyName).Cli" />
   </ItemGroup>
 
 </Project>

@@ -5,7 +5,7 @@ using RankLib.Features;
 using RankLib.Learning;
 using RankLib.Stats;
 
-namespace RankLib.Console;
+namespace RankLib.Cli;
 
 public class StatsCommandOptions : ICommandOptions
 {

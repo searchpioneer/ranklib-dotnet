@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using RankLib.Eval;
 using RankLib.Stats;
 
-namespace RankLib.Console;
+namespace RankLib.Cli;
 
 public class AnalyzeCommandOptions : ICommandOptions
 {

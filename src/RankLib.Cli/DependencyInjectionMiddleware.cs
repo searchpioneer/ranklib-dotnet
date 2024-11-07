@@ -3,7 +3,7 @@ using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace RankLib.Console;
+namespace RankLib.Cli;
 
 // From:
 // https://anthonysimmon.com/true-dependency-injection-with-system-commandline/

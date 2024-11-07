@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace RankLib.Console;
+namespace RankLib.Cli;
 
 // From:
 // https://anthonysimmon.com/true-dependency-injection-with-system-commandline/

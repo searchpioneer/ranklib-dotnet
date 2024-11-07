@@ -4,7 +4,7 @@ using RankLib.Eval;
 using RankLib.Learning;
 using RankLib.Stats;
 
-namespace RankLib.Console;
+namespace RankLib.Cli;
 
 public class CombineCommandOptions : ICommandOptions
 {

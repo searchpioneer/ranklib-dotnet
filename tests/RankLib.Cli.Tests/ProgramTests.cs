@@ -1,11 +1,11 @@
 using Meziantou.Extensions.Logging.Xunit;
 using Microsoft.Extensions.Logging;
-using RankLib.Console.Tests.Utilities;
+using RankLib.Cli.Tests.Utilities;
 using RankLib.Learning;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RankLib.Console.Tests;
+namespace RankLib.Cli.Tests;
 
 public class ProgramTests
 {

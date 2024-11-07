@@ -2,17 +2,21 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib", "src\RankLib\RankLib.csproj", "{08B4F192-ED07-445F-BCF4-DBFCC919E6FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Console", "src\RankLib.Console\RankLib.Console.csproj", "{069925C7-8B79-4FDF-8C40-D2869445E7EA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Cli", "src\RankLib.Cli\RankLib.Cli.csproj", "{069925C7-8B79-4FDF-8C40-D2869445E7EA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Tests", "tests\RankLib.Tests\RankLib.Tests.csproj", "{518F3172-A3C4-4A3A-9714-026DEBCEB21C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Console.Tests", "tests\RankLib.Console.Tests\RankLib.Console.Tests.csproj", "{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Cli.Tests", "tests\RankLib.Cli.Tests\RankLib.Cli.Tests.csproj", "{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Comparison.Tests", "tests\RankLib.Comparison.Tests\RankLib.Comparison.Tests.csproj", "{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0D76860A-E6B8-4546-8310-AE9B13D97F56}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E1AF7739-5FDF-4E02-B7A5-8DA9A7CBD6F0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{C6CD551C-98C5-4741-BB0C-949CA2C20288}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Build", "build\Build\Build.csproj", "{F71AAD63-BCEE-4788-9390-666B6EDE28A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,6 +44,10 @@ Global
 		{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F71AAD63-BCEE-4788-9390-666B6EDE28A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F71AAD63-BCEE-4788-9390-666B6EDE28A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F71AAD63-BCEE-4788-9390-666B6EDE28A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F71AAD63-BCEE-4788-9390-666B6EDE28A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{08B4F192-ED07-445F-BCF4-DBFCC919E6FD} = {0D76860A-E6B8-4546-8310-AE9B13D97F56}
@@ -47,5 +55,6 @@ Global
 		{154FFCE9-E2E8-4D3D-8959-4710A62F4B21} = {E1AF7739-5FDF-4E02-B7A5-8DA9A7CBD6F0}
 		{F7DB4D13-E9B6-4BCE-99BC-56C77EFCA5A4} = {E1AF7739-5FDF-4E02-B7A5-8DA9A7CBD6F0}
 		{518F3172-A3C4-4A3A-9714-026DEBCEB21C} = {E1AF7739-5FDF-4E02-B7A5-8DA9A7CBD6F0}
+		{F71AAD63-BCEE-4788-9390-666B6EDE28A0} = {C6CD551C-98C5-4741-BB0C-949CA2C20288}
 	EndGlobalSection
 EndGlobal

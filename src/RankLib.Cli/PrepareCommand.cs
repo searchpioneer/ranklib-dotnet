@@ -4,7 +4,7 @@ using RankLib.Features;
 using RankLib.Learning;
 using RankLib.Utilities;
 
-namespace RankLib.Console;
+namespace RankLib.Cli;
 
 public class PrepareCommandOptions : ICommandOptions
 {

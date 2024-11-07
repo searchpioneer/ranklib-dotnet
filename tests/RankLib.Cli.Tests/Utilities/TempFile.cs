@@ -1,4 +1,4 @@
-namespace RankLib.Console.Tests.Utilities;
+namespace RankLib.Cli.Tests.Utilities;
 
 public class TempFile : IDisposable
 {

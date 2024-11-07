@@ -9,7 +9,7 @@ using RankLib.Features;
 using RankLib.Learning;
 using RankLib.Metric;
 
-namespace RankLib.Console;
+namespace RankLib.Cli;
 
 internal class Program
 {
