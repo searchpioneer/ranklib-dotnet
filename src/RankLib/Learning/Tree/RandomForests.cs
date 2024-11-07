@@ -66,15 +66,17 @@ public class RandomForestsParameters : IRankerParameters
 	/// </summary>
 	public int MinimumLeafSupport { get; set; } = 1;
 
-	public void Log(ILogger logger)
+	public override string ToString()
 	{
-		logger.LogInformation("No. of bags: " + BagCount);
-		logger.LogInformation("Sub-sampling: " + SubSamplingRate);
-		logger.LogInformation("Feature-sampling: " + FeatureSamplingRate);
-		logger.LogInformation("No. of trees: " + TreeCount);
-		logger.LogInformation("No. of leaves: " + TreeLeavesCount);
-		logger.LogInformation("No. of threshold candidates: " + Threshold);
-		logger.LogInformation("Learning rate: " + LearningRate);
+		var builder = new StringBuilder();
+		builder.AppendLine($"No. of bags: {BagCount}");
+		builder.AppendLine($"Sub-sampling: {SubSamplingRate}");
+		builder.AppendLine($"Feature-sampling: {FeatureSamplingRate}");
+		builder.AppendLine($"No. of trees: {TreeCount}");
+		builder.AppendLine($"No. of leaves: {TreeLeavesCount}");
+		builder.AppendLine($"No. of threshold candidates: {Threshold}");
+		builder.AppendLine($"Learning rate: {LearningRate}");
+		return builder.ToString();
 	}
 }
 

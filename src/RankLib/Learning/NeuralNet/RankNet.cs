@@ -32,12 +32,14 @@ public class RankNetParameters : IRankerParameters
 	/// </summary>
 	public double LearningRate { get; set; } = 0.00005;
 
-	public void Log(ILogger logger)
+	public override string ToString()
 	{
-		logger.LogInformation($"No. of epochs: {IterationCount}");
-		logger.LogInformation($"No. of hidden layers: {HiddenLayerCount}");
-		logger.LogInformation($"No. of hidden nodes per layer: {HiddenNodePerLayerCount}");
-		logger.LogInformation($"Learning rate: {LearningRate}");
+		var builder = new StringBuilder();
+		builder.AppendLine($"No. of epochs: {IterationCount}");
+		builder.AppendLine($"No. of hidden layers: {HiddenLayerCount}");
+		builder.AppendLine($"No. of hidden nodes per layer: {HiddenNodePerLayerCount}");
+		builder.AppendLine($"Learning rate: {LearningRate}");
+		return builder.ToString();
 	}
 }
 

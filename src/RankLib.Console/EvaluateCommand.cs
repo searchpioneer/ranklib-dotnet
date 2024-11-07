@@ -450,7 +450,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				logger.LogInformation("Model file: {ModelFile}", options.Save.FullName);
 
 			logger.LogInformation("[+] {Ranker}'s Parameters:", options.Ranker);
-			rankerParameters.Log(logger);
+			logger.LogInformation("{RankerParameters}", rankerParameters.ToString());
 
 			// starting to do some work
 			if (foldCv != -1)

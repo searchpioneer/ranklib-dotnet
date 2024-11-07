@@ -16,8 +16,7 @@ public class LinearRegressionParameters : IRankerParameters
 	/// </summary>
 	public double Lambda { get; set; } = 1E-10;
 
-	public void Log(ILogger logger) =>
-		logger.LogInformation("L2-norm regularization: lambda = {Lambda}", Lambda);
+	public override string ToString() => $"L2-norm regularization: lambda = {Lambda}";
 }
 
 /// <summary>
@@ -126,9 +125,12 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 		return score;
 	}
 
-	public override string ToString()
+	public override string GetModel()
 	{
-		var output = new StringBuilder();
+		var output = new StringBuilder()
+			.AppendLine($"## {Name}")
+			.AppendLine($"## Lambda = {Parameters.Lambda}");
+
 		output.Append($"0:{_weight[0]} ");
 		for (var i = 0; i < Features.Length; i++)
 		{
@@ -136,15 +138,7 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 			if (i != _weight.Length - 1)
 				output.Append(' ');
 		}
-		return output.ToString();
-	}
 
-	public override string GetModel()
-	{
-		var output = new StringBuilder()
-			.AppendLine($"## {Name}")
-			.AppendLine($"## Lambda = {Parameters.Lambda}")
-			.Append(ToString());
 		return output.ToString();
 	}
 

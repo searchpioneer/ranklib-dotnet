@@ -55,14 +55,16 @@ public class LambdaMARTParameters : IRankerParameters
 	/// </summary>
 	public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
 
-	public void Log(ILogger logger)
+	public override string ToString()
 	{
-		logger.LogInformation("No. of trees: {NTrees}", TreeCount);
-		logger.LogInformation("No. of leaves: {NTreeLeaves}", TreeLeavesCount);
-		logger.LogInformation("No. of threshold candidates: {NThreshold}", Threshold);
-		logger.LogInformation("Min leaf support: {MinLeafSupport}", MinimumLeafSupport);
-		logger.LogInformation("Learning rate: {LearningRate}", LearningRate);
-		logger.LogInformation("Stop early: {NRoundToStopEarly} rounds without performance gain on validation data", StopEarlyRoundCount);
+		var builder = new StringBuilder();
+		builder.AppendLine($"No. of trees: {TreeCount}");
+		builder.AppendLine($"No. of leaves: {TreeLeavesCount}");
+		builder.AppendLine($"No. of threshold candidates: {Threshold}");
+		builder.AppendLine($"Min leaf support: {MinimumLeafSupport}");
+		builder.AppendLine($"Learning rate: {LearningRate}");
+		builder.AppendLine($"Stop early: {StopEarlyRoundCount} rounds without performance gain on validation data");
+		return builder.ToString();
 	}
 }
 

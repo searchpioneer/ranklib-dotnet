@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using RankLib.Metric;
 
 namespace RankLib.Learning;
@@ -6,13 +5,11 @@ namespace RankLib.Learning;
 /// <summary>
 /// Parameters for a <see cref="IRanker"/>
 /// </summary>
+/// <remarks>
+/// Implementations should override <see cref="Object.ToString"/> to allow parameters to be logged.
+/// </remarks>
 public interface IRankerParameters
 {
-	/// <summary>
-	/// Logs the ranker parameters
-	/// </summary>
-	/// <param name="logger">The logger</param>
-	void Log(ILogger logger);
 }
 
 /// <summary>

@@ -54,15 +54,18 @@ public class CoordinateAscentParameters : IRankerParameters
 	/// </summary>
 	public double Slack { get; set; } = 0.001;
 
-	public void Log(ILogger logger)
+	public override string ToString()
 	{
-		logger.LogInformation("No. of random restarts: {Restart}", RandomRestartCount);
-		logger.LogInformation("No. of iterations to search in each direction: {NMaxIteration}", MaximumIterationCount);
-		logger.LogInformation("Tolerance: {Tolerance}", Tolerance);
+		var builder = new StringBuilder();
+		builder.AppendLine($"No. of random restarts: {RandomRestartCount}");
+		builder.AppendLine($"No. of iterations to search in each direction: {MaximumIterationCount}");
+		builder.AppendLine($"Tolerance: {Tolerance}");
 		if (Regularized)
-			logger.LogInformation("Reg. param: {Slack}", Slack);
+			builder.AppendLine($"Reg. param: {Slack}");
 		else
-			logger.LogInformation("Regularization: No");
+			builder.AppendLine("Regularization: No");
+
+		return builder.ToString();
 	}
 }
 

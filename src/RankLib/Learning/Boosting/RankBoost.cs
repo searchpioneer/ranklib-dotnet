@@ -23,10 +23,13 @@ public class RankBoostParameters : IRankerParameters
 	/// </summary>
 	public int Threshold { get; set; } = 10;
 
-	public void Log(ILogger logger)
+
+	public override string ToString()
 	{
-		logger.LogInformation("No. of rounds: {Rounds}", IterationCount);
-		logger.LogInformation("No. of threshold candidates: {Threshold}", Threshold);
+		var builder = new StringBuilder();
+		builder.AppendLine($"No. of rounds: {IterationCount}");
+		builder.AppendLine($"No. of threshold candidates: {Threshold}");
+		return builder.ToString();
 	}
 }
 

@@ -117,14 +117,14 @@ public class Split
 
 	public double Eval(DataPoint dataPoint)
 	{
-		var n = this;
-		while (n._featureId != -1)
+		var split = this;
+		while (split._featureId != -1)
 		{
-			n = dataPoint.GetFeatureValue(n._featureId) <= n._threshold
-				? n._left
-				: n._right;
+			split = dataPoint.GetFeatureValue(split._featureId) <= split._threshold
+				? split._left
+				: split._right;
 		}
-		return n._output;
+		return split._output;
 	}
 
 	public override string ToString() => ToString("");

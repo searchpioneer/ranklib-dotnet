@@ -32,12 +32,14 @@ public class AdaRankParameters : IRankerParameters
 	/// </summary>
 	public int MaximumSelectedCount { get; set; } = 5;
 
-	public void Log(ILogger logger)
+	public override string ToString()
 	{
-		logger.LogInformation("No. of rounds: {NIteration}", IterationCount);
-		logger.LogInformation("Train with 'enqueue': {TrainWithEnqueue}", TrainWithEnqueue ? "Yes" : "No");
-		logger.LogInformation("Tolerance: {Tolerance}", Tolerance);
-		logger.LogInformation("Max Sel. Count: {MaxSelCount}", MaximumSelectedCount);
+		var builder = new StringBuilder();
+		builder.AppendLine($"No. of rounds: {IterationCount}");
+		builder.AppendLine($"Train with 'enqueue': {(TrainWithEnqueue ? "Yes" : "No")}");
+		builder.AppendLine($"Tolerance: {Tolerance}");
+		builder.AppendLine($"Max Sel. Count: {MaximumSelectedCount}");
+		return builder.ToString();
 	}
 }
 
