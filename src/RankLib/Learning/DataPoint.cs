@@ -38,8 +38,8 @@ public abstract class DataPoint
 	/// <returns>Dense array of feature values</returns>
 	protected float[] Parse(ReadOnlySpan<char> span)
 	{
-		var fVals = new float[MaxFeature];
-		Array.Fill(fVals, Unknown);
+		var featureValues = new float[MaxFeature];
+		Array.Fill(featureValues, Unknown);
 		var lastFeature = -1;
 
 		try
@@ -78,12 +78,12 @@ public abstract class DataPoint
 						MaxFeature += FeatureIncrease;
 
 					var tmp = new float[MaxFeature];
-					Array.Copy(fVals, tmp, fVals.Length);
-					Array.Fill(tmp, Unknown, fVals.Length, MaxFeature - fVals.Length);
-					fVals = tmp;
+					Array.Copy(featureValues, tmp, featureValues.Length);
+					Array.Fill(tmp, Unknown, featureValues.Length, MaxFeature - featureValues.Length);
+					featureValues = tmp;
 				}
 
-				fVals[f] = float.Parse(val);
+				featureValues[f] = float.Parse(val);
 
 				if (f > FeatureCount)
 					FeatureCount = f;
@@ -94,15 +94,15 @@ public abstract class DataPoint
 
 			// shrink fVals
 			var shrinkFVals = new float[lastFeature + 1];
-			Array.Copy(fVals, shrinkFVals, lastFeature + 1);
-			fVals = shrinkFVals;
+			Array.Copy(featureValues, shrinkFVals, lastFeature + 1);
+			featureValues = shrinkFVals;
 		}
 		catch (Exception ex)
 		{
-			throw new InvalidOperationException("Error in DataPoint::Parse", ex);
+			throw new InvalidOperationException("Error parsing data point", ex);
 		}
 
-		return fVals;
+		return featureValues;
 	}
 
 	/// <summary>

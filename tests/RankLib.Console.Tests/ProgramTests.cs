@@ -256,13 +256,9 @@ public class ProgramTests
 			Assert.True(rank > 0);
 
 			if (dname.StartsWith("P"))
-			{
 				pRank = Math.Min(rank, pRank);
-			}
 			else
-			{
 				nRank = Math.Min(rank, nRank);
-			}
 
 			Assert.True(pRank < nRank);
 			Assert.Equal(1, pRank);
