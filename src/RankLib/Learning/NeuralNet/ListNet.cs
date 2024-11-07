@@ -174,7 +174,7 @@ public class ListNet : RankNet
 
 		// Print network information
 		output.Append("0\n"); // [# hidden layers, *ALWAYS* 0 since we're using linear net]
-		// Print learned weights
+							  // Print learned weights
 		output.Append(GetModelLayerWeights());
 		return output.ToString();
 	}

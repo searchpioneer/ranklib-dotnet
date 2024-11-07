@@ -172,6 +172,4 @@ public class FeatureStats
 		_logger.LogInformation($"Variance         : {stats.Variance:0.00}");
 		_logger.LogInformation($"STD              : {stats.StandardDeviation:0.00}");
 	}
-
-
 }

@@ -1,4 +1,4 @@
-﻿namespace RankLib.Tests;
+namespace RankLib.Tests;
 
 public class TempFile : IDisposable
 {

@@ -1,4 +1,4 @@
-﻿using System.CommandLine;
+using System.CommandLine;
 using Bullseye;
 using static BuildTargets;
 using static Bullseye.Targets;
@@ -28,12 +28,9 @@ cmd.SetHandler(async () =>
 	var options = new Options(Options.Definitions.Select(d => (d.Aliases[0],
 		cmdLine.GetValueForOption(cmd.Options.OfType<Option<bool>>().Single(o => o.HasAlias(d.Aliases[0]))))));
 
-
-
 	Target(Restore, () =>
 	{
 		Run("dotnet", "restore");
-		Run("dotnet", "tool restore");
 	});
 
 	Target(Clean, () =>

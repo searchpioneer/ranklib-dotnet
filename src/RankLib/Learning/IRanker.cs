@@ -6,7 +6,7 @@ namespace RankLib.Learning;
 /// Parameters for a <see cref="IRanker"/>
 /// </summary>
 /// <remarks>
-/// Implementations should override <see cref="Object.ToString"/> to allow parameters to be logged.
+/// Implementations should override <see cref="object.ToString"/> to allow parameters to be logged.
 /// </remarks>
 public interface IRankerParameters
 {
