@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace RankLib.Cli;
 
-public sealed class CustomFormatter : ConsoleFormatter, IDisposable
+internal sealed class CustomFormatter : ConsoleFormatter, IDisposable
 {
 	private readonly IDisposable? _optionsReloadToken;
 	private ConsoleFormatterOptions _formatterOptions;

@@ -16,7 +16,7 @@ public class SparseDataPoint : DataPoint
 	private static readonly AccessPattern SearchPattern = AccessPattern.Random;
 
 	// The feature ids for known values
-	private int[] _fIds;
+	private int[] _fIds = [];
 	// Internal search optimizers. Currently unused.
 	private int _lastMinId = -1;
 	private int _lastMinPos = -1;

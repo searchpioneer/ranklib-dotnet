@@ -31,6 +31,7 @@ cmd.SetHandler(async () =>
 	Target(Restore, () =>
 	{
 		Run("dotnet", "restore");
+		Run("dotnet", "tool restore");
 	});
 
 	Target(Clean, () =>

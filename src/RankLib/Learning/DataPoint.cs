@@ -18,7 +18,7 @@ public abstract class DataPoint
 	protected const float Unknown = float.NaN;
 
 	// attributes
-	protected float[] FVals = null; // _fVals[0] is unused. Feature id MUST start from 1
+	protected float[] FVals = []; // _fVals[0] is unused. Feature id MUST start from 1
 
 	// helper attributes
 	protected int _knownFeatures; // number of known feature values

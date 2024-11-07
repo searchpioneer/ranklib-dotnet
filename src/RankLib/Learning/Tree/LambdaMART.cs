@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
 using RankLib.Parsing;
 using RankLib.Utilities;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace RankLib.Learning.Tree;
 
@@ -102,7 +103,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	{
 	}
 
-	public LambdaMART(LambdaMARTParameters parameters, ILogger<LambdaMART>? logger = null) : base()
+	public LambdaMART(LambdaMARTParameters parameters, ILogger<LambdaMART>? logger = null)
 	{
 		Parameters = parameters;
 		_logger = logger ?? NullLogger<LambdaMART>.Instance;

@@ -1,3 +1,5 @@
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 namespace RankLib.Learning.Tree;
 
 /// <summary>
@@ -93,7 +95,7 @@ public class RegressionTree
 	{
 		_trainingLabels = [];
 		_index = [];
-		_hist = null;
+		_hist = null!;
 
 		for (var i = 0; i < _leaves.Count; i++)
 			_leaves[i].ClearSamples();

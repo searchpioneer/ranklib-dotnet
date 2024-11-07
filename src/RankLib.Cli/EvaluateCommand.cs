@@ -9,6 +9,8 @@ using RankLib.Learning.NeuralNet;
 using RankLib.Learning.Tree;
 using RankLib.Metric;
 using RankLib.Utilities;
+#pragma warning disable CS8604 // Possible null reference argument.
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
 
 namespace RankLib.Cli;
 
