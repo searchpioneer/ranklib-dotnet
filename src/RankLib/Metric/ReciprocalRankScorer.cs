@@ -2,16 +2,21 @@ using RankLib.Learning;
 
 namespace RankLib.Metric;
 
+/// <summary>
+/// Calculates the Reciprocal Rank (RR) metric for ranked lists of items.
+/// RR is the inverse of the rank of the first relevant item in a rank list.
+/// </summary>
+/// <remarks>
+/// Reciprocal Rank considers the whole list; <see cref="MetricScorer.K"/> value has no impact.
+/// </remarks>
 public class ReciprocalRankScorer : MetricScorer
 {
 	public ReciprocalRankScorer() => K = 0; // consider the whole list
 
 	public override double Score(RankList rankList)
 	{
-		var size = rankList.Count > K ? K : rankList.Count;
 		var firstRank = -1;
-
-		for (var i = 0; i < size && firstRank == -1; i++)
+		for (var i = 0; i < rankList.Count && firstRank == -1; i++)
 		{
 			if (rankList[i].Label > 0)
 				firstRank = i + 1;
@@ -28,7 +33,7 @@ public class ReciprocalRankScorer : MetricScorer
 	{
 		var firstRank = -1;
 		var secondRank = -1;
-		var size = rankList.Count > K ? K : rankList.Count;
+		var size = rankList.Count;
 
 		for (var i = 0; i < size; i++)
 		{

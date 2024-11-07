@@ -6,10 +6,10 @@ using RankLib.Utilities;
 namespace RankLib.Metric;
 
 /// <summary>
-/// Mean Average Precision (MAP) Scorer
+/// Average Precision (MAP) Scorer
 /// </summary>
 /// <remarks>
-/// Computes Mean Average Precision from the WHOLE ranked list; <see cref="MetricScorer.K"/> is ignored.
+/// Computes Average Precision from the WHOLE ranked list; <see cref="MetricScorer.K"/> has no impact.
 /// If you want MAP@10, you really should be using NDCG@10 or ERR@10 instead.
 /// </remarks>
 public class APScorer : MetricScorer
@@ -20,8 +20,6 @@ public class APScorer : MetricScorer
 	public APScorer(ILogger<APScorer>? logger = null)
 	{
 		_logger = logger ?? NullLogger<APScorer>.Instance;
-
-		// consider the whole list
 		K = 0;
 	}
 
