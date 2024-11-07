@@ -21,7 +21,7 @@ public class FeatureManager
 
 		try
 		{
-			using var reader = FileUtils.SmartReader(inputFile);
+			using var reader = SmartReader.OpenText(inputFile);
 			var lastId = string.Empty;
 			var hasRelevantDocument = false;
 			var dataPoints = new List<DataPoint>();
@@ -84,12 +84,12 @@ public class FeatureManager
 		return rankLists;
 	}
 
-	public int[] ReadFeature(string featureDefFile)
+	public int[] ReadFeature(string featureDefinitionFile)
 	{
-		var fids = new List<int>();
+		var featureIds = new List<int>();
 		try
 		{
-			using var reader = FileUtils.SmartReader(featureDefFile);
+			using var reader = SmartReader.OpenText(featureDefinitionFile);
 			while (reader.ReadLine() is { } content)
 			{
 				var contentSpan = content.AsSpan().Trim();
@@ -98,18 +98,18 @@ public class FeatureManager
 
 				var firstTab = contentSpan.IndexOf('\t');
 				if (firstTab == -1)
-					throw new ArgumentException("featureDefFile is not a valid feature file.", nameof(featureDefFile));
+					throw new ArgumentException("feature definition file is not valid", nameof(featureDefinitionFile));
 
-				var fid = contentSpan.Slice(0, firstTab).Trim();
-				fids.Add(int.Parse(fid));
+				var featureId = contentSpan.Slice(0, firstTab).Trim();
+				featureIds.Add(int.Parse(featureId));
 			}
 		}
 		catch (IOException ex)
 		{
-			throw RankLibException.Create("Error in FeatureManager::readFeature(): ", ex);
+			throw RankLibException.Create("Error reading features", ex);
 		}
 
-		return fids.ToArray();
+		return featureIds.ToArray();
 	}
 
 	public int[] GetFeatureFromSampleVector(List<RankList> samples)
@@ -189,7 +189,7 @@ public class FeatureManager
 		PrintQueriesForSplit("Test", testData);
 	}
 
-	public void PrintQueriesForSplit(string name, List<List<RankList>>? split)
+	private void PrintQueriesForSplit(string name, List<List<RankList>>? split)
 	{
 		if (split == null)
 		{
@@ -208,7 +208,7 @@ public class FeatureManager
 	public void PrepareSplit(List<RankList> samples, double percentTrain, List<RankList> trainingData, List<RankList> testData)
 	{
 		if (percentTrain is < 0 or > 1)
-			throw new ArgumentException("percentTrain must be between 0 and 1.", nameof(percentTrain));
+			throw new ArgumentException("percent train must be between 0 and 1.", nameof(percentTrain));
 
 		var size = (int)(samples.Count * percentTrain);
 
@@ -229,7 +229,7 @@ public class FeatureManager
 		}
 		catch (Exception ex)
 		{
-			throw RankLibException.Create("Error in FeatureManager::save(): ", ex);
+			throw RankLibException.Create("Error saving rank lists to file", ex);
 		}
 	}
 

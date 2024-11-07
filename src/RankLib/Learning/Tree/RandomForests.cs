@@ -13,6 +13,7 @@ namespace RankLib.Learning.Tree;
 /// </summary>
 public class RandomForestsParameters : IRankerParameters
 {
+	private RankerType _rankerType = RankerType.MART;
 	public const float DefaultFeatureSamplingRate = 0.3f;
 	public const float DefaultSubSamplingRate = 1.0f;
 
@@ -33,13 +34,24 @@ public class RandomForestsParameters : IRankerParameters
 	/// </summary>
 	public float FeatureSamplingRate { get; set; } = DefaultFeatureSamplingRate;
 
-	// [b] what to do in each bag
-
 	/// <summary>
 	/// Ranking algorithm to use each bag. Only <see cref="RankerType.MART"/>
 	/// and <see cref="RankerType.LambdaMART"/> accepted.
 	/// </summary>
-	public RankerType RankerType { get; set; } = RankerType.MART;
+	/// <exception cref="ArgumentException">
+	/// Thrown when ranker type is not one accepted.
+	/// </exception>
+	public RankerType RankerType
+	{
+		get => _rankerType;
+		set
+		{
+			if (value is not (RankerType.MART or RankerType.LambdaMART))
+				throw new ArgumentException($"value must be {RankerType.MART} or {RankerType.LambdaMART}", nameof(value));
+
+			_rankerType = value;
+		}
+	}
 
 	/// <summary>
 	/// Number of trees in each bag
@@ -65,6 +77,12 @@ public class RandomForestsParameters : IRankerParameters
 	/// Minimum leaf support
 	/// </summary>
 	public int MinimumLeafSupport { get; set; } = 1;
+
+	/// <summary>
+	/// Gets or sets the maximum number of concurrent tasks allowed when splitting up workloads
+	/// that can be run on multiple threads. If unspecified, uses the count of all available processors.
+	/// </summary>
+	public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
 
 	public override string ToString()
 	{
@@ -96,7 +114,7 @@ public class RandomForests : Ranker<RandomForestsParameters>
 
 	public override string Name => RankerName;
 
-	public RandomForests(ILoggerFactory? loggerFactory = null) : base()
+	public RandomForests(ILoggerFactory? loggerFactory = null)
 	{
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<RandomForests>();
@@ -124,6 +142,7 @@ public class RandomForests : Ranker<RandomForestsParameters>
 			StopEarlyRoundCount = -1,
 			// Turn on feature sampling
 			SamplingRate = Parameters.FeatureSamplingRate,
+			MaxDegreeOfParallelism = Parameters.MaxDegreeOfParallelism
 		};
 
 		return Task.CompletedTask;
@@ -142,22 +161,22 @@ public class RandomForests : Ranker<RandomForestsParameters>
 		{
 			// Create a "bag" of samples by random sampling from the training set
 			var (bag, _) = Sampler.Sample(Samples, Parameters.SubSamplingRate, true);
-			var r = (LambdaMART)rankerFactory.CreateRanker(Parameters.RankerType, bag, Features, Scorer);
+			var ranker = (LambdaMART)rankerFactory.CreateRanker(Parameters.RankerType, bag, Features, Scorer);
 
-			r.Parameters = _lambdaMARTParameters;
-			await r.InitAsync().ConfigureAwait(false);
-			await r.LearnAsync().ConfigureAwait(false);
+			ranker.Parameters = _lambdaMARTParameters;
+			await ranker.InitAsync().ConfigureAwait(false);
+			await ranker.LearnAsync().ConfigureAwait(false);
 
 			// Accumulate impacts
 			if (impacts == null)
-				impacts = r.Impacts;
+				impacts = ranker.Impacts;
 			else
 			{
 				for (var ftr = 0; ftr < impacts.Length; ftr++)
-					impacts[ftr] += r.Impacts[ftr];
+					impacts[ftr] += ranker.Impacts[ftr];
 			}
-			_logger.PrintLog([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(r.GetTrainingDataScore(), 4).ToString(CultureInfo.InvariantCulture)]);
-			Ensembles[i] = r.Ensemble;
+			_logger.PrintLog([9, 9], ["b[" + (i + 1) + "]", SimpleMath.Round(ranker.GetTrainingDataScore(), 4).ToString(CultureInfo.InvariantCulture)]);
+			Ensembles[i] = ranker.Ensemble;
 		}
 
 		// Finishing up

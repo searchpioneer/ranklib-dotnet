@@ -145,9 +145,10 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 
 		// Random Forests specific parameters
 		AddOption(new Option<int?>("--bag", "Number of bags (default=300)"));
-		AddOption(new Option<float?>(["--srate", "-srate", "-s"], () => RandomForestsParameters.DefaultSubSamplingRate, "Sub-sampling rate"));
+		AddOption(new Option<float?>(["--srate"], () => RandomForestsParameters.DefaultSubSamplingRate, "Sub-sampling rate"));
 		AddOption(new Option<float?>("--frate", () => RandomForestsParameters.DefaultFeatureSamplingRate, "Feature sampling rate"));
-		AddOption(new Option<RankerType?>("--rtype", "Random Forests ranker type to bag. Random Forests only support MART/LambdaMART"));
+		AddOption(new Option<string>("--rtype", "Random Forests ranker type to bag. Random Forests only support MART/LambdaMART")
+			.FromAmong(RankerType.MART.ToString(), RankerType.LambdaMART.ToString()));
 		AddOption(new Option<double?>("--L2", "TODO: Lambda"));
 		AddOption(new Option<bool?>("--hr", () => false, "Whether to ignore ranked list without any relevant document."));
 		AddOption(new Option<int?>(
@@ -313,21 +314,26 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		if (options.RType != null)
 		{
-			if (options.RType != RankerType.MART && options.RType != RankerType.LambdaMART)
+			try
 			{
-				throw RankLibException.Create(
-					$"{options.RType} cannot be bagged. Random Forests only supports MART/LambdaMART.");
+				RandomForestsParameters.RankerType = options.RType.Value;
 			}
-
-			RandomForestsParameters.RankerType = options.RType.Value;
+			catch (ArgumentException)
+			{
+				logger.LogCritical($"{options.RType} cannot be bagged. Random Forests only supports MART/LambdaMART.");
+				return 1;
+			}
 		}
 
 		if (options.L2 != null)
 			LinearRegressionParameters.Lambda = options.L2.Value;
 
-		LambdaMARTParameters.MaxDegreeOfParallelism = options.Thread == -1
+		var threads = options.Thread == -1
 			? Environment.ProcessorCount
 			: options.Thread;
+
+		LambdaMARTParameters.MaxDegreeOfParallelism = threads;
+		RandomForestsParameters.MaxDegreeOfParallelism = threads;
 
 		Normalizer? normalizer = null;
 		if (options.Norm != null)

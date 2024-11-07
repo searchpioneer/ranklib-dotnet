@@ -15,12 +15,24 @@ public class Evaluator
 	private readonly MetricScorer _trainScorer;
 	private readonly MetricScorer _testScorer;
 	private readonly RankerTrainer _trainer;
-	private readonly bool _mustHaveRelDoc;
+	private readonly bool _mustHaveRelevantDocument;
 	private readonly bool _useSparseRepresentation;
 	private readonly FeatureManager _featureManager;
 	private readonly bool _normalize;
 	private readonly Normalizer _normalizer;
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="Evaluator"/>
+	/// </summary>
+	/// <param name="rankerFactory">The factory for creating rankers</param>
+	/// <param name="featureManager">The </param>
+	/// <param name="trainScorer"></param>
+	/// <param name="testScorer"></param>
+	/// <param name="trainer"></param>
+	/// <param name="normalizer"></param>
+	/// <param name="mustHaveRelevantDocument"></param>
+	/// <param name="useSparseRepresentation"></param>
+	/// <param name="logger"></param>
 	public Evaluator(
 		RankerFactory rankerFactory,
 		FeatureManager featureManager,
@@ -28,7 +40,7 @@ public class Evaluator
 		MetricScorer testScorer,
 		RankerTrainer trainer,
 		Normalizer? normalizer = null,
-		bool mustHaveRelDoc = false,
+		bool mustHaveRelevantDocument = false,
 		bool useSparseRepresentation = false,
 		ILogger<Evaluator>? logger = null
 	)
@@ -38,7 +50,7 @@ public class Evaluator
 		_trainScorer = trainScorer;
 		_testScorer = testScorer;
 		_trainer = trainer;
-		_mustHaveRelDoc = mustHaveRelDoc;
+		_mustHaveRelevantDocument = mustHaveRelevantDocument;
 		_useSparseRepresentation = useSparseRepresentation;
 		_logger = logger ?? NullLogger<Evaluator>.Instance;
 		_normalize = normalizer != null;
@@ -51,7 +63,7 @@ public class Evaluator
 		MetricScorer scorer,
 		RankerTrainer trainer,
 		Normalizer? normalizer = null,
-		bool mustHaveRelDoc = false,
+		bool mustHaveRelevantDocument = false,
 		bool useSparseRepresentation = false,
 		ILogger<Evaluator>? logger = null
 	)
@@ -61,7 +73,7 @@ public class Evaluator
 		_trainScorer = scorer;
 		_testScorer = scorer;
 		_trainer = trainer;
-		_mustHaveRelDoc = mustHaveRelDoc;
+		_mustHaveRelevantDocument = mustHaveRelevantDocument;
 		_useSparseRepresentation = useSparseRepresentation;
 		_logger = logger ?? NullLogger<Evaluator>.Instance;
 		_normalize = normalizer != null;
@@ -69,7 +81,7 @@ public class Evaluator
 	}
 
 	private List<RankList> ReadInput(string inputFile) =>
-		_featureManager.ReadInput(inputFile, _mustHaveRelDoc, _useSparseRepresentation);
+		_featureManager.ReadInput(inputFile, _mustHaveRelevantDocument, _useSparseRepresentation);
 
 	private void Normalize(List<RankList> samples, int[] fids)
 	{
@@ -491,7 +503,7 @@ public class Evaluator
 		{
 			var test = ReadInput(testFile);
 			var scores = new List<double>();
-			using (var reader = FileUtils.SmartReader(scoreFile))
+			using (var reader = SmartReader.OpenText(scoreFile))
 			{
 				while (reader.ReadLine() is { } content)
 				{
@@ -545,7 +557,7 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibException.Create("Error in Evaluator::Score(): ", ex);
+			throw RankLibException.Create("Error scoring and writing output file", ex);
 		}
 	}
 
@@ -581,7 +593,7 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibException.Create("Error in Evaluator::Score(): ", ex);
+			throw RankLibException.Create("Error scoring and writing output file", ex);
 		}
 	}
 
@@ -609,11 +621,11 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibException.Create("Error in Evaluator::Score(): ", ex);
+			throw RankLibException.Create("Error scoring and writing output file", ex);
 		}
 	}
 
-	public void Rank(string modelFile, string testFile, string indriRanking)
+	public void Rank(string modelFile, string testFile, string indriRankingFile)
 	{
 		var ranker = _rankerFactory.LoadRankerFromFile(modelFile);
 		var features = ranker.Features;
@@ -624,7 +636,7 @@ public class Evaluator
 
 		try
 		{
-			using var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), Encoding.UTF8);
+			using var outWriter = new StreamWriter(new FileStream(indriRankingFile, FileMode.Create), Encoding.UTF8);
 			foreach (var l in test)
 			{
 				var scores = new double[l.Count];
@@ -642,17 +654,17 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibException.Create("Error in Evaluator::Rank(): ", ex);
+			throw RankLibException.Create("Error ranking and writing indri ranking file", ex);
 		}
 	}
 
-	public void Rank(string testFile, string indriRanking)
+	public void Rank(string testFile, string indriRankingFile)
 	{
 		var test = ReadInput(testFile);
 
 		try
 		{
-			using var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), Encoding.UTF8);
+			using var outWriter = new StreamWriter(new FileStream(indriRankingFile, FileMode.Create), Encoding.UTF8);
 			foreach (var l in test)
 			{
 				for (var j = 0; j < l.Count; j++)
@@ -664,11 +676,11 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibException.Create("Error in Evaluator::Rank(): ", ex);
+			throw RankLibException.Create("Error ranking and writing indri ranking file", ex);
 		}
 	}
 
-	public void Rank(List<string> modelFiles, string testFile, string indriRanking)
+	public void Rank(List<string> modelFiles, string testFile, string indriRankingFile)
 	{
 		var trainingData = new List<List<RankList>>();
 		var testData = new List<List<RankList>>();
@@ -680,7 +692,7 @@ public class Evaluator
 
 		try
 		{
-			using var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), Encoding.UTF8);
+			using var outWriter = new StreamWriter(new FileStream(indriRankingFile, FileMode.Create), Encoding.UTF8);
 			for (var f = 0; f < nFold; f++)
 			{
 				var test = testData[f];
@@ -690,18 +702,17 @@ public class Evaluator
 				if (_normalize)
 					Normalize(test, features);
 
-				foreach (var l in test)
+				foreach (var rankList in test)
 				{
-					var scores = new double[l.Count];
-					for (var j = 0; j < l.Count; j++)
-						scores[j] = ranker.Eval(l[j]);
+					var scores = new double[rankList.Count];
+					for (var j = 0; j < rankList.Count; j++)
+						scores[j] = ranker.Eval(rankList[j]);
 
 					var idx = MergeSorter.Sort(scores, false);
 					for (var j = 0; j < idx.Length; j++)
 					{
 						var k = idx[j];
-						var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {j + 1} {SimpleMath.Round(scores[k], 5)} indri";
-						outWriter.WriteLine(str);
+						outWriter.WriteLine($"{rankList.Id} Q0 {rankList[k].Description.AsSpan().Trim("#").Trim().ToString()} {j + 1} {SimpleMath.Round(scores[k], 5)} indri");
 					}
 				}
 			}
@@ -712,13 +723,13 @@ public class Evaluator
 		}
 	}
 
-	public void Rank(List<string> modelFiles, List<string> testFiles, string indriRanking)
+	public void Rank(List<string> modelFiles, List<string> testFiles, string indriRankingFile)
 	{
 		var nFold = modelFiles.Count;
 
 		try
 		{
-			using var outWriter = new StreamWriter(new FileStream(indriRanking, FileMode.Create), Encoding.UTF8);
+			using var outWriter = new StreamWriter(new FileStream(indriRankingFile, FileMode.Create), Encoding.UTF8);
 			for (var f = 0; f < nFold; f++)
 			{
 				var test = ReadInput(testFiles[f]);

@@ -1,8 +1,4 @@
-using System.Diagnostics;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Metric;
-using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
@@ -12,13 +8,8 @@ namespace RankLib.Learning;
 public class RankerTrainer
 {
 	private readonly RankerFactory _rankerFactory;
-	private readonly ILogger<RankerTrainer> _logger;
 
-	public RankerTrainer(RankerFactory rankerFactory, ILogger<RankerTrainer> logger)
-	{
-		_rankerFactory = rankerFactory;
-		_logger = logger;
-	}
+	public RankerTrainer(RankerFactory rankerFactory) => _rankerFactory = rankerFactory;
 
 	/// <summary>
 	/// Trains a ranker using the provided training samples, and validates training using the validation samples.
