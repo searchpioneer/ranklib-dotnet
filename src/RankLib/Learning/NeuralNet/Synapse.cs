@@ -10,19 +10,24 @@ namespace RankLib.Learning.NeuralNet;
 /// </summary>
 public class Synapse
 {
-	/// <summary>
-	/// Initializes a new instance of <see cref="Synapse"/>.
-	/// </summary>
-	/// <param name="source">The source neuron.</param>
-	/// <param name="target">The target neuron.</param>
-	public Synapse(Neuron source, Neuron target)
+	private Synapse(Neuron source, Neuron target)
 	{
 		Source = source;
 		Target = target;
-		Source.OutLinks.Add(this);
-		Target.InLinks.Add(this);
 		Weight = (ThreadsafeSeedableRandom.Shared.Next(2) == 0 ? 1 : -1) *
 			ThreadsafeSeedableRandom.Shared.NextDouble() / 10;
+	}
+
+	/// <summary>
+	/// Connects two neurons together
+	/// </summary>
+	/// <param name="source">The source neuron</param>
+	/// <param name="target">The target neuron</param>
+	public static void Connect(Neuron source, Neuron target)
+	{
+		var synapse = new Synapse(source, target);
+		source.OutLinks.Add(synapse);
+		target.InLinks.Add(synapse);
 	}
 
 	/// <summary>

@@ -82,10 +82,10 @@ public class RankNet : Ranker<RankNetParameters>
 		_layers.Add(OutputLayer);
 	}
 
-	protected void SetInputOutput(int inputCount, int outputCount, NeuronType nType)
+	protected void SetInputOutput(int inputCount, int outputCount, NeuronType neuronType)
 	{
-		_inputLayer = new Layer(inputCount + 1, nType, Parameters.LearningRate);
-		OutputLayer = new Layer(outputCount, nType, Parameters.LearningRate);
+		_inputLayer = new Layer(inputCount + 1, neuronType, Parameters.LearningRate);
+		OutputLayer = new Layer(outputCount, neuronType, Parameters.LearningRate);
 		_layers.Clear();
 		_layers.Add(_inputLayer);
 		_layers.Add(OutputLayer);
@@ -117,8 +117,8 @@ public class RankNet : Ranker<RankNetParameters>
 		}
 	}
 
-	protected void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron) =>
-		_ = new Synapse(_layers[sourceLayer][sourceNeuron], _layers[targetLayer][targetNeuron]);
+	private void Connect(int sourceLayer, int sourceNeuron, int targetLayer, int targetNeuron) =>
+		Synapse.Connect(_layers[sourceLayer][sourceNeuron], _layers[targetLayer][targetNeuron]);
 
 	protected void AddInput(DataPoint p)
 	{
