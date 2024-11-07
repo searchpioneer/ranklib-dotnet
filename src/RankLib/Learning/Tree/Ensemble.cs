@@ -121,7 +121,7 @@ public class Ensemble
 		if (node.FirstChild is null)
 			throw new InvalidOperationException("Node does not have a first child.");
 
-		Split s;
+		Split split;
 		if (node.FirstChild.Name.Equals("feature", StringComparison.OrdinalIgnoreCase)) // this is a split
 		{
 			var childNodes = node.ChildNodes;
@@ -129,10 +129,10 @@ public class Ensemble
 			if (childNodes.Count != 4)
 				throw new ArgumentException("Invalid feature");
 
-			var fid = int.Parse(childNodes[0].FirstChild.Value.Trim()); // <feature>
+			var fid = int.Parse(childNodes[0]!.FirstChild.Value.Trim()); // <feature>
 			fids[fid] = 0;
 			var threshold = float.Parse(childNodes[1].FirstChild.Value.Trim()); // <threshold>
-			s = new Split(fid, threshold, 0)
+			split = new Split(fid, threshold, 0)
 			{
 				Left = Create(childNodes[2], fids),
 				Right = Create(childNodes[3], fids)
@@ -141,8 +141,9 @@ public class Ensemble
 		else // this is a stump
 		{
 			var output = float.Parse(node.FirstChild.FirstChild.Value.Trim());
-			s = new Split { Output = output };
+			split = new Split { Output = output };
 		}
-		return s;
+
+		return split;
 	}
 }
