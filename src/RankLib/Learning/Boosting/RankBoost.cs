@@ -450,7 +450,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 		}
 		catch (Exception ex)
 		{
-			throw RankLibException.Create("Error loading RankBoost from string", ex);
+			throw RankLibException.Create("Error loading model", ex);
 		}
 	}
 }

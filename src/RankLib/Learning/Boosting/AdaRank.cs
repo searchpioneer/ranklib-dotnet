@@ -359,7 +359,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 		}
 		catch (Exception ex)
 		{
-			throw new InvalidOperationException("Error loading AdaRank from string", ex);
+			throw RankLibException.Create("Error loading model", ex);
 		}
 	}
 }

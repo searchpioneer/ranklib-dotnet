@@ -231,7 +231,7 @@ public class ListNet : RankNet
 		}
 		catch (Exception ex)
 		{
-			throw RankLibException.Create("Error in ListNet::LoadFromString(): ", ex);
+			throw RankLibException.Create("Error loading model", ex);
 		}
 	}
 }
