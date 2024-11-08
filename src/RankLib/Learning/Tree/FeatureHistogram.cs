@@ -2,9 +2,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
 
-public class FeatureHistogram
+public sealed class FeatureHistogram
 {
-	private class Config
+	private sealed class Config
 	{
 		public int FeatureIdx = -1;
 		public int ThresholdIdx = -1;
@@ -22,10 +22,17 @@ public class FeatureHistogram
 	private int[][] _count = [];
 	private int[][] _sampleToThresholdMap = [];
 	private double[] _impacts = [];
-
-	// Reuse of parent resources
 	private bool _reuseParent;
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="FeatureHistogram"/>
+	/// </summary>
+	/// <param name="samplingRate">the sampling rate</param>
+	/// <param name="maxDegreesOfParallelism">
+	/// the maximum number of concurrent tasks allowed when splitting
+	/// up workloads that can be run on multiple threads.
+	/// If unspecified, uses the count of all available processors.
+	/// </param>
 	public FeatureHistogram(float samplingRate, int? maxDegreesOfParallelism = null)
 	{
 		_samplingRate = samplingRate;
@@ -61,7 +68,112 @@ public class FeatureHistogram
 		}
 	}
 
-	protected void Construct(DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, float[][] thresholds, int start, int end)
+		public async Task<bool> FindBestSplitAsync(Split sp, double[] labels, int minLeafSupport)
+	{
+		if (sp.Deviance == 0)
+			return false; // No need to split
+
+		int[] usedFeatures;
+		if (_samplingRate < 1) //need to do sub sampling (feature sampling)
+		{
+			var size = (int)(_samplingRate * _features.Length);
+			usedFeatures = new int[size];
+			//put all features into a pool
+			var featurePool = new List<int>(_features.Length);
+			for (var i = 0; i < _features.Length; i++)
+				featurePool.Add(i);
+
+			//do sampling, without replacement
+			var random = ThreadsafeSeedableRandom.Shared;
+			for (var i = 0; i < size; i++)
+			{
+				var selected = random.Next(featurePool.Count);
+				usedFeatures[i] = featurePool[selected];
+				featurePool.RemoveAt(selected);
+			}
+		}
+		else //no sub sampling, all features will be used
+		{
+			usedFeatures = new int[_features.Length];
+			for (var i = 0; i < _features.Length; i++)
+				usedFeatures[i] = i;
+		}
+
+		var best = new Config();
+		if (_maxDegreesOfParallelism == 1)
+			best = FindBestSplit(usedFeatures, minLeafSupport, 0, usedFeatures.Length - 1);
+		else
+		{
+			var tasks =
+				Partitioner.PartitionEnumerable(usedFeatures.Length, _maxDegreesOfParallelism)
+					.Select<Range, Task<Config>>(range => new Task<Config>(() => FindBestSplit(usedFeatures, minLeafSupport, range.Start.Value, range.End.Value)))
+					.ToList();
+
+			await Parallel.ForEachAsync(tasks, new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism }, async (task, _) =>
+			{
+				task.Start();
+				await task.ConfigureAwait(false);
+			}).ConfigureAwait(false);
+
+			foreach (var task in tasks)
+			{
+				if (best.S < task.Result.S)
+					best = task.Result;
+			}
+		}
+
+		// ReSharper disable once CompareOfFloatsByEqualityOperator
+		if (best.S == -1) // cannot be split, for some reason...
+			return false;
+
+		// bestFeaturesHist is the best features
+		var bestFeaturesHist = _sum[best.FeatureIdx];
+		var sampleCount = _count[best.FeatureIdx];
+
+		var s = bestFeaturesHist[^1];
+		var c = sampleCount[bestFeaturesHist.Length - 1];
+
+		var sumLeft = bestFeaturesHist[best.ThresholdIdx];
+		var countLeft = sampleCount[best.ThresholdIdx];
+
+		var sumRight = s - sumLeft;
+		var countRight = c - countLeft;
+
+		var left = new int[countLeft];
+		var right = new int[countRight];
+		var l = 0;
+		var r = 0;
+		var idx = sp.GetSamples();
+		for (var j = 0; j < idx.Length; j++)
+		{
+			var k = idx[j];
+			if (_sampleToThresholdMap[best.FeatureIdx][k] <= best.ThresholdIdx)// go to the left
+				left[l++] = k;
+			else // go to the right
+				right[r++] = k;
+		}
+
+		// update impact with info on best
+		_impacts[best.FeatureIdx] += best.ErrReduced;
+
+		var lh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
+		await lh.ConstructAsync(sp.Histogram!, left, labels).ConfigureAwait(false);
+		var rh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
+		await rh.ConstructAsync(sp.Histogram!, lh, !sp.IsRoot).ConfigureAwait(false);
+
+		var var = _sqSumResponse - _sumResponse * _sumResponse / idx.Length;
+		var varLeft = lh._sqSumResponse - lh._sumResponse * lh._sumResponse / left.Length;
+		var varRight = rh._sqSumResponse - rh._sumResponse * rh._sumResponse / right.Length;
+
+		sp.Set(_features[best.FeatureIdx], _thresholds[best.FeatureIdx][best.ThresholdIdx], var);
+		sp.Left = new Split(left, lh, varLeft, sumLeft);
+		sp.Right = new Split(right, rh, varRight, sumRight);
+		sp.ClearSamples();
+
+		return true;
+	}
+
+	private void Construct(DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, float[][] thresholds, int start, int end)
 	{
 		for (var i = start; i <= end; i++)
 		{
@@ -102,7 +214,7 @@ public class FeatureHistogram
 		}
 	}
 
-	protected internal async Task UpdateAsync(double[] labels)
+	internal async Task UpdateAsync(double[] labels)
 	{
 		_sumResponse = 0;
 		_sqSumResponse = 0;
@@ -124,7 +236,7 @@ public class FeatureHistogram
 		}
 	}
 
-	protected void Update(double[] labels, int start, int end)
+	private void Update(double[] labels, int start, int end)
 	{
 		for (var f = start; f <= end; f++)
 			Array.Fill(_sum[f], 0);
@@ -325,123 +437,5 @@ public class FeatureHistogram
 			}
 		}
 		return cfg;
-	}
-
-	public async Task<bool> FindBestSplitAsync(Split sp, double[] labels, int minLeafSupport)
-	{
-		if (sp.Deviance == 0)
-			return false; // No need to split
-
-		int[] usedFeatures;
-		if (_samplingRate < 1) //need to do sub sampling (feature sampling)
-		{
-			var size = (int)(_samplingRate * _features.Length);
-			usedFeatures = new int[size];
-			//put all features into a pool
-			var featurePool = new List<int>(_features.Length);
-			for (var i = 0; i < _features.Length; i++)
-				featurePool.Add(i);
-
-			//do sampling, without replacement
-			var random = ThreadsafeSeedableRandom.Shared;
-			for (var i = 0; i < size; i++)
-			{
-				var selected = random.Next(featurePool.Count);
-				usedFeatures[i] = featurePool[selected];
-				featurePool.RemoveAt(selected);
-			}
-		}
-		else //no sub sampling, all features will be used
-		{
-			usedFeatures = new int[_features.Length];
-			for (var i = 0; i < _features.Length; i++)
-				usedFeatures[i] = i;
-		}
-
-		var best = new Config();
-		if (_maxDegreesOfParallelism == 1)
-			best = FindBestSplit(usedFeatures, minLeafSupport, 0, usedFeatures.Length - 1);
-		else
-		{
-			var tasks =
-				Partitioner.PartitionEnumerable(usedFeatures.Length, _maxDegreesOfParallelism)
-					.Select<Range, Task<Config>>(range => new Task<Config>(() => FindBestSplit(usedFeatures, minLeafSupport, range.Start.Value, range.End.Value)))
-					.ToList();
-
-			await Parallel.ForEachAsync(tasks, new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism }, async (task, _) =>
-			{
-				task.Start();
-				await task.ConfigureAwait(false);
-			}).ConfigureAwait(false);
-
-			foreach (var task in tasks)
-			{
-				if (best.S < task.Result.S)
-					best = task.Result;
-			}
-
-			// FindBestSplit(usedFeatures, minLeafSupport, start, end);
-			//
-			// var workers = await ParallelExecutor.ExecuteAsync(
-			// 	new Worker(this, usedFeatures, minLeafSupport),
-			// 	usedFeatures.Length,
-			// 	_maxDegreesOfParallelism).ConfigureAwait(false);
-			//
-			// foreach (var worker in workers)
-			// {
-			// 	if (best.S < worker.Cfg.S)
-			// 		best = worker.Cfg;
-			// }
-		}
-
-		// ReSharper disable once CompareOfFloatsByEqualityOperator
-		if (best.S == -1) // cannot be split, for some reason...
-			return false;
-
-		// bestFeaturesHist is the best features
-		var bestFeaturesHist = _sum[best.FeatureIdx];
-		var sampleCount = _count[best.FeatureIdx];
-
-		var s = bestFeaturesHist[^1];
-		var c = sampleCount[bestFeaturesHist.Length - 1];
-
-		var sumLeft = bestFeaturesHist[best.ThresholdIdx];
-		var countLeft = sampleCount[best.ThresholdIdx];
-
-		var sumRight = s - sumLeft;
-		var countRight = c - countLeft;
-
-		var left = new int[countLeft];
-		var right = new int[countRight];
-		var l = 0;
-		var r = 0;
-		var idx = sp.GetSamples();
-		for (var j = 0; j < idx.Length; j++)
-		{
-			var k = idx[j];
-			if (_sampleToThresholdMap[best.FeatureIdx][k] <= best.ThresholdIdx)// go to the left
-				left[l++] = k;
-			else // go to the right
-				right[r++] = k;
-		}
-
-		// update impact with info on best
-		_impacts[best.FeatureIdx] += best.ErrReduced;
-
-		var lh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
-		await lh.ConstructAsync(sp.Histogram!, left, labels).ConfigureAwait(false);
-		var rh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
-		await rh.ConstructAsync(sp.Histogram!, lh, !sp.IsRoot).ConfigureAwait(false);
-
-		var var = _sqSumResponse - _sumResponse * _sumResponse / idx.Length;
-		var varLeft = lh._sqSumResponse - lh._sumResponse * lh._sumResponse / left.Length;
-		var varRight = rh._sqSumResponse - rh._sumResponse * rh._sumResponse / right.Length;
-
-		sp.Set(_features[best.FeatureIdx], _thresholds[best.FeatureIdx][best.ThresholdIdx], var);
-		sp.Left = new Split(left, lh, varLeft, sumLeft);
-		sp.Right = new Split(right, rh, varRight, sumRight);
-		sp.ClearSamples();
-
-		return true;
 	}
 }
