@@ -113,7 +113,7 @@ public class Evaluator
 		string trainFile,
 		string? validationFile,
 		string? testFile,
-		string? featureDefFile,
+		string? featureDefinitionFile,
 		string? modelFile = null,
 		IRankerParameters? parameters = default)
 	{
@@ -123,7 +123,7 @@ public class Evaluator
 		var train = ReadInput(trainFile);
 		var validation = !string.IsNullOrEmpty(validationFile) ? ReadInput(validationFile) : null;
 		var test = !string.IsNullOrEmpty(testFile) ? ReadInput(testFile) : null;
-		var features = ReadFeature(featureDefFile) ?? _featureManager.GetFeatureFromSampleVector(train);
+		var features = ReadFeature(featureDefinitionFile) ?? _featureManager.GetFeatureFromSampleVector(train);
 
 		if (_normalize)
 		{
@@ -154,25 +154,25 @@ public class Evaluator
 		string trainFile,
 		string? validationFile,
 		string? testFile,
-		string? featureDefFile,
+		string? featureDefinitionFile,
 		string? modelFile = null,
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), trainFile, validationFile, testFile, featureDefFile, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), trainFile, validationFile, testFile, featureDefinitionFile, modelFile, parameters);
 
 	public async Task EvaluateAsync(
 		Type rankerType,
 		string sampleFile,
 		string? validationFile,
-		string? featureDefFile,
+		string? featureDefinitionFile,
 		double percentTrain,
 		string? modelFile = null,
 		IRankerParameters? parameters = default)
 	{
 		var train = new List<RankList>();
 		var test = new List<RankList>();
-		var features = PrepareSplit(sampleFile, featureDefFile, percentTrain, _normalize, train, test);
+		var features = PrepareSplit(sampleFile, featureDefinitionFile, percentTrain, _normalize, train, test);
 		var validation = !string.IsNullOrEmpty(validationFile) ? ReadInput(validationFile) : null;
 
 		if (_normalize && validation != null)
@@ -194,26 +194,26 @@ public class Evaluator
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string? validationFile,
-		string featureDefFile,
+		string featureDefinitionFile,
 		double percentTrain,
 		string? modelFile = null,
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), sampleFile, validationFile, featureDefFile, percentTrain, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, validationFile, featureDefinitionFile, percentTrain, modelFile, parameters);
 
 	public async Task EvaluateAsync(
 		Type rankerType,
 		string trainFile,
 		double percentTrain,
 		string? testFile,
-		string? featureDefFile,
+		string? featureDefinitionFile,
 		string? modelFile = null,
 		IRankerParameters? parameters = default)
 	{
 		var train = new List<RankList>();
 		var validation = new List<RankList>();
-		var features = PrepareSplit(trainFile, featureDefFile, percentTrain, _normalize, train, validation);
+		var features = PrepareSplit(trainFile, featureDefinitionFile, percentTrain, _normalize, train, validation);
 		var test = !string.IsNullOrEmpty(testFile) ? ReadInput(testFile) : null;
 
 		if (_normalize && test != null)
@@ -239,29 +239,29 @@ public class Evaluator
 		string trainFile,
 		double percentTrain,
 		string? testFile,
-		string featureDefFile,
+		string featureDefinitionFile,
 		string? modelFile = null,
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), trainFile, percentTrain, testFile, featureDefFile, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), trainFile, percentTrain, testFile, featureDefinitionFile, modelFile, parameters);
 
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
-		string featureDefFile,
-		int nFold,
+		string featureDefinitionFile,
+		int foldCount,
 		string modelDir,
 		string modelFile,
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), sampleFile, featureDefFile, nFold, -1, modelDir, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, featureDefinitionFile, foldCount, -1, modelDir, modelFile, parameters);
 
 	public async Task EvaluateAsync(
 		Type rankerType,
 		string sampleFile,
-		string? featureDefFile,
-		int nFold,
+		string? featureDefinitionFile,
+		int foldCount,
 		float tvs,
 		string modelDir,
 		string modelFile,
@@ -271,13 +271,13 @@ public class Evaluator
 		var validationData = new List<List<RankList>>();
 		var testData = new List<List<RankList>>();
 		var samples = ReadInput(sampleFile);
-		var features = ReadFeature(featureDefFile) ?? _featureManager.GetFeatureFromSampleVector(samples);
+		var features = ReadFeature(featureDefinitionFile) ?? _featureManager.GetFeatureFromSampleVector(samples);
 
-		_featureManager.PrepareCV(samples, nFold, tvs, trainingData, validationData, testData);
+		_featureManager.PrepareCV(samples, foldCount, tvs, trainingData, validationData, testData);
 
 		if (_normalize)
 		{
-			for (var i = 0; i < nFold; i++)
+			for (var i = 0; i < foldCount; i++)
 			{
 				NormalizeAll(trainingData, features);
 				NormalizeAll(validationData, features);
@@ -289,9 +289,9 @@ public class Evaluator
 		var scoreOnTest = 0.0;
 		var totalScoreOnTest = 0.0;
 		var totalTestSampleSize = 0;
-		var scores = new double[nFold][];
+		var scores = new double[foldCount][];
 
-		for (var i = 0; i < nFold; i++)
+		for (var i = 0; i < foldCount; i++)
 		{
 			scores[i] = new double[2];
 			var train = trainingData[i];
@@ -321,24 +321,24 @@ public class Evaluator
 		_logger.LogInformation("Summary:");
 		_logger.LogInformation("{Scorer}\t|   Train\t| Test", _testScorer.Name);
 
-		for (var i = 0; i < nFold; i++)
+		for (var i = 0; i < foldCount; i++)
 			_logger.LogInformation($"Fold {i + 1}\t|   {Math.Round(scores[i][0], 4)}\t|  {Math.Round(scores[i][1], 4)}\t");
 
-		_logger.LogInformation($"Avg.\t|   {Math.Round(scoreOnTrain / nFold, 4)}\t|  {Math.Round(scoreOnTest / nFold, 4)}\t");
+		_logger.LogInformation($"Avg.\t|   {Math.Round(scoreOnTrain / foldCount, 4)}\t|  {Math.Round(scoreOnTest / foldCount, 4)}\t");
 		_logger.LogInformation($"Total\t|   \t\t|  {Math.Round(totalScoreOnTest / totalTestSampleSize, 4)}\t");
 	}
 
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
-		string? featureDefFile,
-		int nFold,
+		string? featureDefinitionFile,
+		int foldCount,
 		float tvs,
 		string modelDir,
 		string modelFile,
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), sampleFile, featureDefFile, nFold, tvs, modelDir, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, featureDefinitionFile, foldCount, tvs, modelDir, modelFile, parameters);
 
 	public void Test(string testFile)
 	{
@@ -418,17 +418,17 @@ public class Evaluator
 		var trainingData = new List<List<RankList>>();
 		var testData = new List<List<RankList>>();
 
-		var nFold = modelFiles.Count;
+		var foldCount = modelFiles.Count;
 		var samples = ReadInput(testFile);
 
-		_logger.LogInformation($"Preparing {nFold}-fold test data... ");
-		_featureManager.PrepareCV(samples, nFold, trainingData, testData);
+		_logger.LogInformation($"Preparing {foldCount}-fold test data... ");
+		_featureManager.PrepareCV(samples, foldCount, trainingData, testData);
 
 		var rankScore = 0.0;
 		var ids = new List<string>();
 		var scores = new List<double>();
 
-		for (var f = 0; f < nFold; f++)
+		for (var f = 0; f < foldCount; f++)
 		{
 			var test = testData[f];
 			var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
@@ -463,12 +463,12 @@ public class Evaluator
 
 	public void Test(List<string> modelFiles, List<string> testFiles, string performanceOutputFile)
 	{
-		var nFold = modelFiles.Count;
+		var foldCount = modelFiles.Count;
 		var rankScore = 0.0;
 		var ids = new List<string>();
 		var scores = new List<double>();
 
-		for (var f = 0; f < nFold; f++)
+		for (var f = 0; f < foldCount; f++)
 		{
 			var testRankLists = ReadInput(testFiles[f]);
 			var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
@@ -567,18 +567,18 @@ public class Evaluator
 
 	public void Score(List<string> modelFiles, string testFile, string outputFile)
 	{
-		var nFold = modelFiles.Count;
+		var foldCount = modelFiles.Count;
 		var trainingData = new List<List<RankList>>();
-		var testData = new List<List<RankList>>(nFold);
+		var testData = new List<List<RankList>>(foldCount);
 		var samples = ReadInput(testFile);
 
-		_logger.LogInformation("Preparing {NFold}-fold test data...", nFold);
-		_featureManager.PrepareCV(samples, nFold, trainingData, testData);
+		_logger.LogInformation("Preparing {FoldCount}-fold test data...", foldCount);
+		_featureManager.PrepareCV(samples, foldCount, trainingData, testData);
 
 		try
 		{
 			using var outWriter = new StreamWriter(new FileStream(outputFile, FileMode.Create), Encoding.UTF8);
-			for (var f = 0; f < nFold; f++)
+			for (var f = 0; f < foldCount; f++)
 			{
 				var testRankLists = testData[f];
 				var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
@@ -688,16 +688,16 @@ public class Evaluator
 	{
 		var trainingData = new List<List<RankList>>();
 		var testData = new List<List<RankList>>();
-		var nFold = modelFiles.Count;
+		var foldCount = modelFiles.Count;
 		var samples = ReadInput(testFile);
 
-		_logger.LogInformation($"Preparing {nFold}-fold test data...");
-		_featureManager.PrepareCV(samples, nFold, trainingData, testData);
+		_logger.LogInformation($"Preparing {foldCount}-fold test data...");
+		_featureManager.PrepareCV(samples, foldCount, trainingData, testData);
 
 		try
 		{
 			using var outWriter = new StreamWriter(new FileStream(indriRankingFile, FileMode.Create), Encoding.UTF8);
-			for (var f = 0; f < nFold; f++)
+			for (var f = 0; f < foldCount; f++)
 			{
 				var test = testData[f];
 				var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);
@@ -729,12 +729,12 @@ public class Evaluator
 
 	public void Rank(List<string> modelFiles, List<string> testFiles, string indriRankingFile)
 	{
-		var nFold = modelFiles.Count;
+		var foldCount = modelFiles.Count;
 
 		try
 		{
 			using var outWriter = new StreamWriter(new FileStream(indriRankingFile, FileMode.Create), Encoding.UTF8);
-			for (var f = 0; f < nFold; f++)
+			for (var f = 0; f < foldCount; f++)
 			{
 				var test = ReadInput(testFiles[f]);
 				var ranker = _rankerFactory.LoadRankerFromFile(modelFiles[f]);

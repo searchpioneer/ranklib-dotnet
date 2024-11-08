@@ -2,7 +2,7 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
-public class DenseDataPoint : DataPoint
+public sealed class DenseDataPoint : DataPoint
 {
 	public DenseDataPoint(ReadOnlySpan<char> span) : base(span) { }
 

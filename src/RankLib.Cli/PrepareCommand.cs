@@ -59,7 +59,7 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 
 		if (options.Shuffle || options.K > 0 || options.Tts is not null)
 		{
-			var nFold = options.K ?? 0;
+			var foldCount = options.K ?? 0;
 			var shuffle = options.Shuffle;
 			var outputDir = options.Output.FullName;
 			var rankingFiles = options.Input.Select(f => f.FullName).ToList();
@@ -106,19 +106,19 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 				}
 			}
 
-			if (nFold > 0)
+			if (foldCount > 0)
 			{
 				var trains = new List<List<RankList>>();
 				var tests = new List<List<RankList>>();
 				var valis = new List<List<RankList>>();
 				logger.LogInformation("Partitioning... ");
-				_featureManager.PrepareCV(samples, nFold, tvs, trains, valis, tests);
+				_featureManager.PrepareCV(samples, foldCount, tvs, trains, valis, tests);
 
 				try
 				{
 					for (var i = 0; i < trains.Count; i++)
 					{
-						logger.LogInformation($"Saving fold {i + 1}/{nFold}... ");
+						logger.LogInformation($"Saving fold {i + 1}/{foldCount}... ");
 						_featureManager.Save(trains[i], Path.Combine(outputDir, $"f{i + 1}.train.{fn}"));
 						_featureManager.Save(tests[i], Path.Combine(outputDir, $"f{i + 1}.test.{fn}"));
 						if (tvs > 0)

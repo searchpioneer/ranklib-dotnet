@@ -16,7 +16,7 @@ public class FeatureManager
 
 	public List<RankList> ReadInput(string inputFile, bool mustHaveRelevantDocument, bool useSparseRepresentation)
 	{
-		var samples = new List<RankList>();
+		var rankLists = new List<RankList>();
 		var countEntries = 0;
 
 		try
@@ -42,7 +42,7 @@ public class FeatureManager
 				if (!string.IsNullOrEmpty(lastId) && !lastId.Equals(dataPoint.Id, StringComparison.OrdinalIgnoreCase))
 				{
 					if (!mustHaveRelevantDocument || hasRelevantDocument)
-						samples.Add(new RankList(dataPoints));
+						rankLists.Add(new RankList(dataPoints));
 
 					dataPoints = new List<DataPoint>();
 					hasRelevantDocument = false;
@@ -57,20 +57,20 @@ public class FeatureManager
 			}
 
 			if (dataPoints.Count > 0 && (!mustHaveRelevantDocument || hasRelevantDocument))
-				samples.Add(new RankList(dataPoints));
+				rankLists.Add(new RankList(dataPoints));
 
 			_logger.LogInformation(
 				"Reading feature file [{InputFile}] completed. (Read {SamplesCount} ranked lists, {CountEntries} entries)",
 				inputFile,
-				samples.Count,
+				rankLists.Count,
 				countEntries);
 		}
 		catch (Exception ex)
 		{
-			throw RankLibException.Create("Error reading samples from file", ex);
+			throw RankLibException.Create("Error reading ranklists from file", ex);
 		}
 
-		return samples;
+		return rankLists;
 	}
 
 	public List<RankList> ReadInput(List<string> inputFiles)
@@ -126,17 +126,17 @@ public class FeatureManager
 		return features;
 	}
 
-	public void PrepareCV(List<RankList> samples, int nFold, List<List<RankList>> trainingData, List<List<RankList>> testData) =>
-		PrepareCV(samples, nFold, -1, trainingData, [], testData);
+	public void PrepareCV(List<RankList> samples, int foldCount, List<List<RankList>> trainingData, List<List<RankList>> testData) =>
+		PrepareCV(samples, foldCount, -1, trainingData, [], testData);
 
-	public void PrepareCV(List<RankList> samples, int nFold, float tvs, List<List<RankList>> trainingData, List<List<RankList>> validationData, List<List<RankList>> testData)
+	public void PrepareCV(List<RankList> samples, int foldCount, float tvs, List<List<RankList>> trainingData, List<List<RankList>> validationData, List<List<RankList>> testData)
 	{
 		var trainSamplesIdx = new List<List<int>>();
-		var size = samples.Count / nFold;
+		var size = samples.Count / foldCount;
 		var start = 0;
 		var total = 0;
 
-		for (var f = 0; f < nFold; f++)
+		for (var f = 0; f < foldCount; f++)
 		{
 			var foldIndexes = new List<int>();
 			for (var i = 0; i < size && start + i < samples.Count; i++)
@@ -153,7 +153,7 @@ public class FeatureManager
 		for (var idx = 0; idx < trainSamplesIdx.Count; idx++)
 		{
 			var indexes = trainSamplesIdx[idx];
-			_logger.LogInformation("Creating data for fold {TrainSamplesIdx}/{NFold}...", idx + 1, nFold);
+			_logger.LogInformation("Creating data for fold {TrainSamplesIdx}/{FoldCount}...", idx + 1, foldCount);
 			var train = new List<RankList>();
 			var test = new List<RankList>();
 			var validation = new List<RankList>();
@@ -183,7 +183,7 @@ public class FeatureManager
 				validationData.Add(validation);
 		}
 
-		_logger.LogInformation("Creating data for {NFold} folds completed.", nFold);
+		_logger.LogInformation("Creating data for {FoldCount} folds completed.", foldCount);
 		PrintQueriesForSplit("Train", trainingData);
 		PrintQueriesForSplit("Validate", validationData);
 		PrintQueriesForSplit("Test", testData);

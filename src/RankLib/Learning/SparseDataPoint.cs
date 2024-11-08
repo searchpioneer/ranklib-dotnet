@@ -4,7 +4,7 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
-public class SparseDataPoint : DataPoint
+public sealed class SparseDataPoint : DataPoint
 {
 	// Access pattern of the feature values
 	private enum AccessPattern
