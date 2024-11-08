@@ -1,5 +1,4 @@
 using RankLib.Utilities;
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace RankLib.Learning.Tree;
 
@@ -177,7 +176,7 @@ public class FeatureHistogram
 		_sampleToThresholdMap = parent._sampleToThresholdMap;
 
 		if (_maxDegreesOfParallelism == 1)
-			Construct(parent, soi, labels, 0, _features.Length - 1);
+			Construct(soi, labels, 0, _features.Length - 1);
 		else
 		{
 			var partitions =
@@ -188,13 +187,13 @@ public class FeatureHistogram
 				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism },
 				async (range, cancellationToken) =>
 				{
-					await Task.Run(() => Construct(parent, soi, labels, range.Start.Value, range.End.Value),
+					await Task.Run(() => Construct(soi, labels, range.Start.Value, range.End.Value),
 						cancellationToken).ConfigureAwait(false);
 				}).ConfigureAwait(false);
 		}
 	}
 
-	private void Construct(FeatureHistogram parent, int[] soi, double[] labels, int start, int end)
+	private void Construct(int[] soi, double[] labels, int start, int end)
 	{
 		for (var i = start; i <= end; i++)
 		{
