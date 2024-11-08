@@ -11,7 +11,6 @@ public partial class Analyzer
 	private static partial Regex WhitespaceRegex();
 	private static readonly double[] ImprovementRatioThreshold = [-1, -0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75, 1, 1000];
 	private const int IndexOfZero = 4;
-
 	private readonly ILogger<Analyzer> _logger;
 	private readonly ISignificanceTest _test;
 
@@ -29,16 +28,14 @@ public partial class Analyzer
 		public int[] CountByImprovementRange = [];
 	}
 
-	private int LocateSegment(double value)
+	private static int LocateSegment(double value)
 	{
 		if (value > 0)
 		{
 			for (var i = IndexOfZero; i < ImprovementRatioThreshold.Length; i++)
 			{
 				if (value <= ImprovementRatioThreshold[i])
-				{
 					return i;
-				}
 			}
 		}
 		else if (value < 0)
@@ -46,9 +43,7 @@ public partial class Analyzer
 			for (var i = 0; i <= IndexOfZero; i++)
 			{
 				if (value < ImprovementRatioThreshold[i])
-				{
 					return i;
-				}
 			}
 		}
 		return -1;
@@ -130,9 +125,8 @@ public partial class Analyzer
 		{
 			var resultDetails = targetFiles[i];
 			foreach (var count in results[i].CountByImprovementRange)
-			{
 				resultDetails += "\t" + count;
-			}
+
 			_logger.LogInformation("{Result}", resultDetails);
 		}
 	}
@@ -141,9 +135,8 @@ public partial class Analyzer
 	{
 		var results = new Result[targets.Count];
 		for (var i = 0; i < targets.Count; i++)
-		{
 			results[i] = Compare(basePerformance, targets[i]);
-		}
+
 		return results;
 	}
 
@@ -175,19 +168,13 @@ public partial class Analyzer
 			var targetValue = target[key];
 
 			if (targetValue > baseValue)
-			{
 				result.Win++;
-			}
 			else if (targetValue < baseValue)
-			{
 				result.Loss++;
-			}
 
 			var change = targetValue - baseValue;
 			if (change != 0)
-			{
 				result.CountByImprovementRange[LocateSegment(change)]++;
-			}
 		}
 
 		return result;
