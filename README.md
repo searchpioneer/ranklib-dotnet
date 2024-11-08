@@ -1,6 +1,6 @@
 # RankLib for .NET
 
-Ranklib for .NET is a hardened port of [RankLib](https://sourceforge.net/p/lemur/wiki/RankLib/),
+Ranklib for .NET is a hardened port to .NET of [RankLib](https://sourceforge.net/p/lemur/wiki/RankLib/),
 a popular open source learning to rank library written in Java. It maintains compatibility with input and output
 files of RankLib, allowing it to be used to integrate with systems that use RankLib, such as the
 [Elasticsearch Learning to Rank plugin](http://github.com/o19s/elasticsearch-learning-to-rank).
@@ -47,13 +47,13 @@ The following ranking algorithms are implemented
 
 The following metrics are implemented to measure the effectiveness of ranking
 
-1. Average Precision (MAP)
-2. Best at K (Best@K)
-3. Discounted Cumulative Gain (DCG@K)
-4. Expected Reciprocal Rank (ERR@K)
-5. Normalized Discounted Cumulative Gain (NDCG@K)
-6. Precision at K (P@K)
-7. Reciprocal Rank
+1. Average Precision (`MAP`)
+2. Best at K (`Best@K`)
+3. Discounted Cumulative Gain (`DCG@K`)
+4. Expected Reciprocal Rank (`ERR@K`)
+5. Normalized Discounted Cumulative Gain (`NDCG@K`)
+6. Precision at K (`P@K`)
+7. Reciprocal Rank (`RR`)
 
 ## What is Learning to Rank (LTR)?
 
@@ -70,7 +70,7 @@ The file format for the training, testing, and validation data is the same as fo
 [SVM-Rank](https://www.cs.cornell.edu/people/tj/svm_light/svm_rank.html) and
 [LETOR](https://www.microsoft.com/en-us/research/project/letor-learning-rank-information-retrieval/) datasets.
 
-Each of the following lines represents one training example and is of the following format:
+Each line in a training file represents one training example, and uses the following format:
 
 ```text
 <line> .=. <target> qid:<qid> <feature>:<value> <feature>:<value> ... <feature>:<value> # <info>
@@ -83,7 +83,7 @@ Each of the following lines represents one training example and is of the follow
 
 `<info>` typically takes the form of `<document id> <query>`.
 
-The following example has data for three different queries; each example has two features:
+The following example has data for three different queries, where each example has two features:
 
 ```text
 4 qid:1 1:12.318474 2:10.573917 # 7555 rambo
