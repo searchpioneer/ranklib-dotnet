@@ -10,6 +10,9 @@ public static class Sampler
 {
 	public static (List<RankList> samples, List<RankList> remains) Sample(List<RankList> samplingPool, float samplingRate, bool withReplacement)
 	{
+		if (samplingRate is < 0 or > 1)
+			throw new ArgumentOutOfRangeException(nameof(samplingRate), "sampling rate must be between 0 and 1");
+
 		var samples = new List<RankList>();
 		var remains = new List<RankList>();
 		var size = (int)(samplingRate * samplingPool.Count);
