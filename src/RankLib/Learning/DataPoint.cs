@@ -18,15 +18,15 @@ public abstract class DataPoint
 	protected const float Unknown = float.NaN;
 
 	// attributes
-	protected float[] FVals = []; // _fVals[0] is unused. Feature id MUST start from 1
+	protected float[] FeatureValues = []; // _fVals[0] is unused. Feature id MUST start from 1
 
 	// helper attributes
-	protected int _knownFeatures; // number of known feature values
+	protected int KnownFeatures; // number of known feature values
 
 	// internal to learning procedures
-	public double Cached { get; set; } = -1.0;
+	public double Cached { get; set; } = -1;
 
-	protected static bool IsUnknown(float fVal) => float.IsNaN(fVal);
+	protected static bool IsUnknown(float featureValue) => float.IsNaN(featureValue);
 
 	private static ReadOnlySpan<char> GetKey(ReadOnlySpan<char> pair) => pair.Slice(0, pair.IndexOf(':'));
 	private static ReadOnlySpan<char> GetValue(ReadOnlySpan<char> pair) => pair.Slice(pair.LastIndexOf(':') + 1);
@@ -64,7 +64,7 @@ public abstract class DataPoint
 
 			while (enumerator.MoveNext())
 			{
-				_knownFeatures++;
+				KnownFeatures++;
 				var key = GetKey(enumerator.Current);
 				var val = GetValue(enumerator.Current);
 				var f = int.Parse(key);
@@ -93,9 +93,9 @@ public abstract class DataPoint
 			}
 
 			// shrink fVals
-			var shrinkFVals = new float[lastFeature + 1];
-			Array.Copy(featureValues, shrinkFVals, lastFeature + 1);
-			featureValues = shrinkFVals;
+			var shrinkFeatureValues = new float[lastFeature + 1];
+			Array.Copy(featureValues, shrinkFeatureValues, lastFeature + 1);
+			featureValues = shrinkFeatureValues;
 		}
 		catch (Exception ex)
 		{
@@ -108,17 +108,17 @@ public abstract class DataPoint
 	/// <summary>
 	/// Get the value of the feature with the given feature ID
 	/// </summary>
-	public abstract float GetFeatureValue(int fid);
+	public abstract float GetFeatureValue(int featureId);
 
 	/// <summary>
 	/// Sets the value of the feature with the given feature ID
 	/// </summary>
-	public abstract void SetFeatureValue(int fid, float fval);
+	public abstract void SetFeatureValue(int featureId, float featureValue);
 
 	/// <summary>
 	/// Sets the value of all features with the provided dense array of feature values
 	/// </summary>
-	protected abstract void SetFeatureVector(float[] dfVals);
+	protected abstract void SetFeatureVector(float[] featureValues);
 
 	/// <summary>
 	/// Gets the value of all features as a dense array of feature values.
@@ -129,32 +129,32 @@ public abstract class DataPoint
 
 	protected DataPoint(ReadOnlySpan<char> span)
 	{
-		var fVals = Parse(span);
+		var featureValues = Parse(span);
 		// ReSharper disable once VirtualMemberCallInConstructor
-		SetFeatureVector(fVals);
+		SetFeatureVector(featureValues);
 	}
 
-	public string Id { get; set; } = string.Empty;
+	public string Id { get; protected set; } = string.Empty;
 
-	public string Description { get; set; } = string.Empty;
+	public string Description { get; protected set; } = string.Empty;
 
-	public float Label { get; set; }
+	public float Label { get; protected set; }
 
-	public int FeatureCount { get; protected set; }
+	public int FeatureCount { get; private set; }
 
-	public void ResetCached() => Cached = -100000000.0f;
+	public void ResetCached() => Cached = -1;
 
 	// Override ToString method
 	public override string ToString()
 	{
-		var fval = GetFeatureVector();
+		var featureVector = GetFeatureVector();
 		var output = new StringBuilder();
 		output.Append($"{(int)Label} qid:{Id} ");
 
-		for (var i = 1; i < fval.Length; i++)
+		for (var i = 1; i < featureVector.Length; i++)
 		{
-			if (!IsUnknown(fval[i]))
-				output.Append($"{i}:{fval[i]}{(i == fval.Length - 1 ? "" : " ")}");
+			if (!IsUnknown(featureVector[i]))
+				output.Append($"{i}:{featureVector[i]}{(i == featureVector.Length - 1 ? "" : " ")}");
 		}
 
 		output.Append($" {Description}");

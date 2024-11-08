@@ -32,6 +32,7 @@ public class AdaRankParameters : IRankerParameters
 	/// </summary>
 	public int MaximumSelectedCount { get; set; } = 5;
 
+	/// <inheritdoc />
 	public override string ToString()
 	{
 		var builder = new StringBuilder();
@@ -48,6 +49,11 @@ public class AdaRankParameters : IRankerParameters
 /// optimizing ranking-specific metrics like NDCG and MAP by iteratively
 /// training weak rankers and adapting to misranked instances in each iteration.
 /// </summary>
+/// <remarks>
+/// <a href="https://dl.acm.org/doi/10.1145/1277741.1277809">
+/// J. Xu and H. Li. AdaRank: a boosting algorithm for information retrieval. In Proc. of SIGIR, pages 391-398, 2007.
+/// </a>
+/// </remarks>
 public class AdaRank : Ranker<AdaRankParameters>
 {
 	internal const string RankerName = "AdaRank";

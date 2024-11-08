@@ -8,7 +8,7 @@ namespace RankLib.Metric;
 public abstract class MetricScorer
 {
 	/// <summary>
-	/// The depth parameter, or how deep of a ranked list to use to score the measure.
+	/// The depth parameter, or how deep into a ranked list to use to score the measure.
 	/// </summary>
 	public int K { get; set; } = 10;
 
@@ -49,16 +49,15 @@ public abstract class MetricScorer
 	}
 
 	/// <summary>
-	/// Score a <see cref="RankList"/>.
+	/// Scores a <see cref="RankList"/>.
 	/// </summary>
 	/// <param name="rankList">The rank list to score.</param>
 	/// <returns>The score for the rank list.</returns>
 	public abstract double Score(RankList rankList);
 
 	/// <summary>
-	/// Gets the name of this scorer.
+	/// Gets the name of the scorer.
 	/// </summary>
-	/// <value>The name of this scorer.</value>
 	public abstract string Name { get; }
 
 	/// <summary>

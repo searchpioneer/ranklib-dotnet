@@ -16,7 +16,7 @@ public class SparseDataPoint : DataPoint
 	private static readonly AccessPattern SearchPattern = AccessPattern.Random;
 
 	// The feature ids for known values
-	private int[] _fIds = [];
+	private int[] _featureIds = [];
 	// Internal search optimizers. Currently unused.
 	private int _lastMinId = -1;
 	private int _lastMinPos = -1;
@@ -29,10 +29,10 @@ public class SparseDataPoint : DataPoint
 		Id = dp.Id;
 		Description = dp.Description;
 		Cached = dp.Cached;
-		_fIds = new int[dp._fIds.Length];
-		FVals = new float[dp.FVals.Length];
-		Array.Copy(dp._fIds, 0, _fIds, 0, dp._fIds.Length);
-		Array.Copy(dp.FVals, 0, FVals, 0, dp.FVals.Length);
+		_featureIds = new int[dp._featureIds.Length];
+		FeatureValues = new float[dp.FeatureValues.Length];
+		Array.Copy(dp._featureIds, 0, _featureIds, 0, dp._featureIds.Length);
+		Array.Copy(dp.FeatureValues, 0, FeatureValues, 0, dp.FeatureValues.Length);
 	}
 
 	private int Locate(int fid)
@@ -44,14 +44,14 @@ public class SparseDataPoint : DataPoint
 				_lastMinId = -1;
 				_lastMinPos = -1;
 			}
-			while (_lastMinPos < _knownFeatures && _lastMinId < fid)
-				_lastMinId = _fIds[++_lastMinPos];
+			while (_lastMinPos < KnownFeatures && _lastMinId < fid)
+				_lastMinId = _featureIds[++_lastMinPos];
 			if (_lastMinId == fid)
 				return _lastMinPos;
 		}
 		else if (SearchPattern == AccessPattern.Random)
 		{
-			var pos = Array.BinarySearch(_fIds, fid);
+			var pos = Array.BinarySearch(_featureIds, fid);
 			if (pos >= 0)
 				return pos;
 		}
@@ -63,60 +63,60 @@ public class SparseDataPoint : DataPoint
 
 	public bool HasFeature(int fid) => Locate(fid) != -1;
 
-	public override float GetFeatureValue(int fid)
+	public override float GetFeatureValue(int featureId)
 	{
-		if (fid <= 0 || fid > FeatureCount)
+		if (featureId <= 0 || featureId > FeatureCount)
 		{
 			if (MissingZero)
 				return 0f;
 
-			throw RankLibException.Create("Error in SparseDataPoint::GetFeatureValue(): requesting unspecified feature, fid=" + fid);
+			throw RankLibException.Create("Error in SparseDataPoint::GetFeatureValue(): requesting unspecified feature, fid=" + featureId);
 		}
 
-		var pos = Locate(fid);
+		var pos = Locate(featureId);
 		if (pos >= 0)
-			return FVals[pos];
+			return FeatureValues[pos];
 
 		return 0; // Should ideally be returning unknown?
 	}
 
-	public override void SetFeatureValue(int fid, float fval)
+	public override void SetFeatureValue(int featureId, float featureValue)
 	{
-		if (fid <= 0 || fid > FeatureCount)
-			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + fid + ") out of range.");
+		if (featureId <= 0 || featureId > FeatureCount)
+			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + featureId + ") out of range.");
 
-		var pos = Locate(fid);
+		var pos = Locate(featureId);
 		if (pos >= 0)
-			FVals[pos] = fval;
+			FeatureValues[pos] = featureValue;
 		else
-			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + fid + ") not found.");
+			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + featureId + ") not found.");
 	}
 
-	protected override void SetFeatureVector(float[] dfVals)
+	protected override void SetFeatureVector(float[] featureValues)
 	{
-		_fIds = new int[_knownFeatures];
-		FVals = new float[_knownFeatures];
+		_featureIds = new int[KnownFeatures];
+		FeatureValues = new float[KnownFeatures];
 		var pos = 0;
-		for (var i = 1; i < dfVals.Length; i++)
+		for (var i = 1; i < featureValues.Length; i++)
 		{
-			if (!IsUnknown(dfVals[i]))
+			if (!IsUnknown(featureValues[i]))
 			{
-				_fIds[pos] = i;
-				FVals[pos] = dfVals[i];
+				_featureIds[pos] = i;
+				FeatureValues[pos] = featureValues[i];
 				pos++;
 			}
 		}
-		if (pos != _knownFeatures)
+		if (pos != KnownFeatures)
 			throw new InvalidOperationException("Mismatch in known features count.");
 	}
 
 	protected override float[] GetFeatureVector()
 	{
-		var dfVals = new float[_fIds[_knownFeatures - 1] + 1]; // Adjust for array length
-		Array.Fill(dfVals, Unknown);
-		for (var i = 0; i < _knownFeatures; i++)
-			dfVals[_fIds[i]] = FVals[i];
+		var featureVector = new float[_featureIds[KnownFeatures - 1] + 1]; // Adjust for array length
+		Array.Fill(featureVector, Unknown);
+		for (var i = 0; i < KnownFeatures; i++)
+			featureVector[_featureIds[i]] = FeatureValues[i];
 
-		return dfVals;
+		return featureVector;
 	}
 }

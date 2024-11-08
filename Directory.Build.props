@@ -2,8 +2,14 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <Authors>Search Pioneer</Authors>
+    <Authors>Search Pioneer and Contributors</Authors>
     <Copyright>Search Pioneer</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/searchpioneer/ranklib-dotnet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/searchpioneer/ranklib-dotnet</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/searchpioneer/ranklib-dotnet/releases</PackageReleaseNotes>
+    <PackageTags>search;ranking;learning-to-rank;ranklib;machine-learning;lambdamart;mart;ranknet;rankboost;adarank;lambdarank</PackageTags>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup>

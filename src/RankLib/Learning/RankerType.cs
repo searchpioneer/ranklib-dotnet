@@ -9,18 +9,31 @@ namespace RankLib.Learning;
 /// </summary>
 public enum RankerType
 {
+	/// <inheritdoc cref="RankLib.Learning.Tree.MART"/>
 	MART = 0,
+	/// <inheritdoc cref="RankLib.Learning.NeuralNet.RankNet"/>
 	RankNet = 1,
+	/// <inheritdoc cref="RankLib.Learning.Boosting.RankBoost"/>
 	RankBoost = 2,
+	/// <inheritdoc cref="RankLib.Learning.Boosting.AdaRank"/>
 	AdaRank = 3,
+	/// <inheritdoc cref="RankLib.Learning.CoordinateAscent"/>
 	CoordinateAscent = 4,
+	/// <inheritdoc cref="RankLib.Learning.NeuralNet.LambdaRank"/>
 	LambdaRank = 5,
+	/// <inheritdoc cref="RankLib.Learning.Tree.LambdaMART"/>
 	LambdaMART = 6,
+	/// <inheritdoc cref="RankLib.Learning.NeuralNet.ListNet"/>
 	ListNet = 7,
+	/// <inheritdoc cref="RankLib.Learning.Tree.RandomForests"/>
 	RandomForests = 8,
+	/// <inheritdoc cref="RankLib.Learning.LinearRegression"/>
 	LinearRegression = 9,
 }
 
+/// <summary>
+/// Extension methods for <see cref="RankerType"/>
+/// </summary>
 public static class RankerTypeExtensions
 {
 	/// <summary>

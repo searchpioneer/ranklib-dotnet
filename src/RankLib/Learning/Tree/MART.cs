@@ -19,17 +19,52 @@ public class MART : LambdaMART
 {
 	internal new const string RankerName = "MART";
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="MART"/>
+	/// </summary>
+	/// <param name="logger">logger to log messages</param>
 	public MART(ILogger<MART>? logger = null) : base(logger)
 	{
 	}
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="MART"/>
+	/// </summary>
+	/// <param name="parameters">the parameters for training this instance</param>
+	/// <param name="logger">logger to log messages</param>
+	public MART(LambdaMARTParameters parameters, ILogger<MART>? logger = null) : base(parameters, logger)
+	{
+	}
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="MART"/>
+	/// </summary>
+	/// <param name="samples">the training samples</param>
+	/// <param name="features">the features</param>
+	/// <param name="scorer">the scorer used to measure the effectiveness of the ranker</param>
+	/// <param name="logger">logger to log messages</param>
 	public MART(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<MART>? logger = null)
 		: base(samples, features, scorer, logger)
 	{
 	}
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="MART"/>
+	/// </summary>
+	/// <param name="parameters">the parameters for training this instance</param>
+	/// <param name="samples">the training samples</param>
+	/// <param name="features">the features</param>
+	/// <param name="scorer">the scorer used to measure the effectiveness of the ranker</param>
+	/// <param name="logger">logger to log messages</param>
+	public MART(LambdaMARTParameters parameters, List<RankList> samples, int[] features, MetricScorer scorer, ILogger<MART>? logger = null)
+		: base(parameters, samples, features, scorer, logger)
+	{
+	}
+
+	/// <inheritdoc />
 	public override string Name => RankerName;
 
+	/// <inheritdoc />
 	protected override Task ComputePseudoResponses()
 	{
 		for (var i = 0; i < MARTSamples.Length; i++)
@@ -38,6 +73,7 @@ public class MART : LambdaMART
 		return Task.CompletedTask;
 	}
 
+	/// <inheritdoc />
 	protected override void UpdateTreeOutput(RegressionTree tree)
 	{
 		foreach (var split in tree.Leaves)

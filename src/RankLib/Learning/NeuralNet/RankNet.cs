@@ -49,6 +49,12 @@ public class RankNetParameters : IRankerParameters
 /// by minimizing a pairwise loss function, optimizing the ordering of items
 /// based on their predicted relevance.
 /// </summary>
+/// <remarks>
+/// <a href="https://icml.cc/Conferences/2005/proceedings/papers/012_LearningToRank_BurgesEtAl.pdf">
+/// C.J.C. Burges, T. Shaked, E. Renshaw, A. Lazier, M. Deeds, N. Hamilton and G. Hullender.
+/// Learning to rank using gradient descent. In Proc. of ICML, pages 89-96, 2005
+/// </a>
+/// </remarks>
 public class RankNet : Ranker<RankNetParameters>
 {
 	internal const string RankerName = "RankNet";

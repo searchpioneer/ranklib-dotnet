@@ -45,22 +45,53 @@ public class RankerFactory
 		[typeof(LinearRegression)] = loggerFactory => new LinearRegression(loggerFactory.CreateLogger<LinearRegression>()),
 	};
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="RankerFactory"/>
+	/// </summary>
+	/// <param name="loggerFactory">The logger factory to create loggers</param>
 	public RankerFactory(ILoggerFactory? loggerFactory = null)
 	{
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 		_logger = _loggerFactory.CreateLogger<RankerFactory>();
 	}
 
-	public void AddRanker<TRanker, TRankerParameters>(Func<ILoggerFactory, TRanker> factory)
+	/// <summary>
+	/// Registers a factory function for creating instances of a <see cref="IRanker{TParameters}"/>
+	/// </summary>
+	/// <param name="name">The name of the ranker</param>
+	/// <param name="factory">A function used to create instances of a ranker</param>
+	/// <typeparam name="TRanker">The type of ranker</typeparam>
+	/// <typeparam name="TRankerParameters">The type of ranker parameters</typeparam>
+	/// <exception cref="ArgumentException">
+	/// Type of ranker is already registered.
+	/// </exception>
+	public void AddRanker<TRanker, TRankerParameters>(string name, Func<ILoggerFactory, TRanker> factory)
 		where TRanker : class, IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters
 	{
+		if (!_map.TryAdd(name, typeof(TRanker)))
+			throw new ArgumentException($"Ranker with name '{name}' is already registered.");
+
 		if (!_rankers.TryAdd(typeof(TRanker), factory))
 			throw new ArgumentException($"Ranker of type '{typeof(TRanker).Name}' is already registered.");
 	}
 
-	public IRanker CreateRanker(RankerType type) => CreateRanker(type.GetRankerType());
+	/// <summary>
+	/// Creates a new instance of a ranker of the specified type.
+	/// </summary>
+	/// <param name="rankerType">The type of ranker</param>
+	/// <returns>A new instance of the ranker</returns>
+	public IRanker CreateRanker(RankerType rankerType) => CreateRanker(rankerType.GetRankerType());
 
+
+	/// <summary>
+	/// Creates a new instance of a ranker of the specified type.
+	/// </summary>
+	/// <typeparam name="TRanker">The type of ranker</typeparam>
+	/// <returns>A new instance of the ranker</returns>
+	/// <exception cref="ArgumentException">
+	/// The type of ranker is not registered.
+	/// </exception>
 	public TRanker CreateRanker<TRanker>()
 		where TRanker : IRanker
 	{
@@ -70,6 +101,11 @@ public class RankerFactory
 		return (TRanker)factory(_loggerFactory);
 	}
 
+	/// <summary>
+	/// Creates a new instance of a ranker of the specified type.
+	/// </summary>
+	/// <param name="rankerType">The type of ranker</param>
+	/// <returns>A new instance of the ranker</returns>
 	public IRanker CreateRanker(Type rankerType)
 	{
 		if (!typeof(IRanker).IsAssignableFrom(rankerType))
@@ -81,6 +117,16 @@ public class RankerFactory
 		return factory(_loggerFactory);
 	}
 
+	/// <summary>
+	/// Creates a new instance of a ranker of the specified type.
+	/// </summary>
+	/// <param name="samples">the training samples</param>
+	/// <param name="features">the features</param>
+	/// <param name="scorer">the scorer used to measure the effectiveness of the ranker</param>
+	/// <param name="parameters">the parameters for training this instance</param>
+	/// <typeparam name="TRanker">The type of ranker</typeparam>
+	/// <typeparam name="TRankerParameters">The type of ranker parameters</typeparam>
+	/// <returns>A new instance of the ranker</returns>
 	public TRanker CreateRanker<TRanker, TRankerParameters>(List<RankList> samples, int[] features, MetricScorer scorer, TRankerParameters? parameters = default)
 		where TRankerParameters : IRankerParameters
 		where TRanker : IRanker<TRankerParameters>
@@ -95,6 +141,15 @@ public class RankerFactory
 		return ranker;
 	}
 
+	/// <summary>
+	/// Creates a new instance of a ranker of the specified type.
+	/// </summary>
+	/// <param name="rankerType">The type of ranker</param>
+	/// <param name="samples">the training samples</param>
+	/// <param name="features">the features</param>
+	/// <param name="scorer">the scorer used to measure the effectiveness of the ranker</param>
+	/// <param name="parameters">the parameters for training this instance</param>
+	/// <returns>A new instance of the ranker</returns>
 	public IRanker CreateRanker(Type rankerType, List<RankList> samples, int[] features, MetricScorer scorer, IRankerParameters? parameters = default)
 	{
 		var ranker = CreateRanker(rankerType);
@@ -116,15 +171,34 @@ public class RankerFactory
 		return ranker;
 	}
 
-	public IRanker CreateRanker(RankerType type, List<RankList> samples, int[] features, MetricScorer scorer, IRankerParameters? parameters = default) =>
-		CreateRanker(type.GetRankerType(), samples, features, scorer, parameters);
+	/// <summary>
+	/// Creates a new instance of a ranker of the specified type.
+	/// </summary>
+	/// <param name="rankerType">The type of ranker</param>
+	/// <param name="samples">the training samples</param>
+	/// <param name="features">the features</param>
+	/// <param name="scorer">the scorer used to measure the effectiveness of the ranker</param>
+	/// <param name="parameters">the parameters for training this instance</param>
+	/// <returns>A new instance of the ranker</returns>
+	public IRanker CreateRanker(RankerType rankerType, List<RankList> samples, int[] features, MetricScorer scorer, IRankerParameters? parameters = default) =>
+		CreateRanker(rankerType.GetRankerType(), samples, features, scorer, parameters);
 
+	/// <summary>
+	/// Loads an instance of a ranker from a model file
+	/// </summary>
+	/// <param name="modelFile">The model file from which to load the ranker</param>
+	/// <returns>A new instance of the ranker</returns>
 	public IRanker LoadRankerFromFile(string modelFile)
 	{
 		var model = SmartReader.ReadToEnd(modelFile, Encoding.ASCII);
 		return LoadRankerFromString(model);
 	}
 
+	/// <summary>
+	/// Loads an instance of a ranker from a model.
+	/// </summary>
+	/// <param name="model">The model from which to load the ranker</param>
+	/// <returns>A new instance of the ranker</returns>
 	public IRanker LoadRankerFromString(string model)
 	{
 		// read the first line to get the ranker name

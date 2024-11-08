@@ -11,8 +11,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RankLib.Comparison.Tests", "tests\RankLib.Comparison.Tests\RankLib.Comparison.Tests.csproj", "{154FFCE9-E2E8-4D3D-8959-4710A62F4B21}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0D76860A-E6B8-4546-8310-AE9B13D97F56}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E1AF7739-5FDF-4E02-B7A5-8DA9A7CBD6F0}"
+	ProjectSection(SolutionItems) = preProject
+		tests\Directory.Build.props = tests\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{C6CD551C-98C5-4741-BB0C-949CA2C20288}"
 EndProject
@@ -21,6 +27,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{8FC7CA5A-7788-48CA-9E58-2A88F5A6ABFC}"
 	ProjectSection(SolutionItems) = preProject
 		Directory.Packages.props = Directory.Packages.props
+		Directory.Build.props = Directory.Build.props
+		README.md = README.md
 	EndProjectSection
 EndProject
 Global

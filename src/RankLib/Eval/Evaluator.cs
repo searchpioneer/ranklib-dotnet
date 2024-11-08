@@ -8,6 +8,10 @@ using RankLib.Utilities;
 
 namespace RankLib.Eval;
 
+/// <summary>
+/// Evaluates rankers and rank lists.
+/// Rankers can be trained or loaded from a model file and evaluated.
+/// </summary>
 public class Evaluator
 {
 	private readonly ILogger<Evaluator> _logger;
@@ -344,7 +348,7 @@ public class Evaluator
 			Math.Round(rankScore, 4));
 	}
 
-	public void Test(string testFile, string? prpFile)
+	public void Test(string testFile, string? performanceOutputFile)
 	{
 		var test = ReadInput(testFile);
 		var rankScore = 0.0;
@@ -366,14 +370,14 @@ public class Evaluator
 		_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
 			Math.Round(rankScore, 4));
 
-		if (!string.IsNullOrEmpty(prpFile))
+		if (!string.IsNullOrEmpty(performanceOutputFile))
 		{
-			SavePerRankListPerformanceFile(ids, scores, prpFile);
-			_logger.LogInformation($"Per-ranked list performance saved to: {prpFile}");
+			SavePerRankListPerformanceFile(ids, scores, performanceOutputFile);
+			_logger.LogInformation($"Per-ranked list performance saved to: {performanceOutputFile}");
 		}
 	}
 
-	public void Test(string modelFile, string testFile, string? prpFile)
+	public void Test(string modelFile, string testFile, string? performanceOutputFile)
 	{
 		var ranker = _rankerFactory.LoadRankerFromFile(modelFile);
 		var features = ranker.Features;
@@ -402,14 +406,14 @@ public class Evaluator
 		_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
 			Math.Round(rankScore, 4));
 
-		if (!string.IsNullOrEmpty(prpFile))
+		if (!string.IsNullOrEmpty(performanceOutputFile))
 		{
-			SavePerRankListPerformanceFile(ids, scores, prpFile);
-			_logger.LogInformation($"Per-ranked list performance saved to: {prpFile}");
+			SavePerRankListPerformanceFile(ids, scores, performanceOutputFile);
+			_logger.LogInformation($"Per-ranked list performance saved to: {performanceOutputFile}");
 		}
 	}
 
-	public void Test(List<string> modelFiles, string testFile, string prpFile)
+	public void Test(List<string> modelFiles, string testFile, string performanceOutputFile)
 	{
 		var trainingData = new List<List<RankList>>();
 		var testData = new List<List<RankList>>();
@@ -450,14 +454,14 @@ public class Evaluator
 		_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
 			Math.Round(rankScore, 4));
 
-		if (!string.IsNullOrEmpty(prpFile))
+		if (!string.IsNullOrEmpty(performanceOutputFile))
 		{
-			SavePerRankListPerformanceFile(ids, scores, prpFile);
-			_logger.LogInformation($"Per-ranked list performance saved to: {prpFile}");
+			SavePerRankListPerformanceFile(ids, scores, performanceOutputFile);
+			_logger.LogInformation($"Per-ranked list performance saved to: {performanceOutputFile}");
 		}
 	}
 
-	public void Test(List<string> modelFiles, List<string> testFiles, string prpFile)
+	public void Test(List<string> modelFiles, List<string> testFiles, string performanceOutputFile)
 	{
 		var nFold = modelFiles.Count;
 		var rankScore = 0.0;
@@ -490,10 +494,10 @@ public class Evaluator
 		_logger.LogInformation("{TestScorerName} on test data: {RoundedRankScore}", _testScorer.Name,
 			Math.Round(rankScore, 4));
 
-		if (!string.IsNullOrEmpty(prpFile))
+		if (!string.IsNullOrEmpty(performanceOutputFile))
 		{
-			SavePerRankListPerformanceFile(ids, scores, prpFile);
-			_logger.LogInformation("Per-ranked list performance saved to: {PrpFile}", prpFile);
+			SavePerRankListPerformanceFile(ids, scores, performanceOutputFile);
+			_logger.LogInformation("Per-ranked list performance saved to: {PerformanceOutputFile}", performanceOutputFile);
 		}
 	}
 
@@ -773,9 +777,9 @@ public class Evaluator
 		return features;
 	}
 
-	private void SavePerRankListPerformanceFile(List<string> ids, List<double> scores, string prpFile)
+	private void SavePerRankListPerformanceFile(List<string> ids, List<double> scores, string performanceOutputFile)
 	{
-		using var writer = new StreamWriter(prpFile);
+		using var writer = new StreamWriter(performanceOutputFile);
 		for (var i = 0; i < ids.Count; i++)
 			writer.WriteLine($"{_testScorer.Name}   {ids[i]}   {scores[i]}");
 	}

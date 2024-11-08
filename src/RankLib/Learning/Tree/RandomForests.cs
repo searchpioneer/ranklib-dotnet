@@ -103,6 +103,11 @@ public class RandomForestsParameters : IRankerParameters
 /// Random Forests is an ensemble learning method that constructs multiple decision trees during training
 /// and merges their results for more accurate and stable predictions.
 /// </summary>
+/// <remarks>
+/// <a href="https://www.stat.berkeley.edu/~breiman/randomforest2001.pdf">
+/// L. Breiman. Random Forests. Machine Learning 45 (1): 5–32, 2001.
+/// </a>
+/// </remarks>
 public class RandomForests : Ranker<RandomForestsParameters>
 {
 	internal const string RankerName = "Random Forests";

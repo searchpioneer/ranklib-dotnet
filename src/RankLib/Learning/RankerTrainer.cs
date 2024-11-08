@@ -9,6 +9,10 @@ public class RankerTrainer
 {
 	private readonly RankerFactory _rankerFactory;
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="RankerTrainer"/>
+	/// </summary>
+	/// <param name="rankerFactory"></param>
 	public RankerTrainer(RankerFactory rankerFactory) => _rankerFactory = rankerFactory;
 
 	/// <summary>
@@ -18,7 +22,7 @@ public class RankerTrainer
 	/// <param name="trainingSamples">The training samples.</param>
 	/// <param name="validationSamples">The validation samples.</param>
 	/// <param name="features">The features</param>
-	/// <param name="scorer">The scorer to use</param>
+	/// <param name="scorer">the scorer used to measure the effectiveness of the ranker</param>
 	/// <param name="parameters">The ranking parameters</param>
 	/// <returns>A new instance of a trained <see cref="IRanker"/></returns>
 	public async Task<IRanker> TrainAsync(
@@ -42,12 +46,12 @@ public class RankerTrainer
 	/// <param name="trainingSamples">The training samples.</param>
 	/// <param name="validationSamples">The validation samples.</param>
 	/// <param name="features">The features</param>
-	/// <param name="scorer">The scorer to use</param>
+	/// <param name="scorer">the scorer used to measure the effectiveness of the ranker</param>
 	/// <param name="parameters">The ranking parameters</param>
 	/// <returns>A new instance of a trained <see cref="IRanker"/></returns>
 	/// <typeparam name="TRanker">The type of ranker</typeparam>
 	/// <typeparam name="TRankerParameters">The type of ranker parameters</typeparam>
-	/// <returns>A new instance of a trained <see cref="TRanker"/></returns>
+	/// <returns>A new instance of a trained ranker</returns>
 	public async Task<TRanker> TrainAsync<TRanker, TRankerParameters>(
 		List<RankList> trainingSamples,
 		List<RankList>? validationSamples,

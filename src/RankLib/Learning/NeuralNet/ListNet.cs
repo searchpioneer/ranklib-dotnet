@@ -24,6 +24,11 @@ public class ListNetParameters : RankNetParameters
 /// pairs or individual documents. It employs a probabilistic approach using permutation
 /// probability distributions to model the ranking.
 /// </summary>
+/// <remarks>
+/// <a href="https://dl.acm.org/doi/10.1145/1273496.1273513">
+/// Z. Cao, T. Qin, T.Y. Liu, M. Tsai and H. Li. Learning to Rank: From Pairwise Approach to Listwise Approach. ICML 2007.
+/// </a>
+/// </remarks>
 public class ListNet : RankNet
 {
 	internal new const string RankerName = "ListNet";

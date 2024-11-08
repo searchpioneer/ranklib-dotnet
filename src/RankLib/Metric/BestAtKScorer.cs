@@ -28,7 +28,7 @@ public class BestAtKScorer : MetricScorer
 	/// <param name="rl">The rank list.</param>
 	/// <param name="k">The last position of the range.</param>
 	/// <returns>The index of the best object in the specified range.</returns>
-	public int MaxToK(RankList rl, int k)
+	private static int MaxToK(RankList rl, int k)
 	{
 		var size = k;
 		if (size < 0 || size > rl.Count - 1)

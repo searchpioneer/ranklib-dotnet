@@ -56,6 +56,7 @@ public class LambdaMARTParameters : IRankerParameters
 	/// </summary>
 	public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
 
+	/// <inheritdoc />
 	public override string ToString()
 	{
 		var builder = new StringBuilder();
@@ -94,21 +95,53 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	private FeatureHistogram _hist;
 	private double[] _weights = [];
 
+	/// <summary>
+	/// The model scores calculated through learning
+	/// </summary>
 	protected double[] ModelScores = [];
+
+	/// <summary>
+	/// The samples for training
+	/// </summary>
 	protected DataPoint[] MARTSamples = [];
+
+	/// <summary>
+	/// The impacts of features calculated through learning
+	/// </summary>
 	protected internal double[] Impacts = [];
+
+	/// <summary>
+	/// The pseudo responses used in learning
+	/// </summary>
 	protected double[] PseudoResponses = [];
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="LambdaMART"/>
+	/// </summary>
+	/// <param name="logger">logger to log messages</param>
 	public LambdaMART(ILogger<LambdaMART>? logger = null) : this(new LambdaMARTParameters(), logger)
 	{
 	}
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="LambdaMART"/>
+	/// </summary>
+	/// <param name="parameters">the parameters for training this instance</param>
+	/// <param name="logger">logger to log messages</param>
 	public LambdaMART(LambdaMARTParameters parameters, ILogger<LambdaMART>? logger = null)
 	{
 		Parameters = parameters;
 		_logger = logger ?? NullLogger<LambdaMART>.Instance;
 	}
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="LambdaMART"/>
+	/// </summary>
+	/// <param name="parameters">the parameters for training this instance</param>
+	/// <param name="samples">the training samples</param>
+	/// <param name="features">the features</param>
+	/// <param name="scorer">the scorer used to measure the effectiveness of the ranker</param>
+	/// <param name="logger">logger to log messages</param>
 	public LambdaMART(LambdaMARTParameters parameters, List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaMART>? logger = null)
 		: base(samples, features, scorer)
 	{
@@ -116,15 +149,27 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		_logger = logger ?? NullLogger<LambdaMART>.Instance;
 	}
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="LambdaMART"/>
+	/// </summary>
+	/// <param name="samples">the training samples</param>
+	/// <param name="features">the features</param>
+	/// <param name="scorer">the scorer used to measure the effectiveness of the ranker</param>
+	/// <param name="logger">logger to log messages</param>
 	public LambdaMART(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaMART>? logger = null) :
 		this(new LambdaMARTParameters(), samples, features, scorer, logger)
 	{
 	}
 
+	/// <inheritdoc />
 	public override string Name => RankerName;
 
+	/// <summary>
+	/// Gets the ensemble
+	/// </summary>
 	public Ensemble Ensemble => _ensemble;
 
+	/// <inheritdoc />
 	public override async Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
@@ -234,6 +279,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		_sortedIdx = [];
 	}
 
+	/// <inheritdoc />
 	public override async Task LearnAsync()
 	{
 		_ensemble = new Ensemble();
@@ -330,8 +376,10 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		}
 	}
 
+	/// <inheritdoc />
 	public override double Eval(DataPoint dataPoint) => _ensemble.Eval(dataPoint);
 
+	/// <inheritdoc />
 	public override string GetModel()
 	{
 		var output = new StringBuilder();
@@ -346,6 +394,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		return output.ToString();
 	}
 
+	/// <inheritdoc />
 	public override void LoadFromString(string model)
 	{
 		var lineByLine = new ModelLineProducer();
@@ -354,7 +403,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		Features = _ensemble.Features;
 	}
 
-	// Helper Methods
+	/// <summary>
+	/// Computes the pseudoresponses for an iteration of learning.
+	/// </summary>
 	protected virtual async Task ComputePseudoResponses()
 	{
 		Array.Fill(PseudoResponses, 0);
@@ -470,6 +521,10 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		}
 	}
 
+	/// <summary>
+	/// Updates the outputs of the tree
+	/// </summary>
+	/// <param name="tree">The tree to update</param>
 	protected virtual void UpdateTreeOutput(RegressionTree tree)
 	{
 		var leaves = tree.Leaves;
@@ -493,7 +548,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		}
 	}
 
-	protected int[] SortSamplesByFeature(DataPoint[] samples, int fid)
+	private int[] SortSamplesByFeature(DataPoint[] samples, int fid)
 	{
 		var score = new double[samples.Length];
 		for (var i = 0; i < samples.Length; i++)
@@ -503,7 +558,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		return idx;
 	}
 
-	protected RankList Rank(int rankListIndex, int current)
+	private RankList Rank(int rankListIndex, int current)
 	{
 		var orig = Samples[rankListIndex];
 		var scores = new double[orig.Count];
@@ -514,9 +569,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		return new RankList(orig, idx);
 	}
 
-	protected float ComputeModelScoreOnTraining() => ComputeModelScoreOnTraining(0, Samples.Count - 1, 0) / Samples.Count;
+	private float ComputeModelScoreOnTraining() => ComputeModelScoreOnTraining(0, Samples.Count - 1, 0) / Samples.Count;
 
-	protected float ComputeModelScoreOnTraining(int start, int end, int current)
+	private float ComputeModelScoreOnTraining(int start, int end, int current)
 	{
 		float s = 0;
 		var c = current;
@@ -528,7 +583,8 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		return s;
 	}
 
-	private float ComputeModelScoreOnValidation() => ComputeModelScoreOnValidation(0, ValidationSamples!.Count - 1) / ValidationSamples.Count;
+	private float ComputeModelScoreOnValidation() =>
+		ComputeModelScoreOnValidation(0, ValidationSamples!.Count - 1) / ValidationSamples.Count;
 
 	private float ComputeModelScoreOnValidation(int start, int end)
 	{

@@ -34,7 +34,7 @@ public class RankList : IEnumerable<DataPoint>
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="RankList"/> with a copy of
-	/// selected data points from the specified rank list specified by <see cref="idx"/>
+	/// selected data points from the specified rank list specified by <paramref name="idx"/>
 	/// </summary>
 	/// <param name="rankList">The rank list to copy data points from.</param>
 	/// <param name="idx">The indexes of data points to copy.</param>
@@ -49,7 +49,7 @@ public class RankList : IEnumerable<DataPoint>
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="RankList"/> with a copy of
-	/// selected data points from the specified rank list specified by <see cref="idx"/>
+	/// selected data points from the specified rank list specified by <paramref name="idx"/>
 	/// minus the specified offset.
 	/// </summary>
 	/// <param name="rankList">The rank list to copy data points from.</param>
