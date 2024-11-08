@@ -197,15 +197,21 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 
 		// Sort samples by each feature
 		_sortedIdx = new int[Features.Length][];
+
 		if (Parameters.MaxDegreeOfParallelism == 1)
 			SortSamplesByFeature(0, Features.Length - 1);
 		else
 		{
-			var tasks = ParallelExecutor
-				.PartitionEnumerable(Features.Length, Parameters.MaxDegreeOfParallelism)
-				.Select(range => new SortWorker(this, range.Start.Value, range.End.Value));
-
-			await ParallelExecutor.ExecuteAsync(tasks, Parameters.MaxDegreeOfParallelism).ConfigureAwait(false);
+			var partitions =
+				Partitioner.PartitionEnumerable(Features.Length, Parameters.MaxDegreeOfParallelism);
+			await Parallel.ForEachAsync(
+				partitions,
+				new ParallelOptions { MaxDegreeOfParallelism = Parameters.MaxDegreeOfParallelism },
+				async (range, cancellationToken) =>
+			{
+				await Task.Run(() =>
+					SortSamplesByFeature(range.Start.Value, range.End.Value), cancellationToken).ConfigureAwait(false);
+			}).ConfigureAwait(false);
 		}
 
 		//Create a table of candidate thresholds (for each feature). Later on, we will select the best tree split from these candidates
@@ -414,9 +420,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			ComputePseudoResponses(0, Samples.Count - 1, 0);
 		else
 		{
-			var partition = ParallelExecutor.Partition(Samples.Count, Parameters.MaxDegreeOfParallelism);
+			var partition = Partitioner.Partition(Samples.Count, Parameters.MaxDegreeOfParallelism);
 			var current = 0;
-			var e = Enumerable.Range(0, partition.Length - 1)
+			var tuples = Enumerable.Range(0, partition.Length - 1)
 				.Select(i =>
 				{
 					var start = partition[i];
@@ -438,8 +444,8 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 				CancellationToken = default
 			};
 
-			await Parallel.ForEachAsync(e, parallelOptions, async (values, token) =>
-				await Task.Run(() => ComputePseudoResponses(values.start, values.end, values.current), token).ConfigureAwait(false))
+			await Parallel.ForEachAsync(tuples, parallelOptions, async (values, cancellationToken) =>
+				await Task.Run(() => ComputePseudoResponses(values.start, values.end, values.current), cancellationToken).ConfigureAwait(false))
 				.ConfigureAwait(false);
 		}
 	}
@@ -601,21 +607,5 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	{
 		for (var i = start; i <= end; i++)
 			_sortedIdx[i] = SortSamplesByFeature(MARTSamples, Features[i]);
-	}
-
-	private class SortWorker : RunnableTask
-	{
-		private readonly LambdaMART _ranker;
-		private readonly int _start;
-		private readonly int _end;
-
-		public SortWorker(LambdaMART ranker, int start, int end)
-		{
-			_ranker = ranker;
-			_start = start;
-			_end = end;
-		}
-
-		public override Task RunAsync() => Task.Run(() => _ranker.SortSamplesByFeature(_start, _end));
 	}
 }

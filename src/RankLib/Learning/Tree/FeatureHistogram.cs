@@ -48,10 +48,17 @@ public class FeatureHistogram
 			Construct(samples, labels, sampleSortedIdx, thresholds, 0, features.Length - 1);
 		else
 		{
-			await ParallelExecutor.ExecuteAsync(
-				new Worker(this, samples, labels, sampleSortedIdx, thresholds),
-				features.Length,
-				_maxDegreesOfParallelism).ConfigureAwait(false);
+			var partitions =
+				Partitioner.PartitionEnumerable(_features.Length, _maxDegreesOfParallelism);
+			await Parallel.ForEachAsync(
+				partitions,
+				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism },
+				async (range, cancellationToken) =>
+				{
+					await Task.Run(
+						() => Construct(samples, labels, sampleSortedIdx, thresholds, range.Start.Value,
+							range.End.Value), cancellationToken).ConfigureAwait(false);
+				}).ConfigureAwait(false);
 		}
 	}
 
@@ -105,10 +112,16 @@ public class FeatureHistogram
 			Update(labels, 0, _features.Length - 1);
 		else
 		{
-			await ParallelExecutor.ExecuteAsync(
-				new Worker(this, labels),
-				_features.Length,
-				_maxDegreesOfParallelism).ConfigureAwait(false);
+			var partitions =
+				Partitioner.PartitionEnumerable(_features.Length, _maxDegreesOfParallelism);
+			await Parallel.ForEachAsync(
+				partitions,
+				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism },
+				async (range, cancellationToken) =>
+				{
+					await Task.Run(() => Update(labels, range.Start.Value, range.End.Value), cancellationToken)
+						.ConfigureAwait(false);
+				}).ConfigureAwait(false);
 		}
 	}
 
@@ -167,10 +180,17 @@ public class FeatureHistogram
 			Construct(parent, soi, labels, 0, _features.Length - 1);
 		else
 		{
-			await ParallelExecutor.ExecuteAsync(
-				new Worker(this, parent, soi, labels),
-				_features.Length,
-				_maxDegreesOfParallelism).ConfigureAwait(false);
+			var partitions =
+				Partitioner.PartitionEnumerable(_features.Length, _maxDegreesOfParallelism);
+
+			await Parallel.ForEachAsync(
+				partitions,
+				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism },
+				async (range, cancellationToken) =>
+				{
+					await Task.Run(() => Construct(parent, soi, labels, range.Start.Value, range.End.Value),
+						cancellationToken).ConfigureAwait(false);
+				}).ConfigureAwait(false);
 		}
 	}
 
@@ -236,10 +256,16 @@ public class FeatureHistogram
 			Construct(parent, leftSibling, 0, _features.Length - 1);
 		else
 		{
-			await ParallelExecutor.ExecuteAsync(
-				new Worker(this, parent, leftSibling),
-				_features.Length,
-				_maxDegreesOfParallelism).ConfigureAwait(false);
+			var partitions =
+				Partitioner.PartitionEnumerable(_features.Length, _maxDegreesOfParallelism);
+			await Parallel.ForEachAsync(
+				partitions,
+				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism },
+				async (range, cancellationToken) =>
+				{
+					await Task.Run(() => Construct(parent, leftSibling, range.Start.Value, range.End.Value),
+						cancellationToken).ConfigureAwait(false);
+				}).ConfigureAwait(false);
 		}
 	}
 
@@ -338,16 +364,35 @@ public class FeatureHistogram
 			best = FindBestSplit(usedFeatures, minLeafSupport, 0, usedFeatures.Length - 1);
 		else
 		{
-			var workers = await ParallelExecutor.ExecuteAsync(
-				new Worker(this, usedFeatures, minLeafSupport),
-				usedFeatures.Length,
-				_maxDegreesOfParallelism).ConfigureAwait(false);
+			var tasks =
+				Partitioner.PartitionEnumerable(usedFeatures.Length, _maxDegreesOfParallelism)
+					.Select<Range, Task<Config>>(range => new Task<Config>(() => FindBestSplit(usedFeatures, minLeafSupport, range.Start.Value, range.End.Value)))
+					.ToList();
 
-			foreach (var worker in workers)
+			await Parallel.ForEachAsync(tasks, new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism }, async (task, _) =>
 			{
-				if (best.S < worker.Cfg.S)
-					best = worker.Cfg;
+				task.Start();
+				await task.ConfigureAwait(false);
+			}).ConfigureAwait(false);
+
+			foreach (var task in tasks)
+			{
+				if (best.S < task.Result.S)
+					best = task.Result;
 			}
+
+			// FindBestSplit(usedFeatures, minLeafSupport, start, end);
+			//
+			// var workers = await ParallelExecutor.ExecuteAsync(
+			// 	new Worker(this, usedFeatures, minLeafSupport),
+			// 	usedFeatures.Length,
+			// 	_maxDegreesOfParallelism).ConfigureAwait(false);
+			//
+			// foreach (var worker in workers)
+			// {
+			// 	if (best.S < worker.Cfg.S)
+			// 		best = worker.Cfg;
+			// }
 		}
 
 		// ReSharper disable once CompareOfFloatsByEqualityOperator
@@ -399,119 +444,5 @@ public class FeatureHistogram
 		sp.ClearSamples();
 
 		return true;
-	}
-
-	// Worker class for multithreading tasks
-	private class Worker : WorkerThread
-	{
-		private FeatureHistogram _fh;
-		private int _type;
-		private int[] _usedFeatures;
-		private int _minLeafSup;
-		internal Config Cfg;
-		private double[] _labels;
-		private FeatureHistogram _parent;
-		private int[] _soi;
-		private FeatureHistogram _leftSibling;
-		private DataPoint[] _samples;
-		private int[][] _sampleSortedIdx;
-		private float[][] _thresholds;
-
-		private Worker() { }
-
-		public Worker(FeatureHistogram fh, int[] usedFeatures, int minLeafSup)
-		{
-			_type = 0;
-			_fh = fh;
-			_usedFeatures = usedFeatures;
-			_minLeafSup = minLeafSup;
-		}
-
-		public Worker(FeatureHistogram fh, double[] labels)
-		{
-			_type = 1;
-			_fh = fh;
-			_labels = labels;
-		}
-
-		public Worker(FeatureHistogram fh, FeatureHistogram parent, int[] soi, double[] labels)
-		{
-			_type = 2;
-			_fh = fh;
-			_parent = parent;
-			_soi = soi;
-			_labels = labels;
-		}
-
-		public Worker(FeatureHistogram fh, FeatureHistogram parent, FeatureHistogram leftSibling)
-		{
-			_type = 3;
-			_fh = fh;
-			_parent = parent;
-			_leftSibling = leftSibling;
-		}
-
-		public Worker(FeatureHistogram fh, DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, float[][] thresholds)
-		{
-			_type = 4;
-			_fh = fh;
-			_samples = samples;
-			_labels = labels;
-			_sampleSortedIdx = sampleSortedIdx;
-			_thresholds = thresholds;
-		}
-
-		public override Task RunAsync() =>
-			Task.Run(() =>
-			{
-				switch (_type)
-				{
-					case 0:
-						Cfg = _fh.FindBestSplit(_usedFeatures, _minLeafSup, start, end);
-						break;
-					case 1:
-						_fh.Update(_labels, start, end);
-						break;
-					case 2:
-						_fh.Construct(_parent, _soi, _labels, start, end);
-						break;
-					case 3:
-						_fh.Construct(_parent, _leftSibling, start, end);
-						break;
-					case 4:
-						_fh.Construct(_samples, _labels, _sampleSortedIdx, _thresholds, start, end);
-						break;
-				}
-			});
-
-		public override WorkerThread Clone()
-		{
-			var wk = new Worker
-			{
-				_fh = _fh,
-				_type = _type,
-
-				// find best split (type == 0)
-				_usedFeatures = _usedFeatures,
-				_minLeafSup = _minLeafSup,
-
-				// update
-				_labels = _labels,
-
-				// construct
-				_parent = _parent,
-				_soi = _soi,
-
-				// construct sibling
-				_leftSibling = _leftSibling,
-
-				// construct full
-				_samples = _samples,
-				_sampleSortedIdx = _sampleSortedIdx,
-				_thresholds = _thresholds
-			};
-
-			return wk;
-		}
 	}
 }

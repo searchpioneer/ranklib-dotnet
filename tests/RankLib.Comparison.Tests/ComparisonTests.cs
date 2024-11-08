@@ -18,16 +18,16 @@ public class ComparisonTests
 		// - Linear Regression
 		// - MART
 
-		// Differ by small amounts in some values (differences in double precision?)
+		// Differ by small amounts in some values (differences in floating point precision calculations?)
 		// - RankBoost
 		// - AdaRank
 
 		// Different
-		// - RankNet
-		// - LambdaRank
-		// - LambdaMART - (Same with different double string representation up to tree 404).
-		// - ListNet
-		// - Random Forests
+		// - RankNet - (maybe use of random values?)
+		// - ListNet - (maybe use of random values?)
+		// - LambdaRank - (maybe use of random values?)
+		// - LambdaMART - (Same with different double string representation up to tree 404. Compounding differences with floating point precision calculations?).
+		// - Random Forests - (Same with different double string representation up to tree 404. Compounding differences with floating point precision calculations?).
 
 		var javaExecutable = new JavaExecutable("RankyMcRankFace-0.2.0.jar");
 		var dotnetExecutable = new DotnetExecutable("RankLib.Cli.dll");
