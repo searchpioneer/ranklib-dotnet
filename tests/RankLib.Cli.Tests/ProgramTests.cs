@@ -41,14 +41,10 @@ public class ProgramTests
 		{
 			Program.Main([
 				"eval",
-				"--train",
-				dataFile.Path,
-				"--metric2t",
-				"map",
-				"--ranker",
-				"4",
-				"--save",
-				modelFile.Path
+				"-train", dataFile.Path,
+				"-metric2t", "map",
+				"-ranker", "4",
+				"-save", modelFile.Path
 			]);
 		}
 
@@ -207,22 +203,14 @@ public class ProgramTests
 		{
 			Program.Main([
 				"eval",
-				"--train",
-				dataFile.Path,
-				"--metric2t",
-				measure,
-				"--ranker",
-				rnum.ToString(),
-				"--frate",
-				"1.0",
-				"--bag",
-				"10",
-				"--round",
-				"10",
-				"--epoch",
-				"10",
-				"--save",
-				modelFile.Path
+				"-train", dataFile.Path,
+				"-metric2t", measure,
+				"-ranker", rnum.ToString(),
+				"-frate", "1.0",
+				"-bag", "10",
+				"-round", "10",
+				"-epoch", "10",
+				"-save", modelFile.Path
 			]);
 		}
 
@@ -230,12 +218,9 @@ public class ProgramTests
 		{
 			Program.Main([
 				"eval",
-				"--rank",
-				dataFile.Path,
-				"--load",
-				modelFile.Path,
-				"--indri",
-				rankFile.Path
+				"-rank", dataFile.Path,
+				"-load", modelFile.Path,
+				"-indri", rankFile.Path
 			]);
 		}
 

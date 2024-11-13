@@ -35,21 +35,21 @@ public class EvaluatorFactory
 		Metric.Metric trainMetric,
 		Metric.Metric testMetric,
 		Normalizer? normalizer = null,
-		double? gMax = null,
-		bool mustHaveRelDoc = false,
+		double? maxLabel = null,
+		bool mustHaveRelevantDocs = false,
 		bool useSparseRepresentation = false,
 		string? queryRelevanceFile = null)
 	{
 		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric);
 		var testScorer = _metricScorerFactory.CreateScorer(testMetric);
 
-		if (gMax != null)
+		if (maxLabel != null)
 		{
 			if (trainScorer is ERRScorer errTrainScorer)
-				errTrainScorer.Max = gMax.Value;
+				errTrainScorer.Max = maxLabel.Value;
 
 			if (testScorer is ERRScorer errTestScorer)
-				errTestScorer.Max = gMax.Value;
+				errTestScorer.Max = maxLabel.Value;
 		}
 
 		if (queryRelevanceFile != null)
@@ -65,7 +65,7 @@ public class EvaluatorFactory
 			testScorer,
 			_trainer,
 			normalizer,
-			mustHaveRelDoc,
+			mustHaveRelevantDocs,
 			useSparseRepresentation,
 			_loggerFactory.CreateLogger<Evaluator>());
 	}
@@ -155,15 +155,15 @@ public class EvaluatorFactory
 		Metric.Metric metric,
 		int k,
 		Normalizer? normalizer = null,
-		double? gMax = null,
-		bool mustHaveRelDoc = false,
+		double? maxLabel = null,
+		bool mustHaveRelevantDocs = false,
 		bool useSparseRepresentation = false,
 		string? queryRelevanceFile = null)
 	{
 		var scorer = _metricScorerFactory.CreateScorer(metric, k);
 
-		if (gMax != null && scorer is ERRScorer errScorer)
-			errScorer.Max = gMax.Value;
+		if (maxLabel != null && scorer is ERRScorer errScorer)
+			errScorer.Max = maxLabel.Value;
 
 		if (queryRelevanceFile != null)
 			scorer.LoadExternalRelevanceJudgment(queryRelevanceFile);
@@ -174,7 +174,7 @@ public class EvaluatorFactory
 			scorer,
 			_trainer,
 			normalizer,
-			mustHaveRelDoc,
+			mustHaveRelevantDocs,
 			useSparseRepresentation,
 			_loggerFactory.CreateLogger<Evaluator>());
 	}
@@ -183,21 +183,21 @@ public class EvaluatorFactory
 		string trainMetric,
 		string testMetric,
 		Normalizer? normalizer = null,
-		double? gMax = null,
-		bool mustHaveRelDoc = false,
+		double? maxLabel = null,
+		bool mustHaveRelevantDocs = false,
 		bool useSparseRepresentation = false,
 		string? queryRelevanceFile = null)
 	{
 		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric);
 		var testScorer = _metricScorerFactory.CreateScorer(testMetric);
 
-		if (gMax != null)
+		if (maxLabel != null)
 		{
 			if (trainScorer is ERRScorer errTrainScorer)
-				errTrainScorer.Max = gMax.Value;
+				errTrainScorer.Max = maxLabel.Value;
 
 			if (testScorer is ERRScorer errTestScorer)
-				errTestScorer.Max = gMax.Value;
+				errTestScorer.Max = maxLabel.Value;
 		}
 
 		if (queryRelevanceFile != null)
@@ -213,7 +213,7 @@ public class EvaluatorFactory
 			testScorer,
 			_trainer,
 			normalizer,
-			mustHaveRelDoc,
+			mustHaveRelevantDocs,
 			useSparseRepresentation,
 			_loggerFactory.CreateLogger<Evaluator>());
 	}

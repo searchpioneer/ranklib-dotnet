@@ -14,16 +14,34 @@ namespace RankLib.Learning.Tree;
 /// </summary>
 public class RandomForestsParameters : IRankerParameters
 {
-	private RankerType _rankerType = RankerType.MART;
+	/// <summary>
+	/// Default ranker type
+	/// </summary>
+	public const RankerType DefaultRankerType = RankerType.MART;
+
+	/// <summary>
+	/// Default number of bags
+	/// </summary>
+	public const int DefaultBagCount = 300;
+
+	/// <summary>
+	/// Default feature sampling rate
+	/// </summary>
 	public const float DefaultFeatureSamplingRate = 0.3f;
+
+	/// <summary>
+	/// Default sub sampling rate
+	/// </summary>
 	public const float DefaultSubSamplingRate = 1.0f;
+
+	private RankerType _rankerType = DefaultRankerType;
 
 	// Parameters
 	// [a] general bagging parameters
 	/// <summary>
 	/// Number of bags
 	/// </summary>
-	public int BagCount { get; set; } = 300;
+	public int BagCount { get; set; } = DefaultBagCount;
 
 	/// <summary>
 	/// Sampling of samples rate, with replacement

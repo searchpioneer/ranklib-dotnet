@@ -13,14 +13,30 @@ namespace RankLib.Learning;
 public class CoordinateAscentParameters : IRankerParameters
 {
 	/// <summary>
+	/// Default number of random restarts.
+	/// </summary>
+	public const int DefaultRandomRestartCount = 5;
+
+	/// <summary>
+	/// Default number of iterations to search in each direction.
+	/// </summary>
+	public const int DefaultMaximumIterationCount = 25;
+
+	/// <summary>
+	/// Default threshold for the minimal improvement required between iterations to continue the optimization.
+	/// When changes fall below this threshold, the algorithm stops adjusting further, assuming convergence.
+	/// </summary>
+	public const double DefaultTolerance = 0.001;
+
+	/// <summary>
 	/// Number of random restarts.
 	/// </summary>
-	public int RandomRestartCount { get; set; } = 5;
+	public int RandomRestartCount { get; set; } = DefaultRandomRestartCount;
 
 	/// <summary>
 	/// Number of iterations to search in each direction.
 	/// </summary>
-	public int MaximumIterationCount { get; set; } = 25;
+	public int MaximumIterationCount { get; set; } = DefaultMaximumIterationCount;
 
 	/// <summary>
 	/// The base step size that the algorithm initially uses for adjusting weights.
@@ -39,7 +55,7 @@ public class CoordinateAscentParameters : IRankerParameters
 	/// The threshold for the minimal improvement required between iterations to continue the optimization.
 	/// When changes fall below this threshold, the algorithm stops adjusting further, assuming convergence.
 	/// </summary>
-	public double Tolerance { get; set; } = 0.001;
+	public double Tolerance { get; set; } = DefaultTolerance;
 
 	/// <summary>
 	/// Whether regularization is applied to help avoid overfitting. If <c>true</c>, <see cref="Slack"/> value

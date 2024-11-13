@@ -29,13 +29,13 @@ public class StatsCommandOptionsHandler : ICommandOptionsHandler<StatsCommandOpt
 	{
 		try
 		{
-			var featureStats = new FeatureStats(options.Model.FullName);
+			var featureStats = new FeatureStats(options.Model.FullName, _loggerFactory.CreateLogger<FeatureStats>());
 			featureStats.WriteFeatureStats();
 			return Task.FromResult(0);
 		}
 		catch (Exception e)
 		{
-			_loggerFactory.CreateLogger<StatsCommand>().LogCritical(e, "Failed processing saved {Model} model file", options.Model);
+			_loggerFactory.CreateLogger<StatsCommand>().LogCritical(e, "Failed processing saved {Model} model file. {Message}", options.Model, e.Message);
 			return Task.FromResult(1);
 		}
 	}

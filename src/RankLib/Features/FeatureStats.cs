@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using MathNet.Numerics.Statistics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -107,20 +108,8 @@ public class FeatureStats
 			using var reader = new StreamReader(_file.FullName);
 
 			// Read model name from the file
-			var modelLine = reader.ReadLine().AsSpan().Trim();
-			var ranges = new Span<Range>();
-			var len = modelLine.Split(ranges, ' ');
-			modelName = len switch
-			{
-				2 => modelLine[ranges[1]].Trim().ToString(),
-				3 => modelLine.Slice(ranges[1].Start.Value, ranges[2].End.Value - ranges[1].Start.Value)
-					.Trim()
-					.ToString(),
-				_ => null
-			};
-
-			if (string.IsNullOrEmpty(modelName))
-				throw new Exception($"Expected to find model name on first line, but found {modelLine}");
+			var modelLine = reader.ReadLine().AsSpan();
+			modelName = modelLine.TrimStart('#').Trim().ToString();
 
 			// Handle models that use all features
 			if (ModelsThatUseAllFeatures.Contains(modelName))
@@ -135,6 +124,9 @@ public class FeatureStats
 			// Tree models
 			else if (TreeModels.Contains(modelName))
 				featureFrequencies = GetTreeFeatureFrequencies(reader);
+			// Anything else
+			else
+				throw new Exception($"Expected to find model name on first line, but found {modelLine}");
 		}
 		catch (IOException exception)
 		{
@@ -162,12 +154,10 @@ public class FeatureStats
 		}
 
 		var stats = new DescriptiveStatistics(data);
-
-		// Print out summary statistics
 		_logger.LogInformation("Total Features Used: {FeaturesUsed}", featuresUsed);
 		_logger.LogInformation($"Min frequency    : {stats.Minimum:0.00}");
 		_logger.LogInformation($"Max frequency    : {stats.Maximum:0.00}");
-		//logger.LogInformation($"Median frequency : {stats.Median:0.00}");
+		_logger.LogInformation($"Median frequency : {data.Median():0.00}");
 		_logger.LogInformation($"Avg frequency    : {stats.Mean:0.00}");
 		_logger.LogInformation($"Variance         : {stats.Variance:0.00}");
 		_logger.LogInformation($"STD              : {stats.StandardDeviation:0.00}");

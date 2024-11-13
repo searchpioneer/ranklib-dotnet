@@ -12,9 +12,14 @@ namespace RankLib.Learning;
 public class LinearRegressionParameters : IRankerParameters
 {
 	/// <summary>
+	/// Default L2-norm regularization parameter
+	/// </summary>
+	public const double DefaultLambda = 1E-10;
+
+	/// <summary>
 	/// L2-norm regularization parameter
 	/// </summary>
-	public double Lambda { get; set; } = 1E-10;
+	public double Lambda { get; set; } = DefaultLambda;
 
 	public override string ToString() => $"L2-norm regularization: lambda = {Lambda}";
 }

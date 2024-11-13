@@ -15,8 +15,12 @@ namespace RankLib.Metric;
 /// </remarks>
 public class ERRScorer : MetricScorer
 {
-	// By default, we assume the relevance scale of {0, 1, 2, 3, 4} => g_max = 4 => 2^g_max = 16
-	public const double DefaultMax = 16;
+	/// <summary>
+	/// Highest judged relevance label. By default, a 5 point scale is assumed [0,1,2,3,4]. The calculated
+	/// max value is <c>Math.Pow(2, Max)</c>
+	/// </summary>
+	public const double DefaultMax = 4;
+
 	public const int DefaultK = 10;
 
 	public double Max { get; internal set; }
@@ -31,7 +35,7 @@ public class ERRScorer : MetricScorer
 
 	public ERRScorer(int k, double max)
 	{
-		Max = max;
+		Max = Math.Pow(2, max);
 		K = k;
 	}
 

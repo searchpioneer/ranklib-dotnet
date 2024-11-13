@@ -44,82 +44,84 @@ public class ComparisonTests
 				"-save", Path.Combine(outputDir, $"model_java_{ranker}.txt"),
 				"-frate", "1.0");
 
+			_output.WriteLine(output);
+
 			if (!string.IsNullOrEmpty(error))
 			{
-				_output.WriteLine(error);
 				_output.WriteLine("");
-				_output.WriteLine(output);
+				_output.WriteLine(error);
 				Assert.Fail();
 			}
 
 			_output.WriteLine($"Run dotnet executable for {rankerType}");
 			(output, error) = dotnetExecutable.Execute(
 				"eval",
-				"--ranker", ranker,
-				"--train", trainFile,
-				"--save", Path.Combine(outputDir, $"model_dotnet_{ranker}.txt"),
-				"--frate", "1.0");
+				"-ranker", ranker,
+				"-train", trainFile,
+				"-save", Path.Combine(outputDir, $"model_dotnet_{ranker}.txt"),
+				"-frate", "1.0");
+
+			_output.WriteLine(output);
 
 			if (!string.IsNullOrEmpty(error))
 			{
-				_output.WriteLine(error);
 				_output.WriteLine("");
-				_output.WriteLine(output);
+				_output.WriteLine(error);
 				Assert.Fail();
 			}
 		}
+
+		// No assertions, check the outputs.
 	}
 
-	[Fact]
-	public void SingleThreadedAndMultiThreadedOutputAreTheSame()
+	public static IEnumerable<object[]> RankerTypes =>
+		Enum.GetValues<RankerType>().Select(rankerType => new object[] { rankerType });
+
+	[Theory]
+	[MemberData(nameof(RankerTypes))]
+	public void SingleThreadedAndMultiThreadedOutputAreTheSame(RankerType rankerType)
 	{
 		var trainFile = "sample_judgments_with_features.txt";
-		var outputsNotEqual = new List<RankerType>();
 		var dotnetExecutable = new DotnetExecutable("RankLib.Cli.dll");
+		var ranker = ((int)rankerType).ToString();
+		var singleThreadedOutput = $"model_dotnet_{ranker}_single.txt";
+		var (output, error) = dotnetExecutable.Execute(
+			"eval",
+			"--ranker", ranker,
+			"--train-input-file", trainFile,
+			"--model-output-file", singleThreadedOutput,
+			"--feature-sampling-rate", "1.0",
+			"--thread", "1",
+			"--random-seed", "42");
 
-		foreach (var rankerType in Enum.GetValues<RankerType>())
+		_output.WriteLine(output);
+
+		if (!string.IsNullOrEmpty(error))
 		{
-			var ranker = ((int)rankerType).ToString();
-			var singleThreadedOutput = $"model_dotnet_{ranker}_single.txt";
-			var (output, error) = dotnetExecutable.Execute(
-				"eval",
-				"--ranker", ranker,
-				"--train", trainFile,
-				"--save", singleThreadedOutput,
-				"--frate", "1.0",
-				"--thread", "1",
-				"--randomSeed", "42");
-
-			if (!string.IsNullOrEmpty(error))
-			{
-				_output.WriteLine(error);
-				_output.WriteLine("");
-				_output.WriteLine(output);
-				Assert.Fail();
-			}
-
-			var multiThreadedOutput = $"model_dotnet_{ranker}_multi.txt";
-			(output, error) = dotnetExecutable.Execute(
-				"eval",
-				"--ranker", ranker,
-				"--train", trainFile,
-				"--save", multiThreadedOutput,
-				"--frate", "1.0",
-				"--randomSeed", "42");
-
-			if (!string.IsNullOrEmpty(error))
-			{
-				_output.WriteLine(error);
-				_output.WriteLine("");
-				_output.WriteLine(output);
-				Assert.Fail();
-			}
-
-			if (!FilesAreEqual(singleThreadedOutput, multiThreadedOutput))
-				outputsNotEqual.Add(rankerType);
+			_output.WriteLine("");
+			_output.WriteLine(error);
+			Assert.Fail();
 		}
 
-		Assert.Empty(outputsNotEqual);
+		var multiThreadedOutput = $"model_dotnet_{ranker}_multi.txt";
+		(output, error) = dotnetExecutable.Execute(
+			"eval",
+			"--ranker", ranker,
+			"--train-input-file", trainFile,
+			"--model-output-file", multiThreadedOutput,
+			"--feature-sampling-rate", "1.0",
+			"--random-seed", "42");
+
+		_output.WriteLine(output);
+
+		if (!string.IsNullOrEmpty(error))
+		{
+			_output.WriteLine("");
+			_output.WriteLine(error);
+			Assert.Fail();
+		}
+
+		Assert.True(FilesAreEqual(singleThreadedOutput, multiThreadedOutput));
 	}
 
 	private static bool FilesAreEqual(string file1, string file2)

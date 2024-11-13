@@ -14,61 +14,102 @@ namespace RankLib.Learning.Tree;
 /// </summary>
 public class LambdaMARTParameters : IRankerParameters
 {
-	/// <summary>
-	/// Gets or sets the number of trees. Defaults to 1000.
-	/// </summary>
-	public int TreeCount { get; set; } = 1000;
+    // Constants for default property values
 
-	/// <summary>
-	/// Gets or sets the learning rate. Defaults to 0.1.
-	/// </summary>
-	public float LearningRate { get; set; } = 0.1f;
+    /// <summary>
+    /// The default number of trees used in the model.
+    /// </summary>
+    public const int DefaultTreeCount = 1000;
 
-	/// <summary>
-	/// Gets or sets the number of threshold candidates. Defaults to 256.
-	/// </summary>
-	public int Threshold { get; set; } = 256;
+    /// <summary>
+    /// The default learning rate for the model.
+    /// </summary>
+    public const float DefaultLearningRate = 0.1f;
 
-	/// <summary>
-	/// Gets or sets the number of rounds top stop on without performance
-	/// gain on validation data. Defaults to 100.
-	/// </summary>
-	public int StopEarlyRoundCount { get; set; } = 100;
+    /// <summary>
+    /// The default number of threshold candidates for splits.
+    /// </summary>
+    public const int DefaultThreshold = 256;
 
-	/// <summary>
-	/// Gets or sets the number of leaves. Defaults to 10.
-	/// </summary>
-	public int TreeLeavesCount { get; set; } = 10;
+    /// <summary>
+    /// The default number of rounds to stop early without performance gain on validation data.
+    /// </summary>
+    public const int DefaultStopEarlyRoundCount = 100;
 
-	/// <summary>
-	/// Gets or sets the minimum leaf support. Defaults to 1.
-	/// </summary>
-	public int MinimumLeafSupport { get; set; } = 1;
+    /// <summary>
+    /// The default number of leaves per tree.
+    /// </summary>
+    public const int DefaultTreeLeavesCount = 10;
 
-	/// <summary>
-	/// Gets or sets the sampling rate. Defaults to 1.
-	/// </summary>
-	public float SamplingRate { get; set; } = 1;
+    /// <summary>
+    /// The default minimum leaf support, determining the minimum number of instances per leaf.
+    /// </summary>
+    public const int DefaultMinimumLeafSupport = 1;
 
-	/// <summary>
-	/// Gets or sets the maximum number of concurrent tasks allowed when splitting up workloads
-	/// that can be run on multiple threads. If unspecified, uses the count of all available processors.
-	/// </summary>
-	public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
+    /// <summary>
+    /// The default sampling rate for training data.
+    /// </summary>
+    public const float DefaultSamplingRate = 1f;
 
-	/// <inheritdoc />
-	public override string ToString()
-	{
-		var builder = new StringBuilder();
-		builder.AppendLine($"No. of trees: {TreeCount}");
-		builder.AppendLine($"No. of leaves: {TreeLeavesCount}");
-		builder.AppendLine($"No. of threshold candidates: {Threshold}");
-		builder.AppendLine($"Min leaf support: {MinimumLeafSupport}");
-		builder.AppendLine($"Learning rate: {LearningRate}");
-		builder.AppendLine($"Stop early: {StopEarlyRoundCount} rounds without performance gain on validation data");
-		return builder.ToString();
-	}
+    // Properties
+
+    /// <summary>
+    /// Gets or sets the number of trees. Defaults to <see cref="DefaultTreeCount"/>.
+    /// </summary>
+    public int TreeCount { get; set; } = DefaultTreeCount;
+
+    /// <summary>
+    /// Gets or sets the learning rate. Defaults to <see cref="DefaultLearningRate"/>.
+    /// </summary>
+    public float LearningRate { get; set; } = DefaultLearningRate;
+
+    /// <summary>
+    /// Gets or sets the number of threshold candidates. Defaults to <see cref="DefaultThreshold"/>.
+    /// </summary>
+    public int Threshold { get; set; } = DefaultThreshold;
+
+    /// <summary>
+    /// Gets or sets the number of rounds to stop early without performance gain on validation data.
+    /// Defaults to <see cref="DefaultStopEarlyRoundCount"/>.
+    /// </summary>
+    public int StopEarlyRoundCount { get; set; } = DefaultStopEarlyRoundCount;
+
+    /// <summary>
+    /// Gets or sets the number of leaves per tree. Defaults to <see cref="DefaultTreeLeavesCount"/>.
+    /// </summary>
+    public int TreeLeavesCount { get; set; } = DefaultTreeLeavesCount;
+
+    /// <summary>
+    /// Gets or sets the minimum leaf support, determining the minimum number of instances per leaf.
+    /// Defaults to <see cref="DefaultMinimumLeafSupport"/>.
+    /// </summary>
+    public int MinimumLeafSupport { get; set; } = DefaultMinimumLeafSupport;
+
+    /// <summary>
+    /// Gets or sets the sampling rate for training data. Defaults to <see cref="DefaultSamplingRate"/>.
+    /// </summary>
+    public float SamplingRate { get; set; } = DefaultSamplingRate;
+
+    /// <summary>
+    /// Gets or sets the maximum number of concurrent tasks allowed when splitting up workloads
+    /// that can be run on multiple threads. Defaults to the count of all available processors.
+    /// </summary>
+    public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
+
+    /// <inheritdoc />
+    public override string ToString()
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine($"No. of trees: {TreeCount}");
+        builder.AppendLine($"No. of leaves: {TreeLeavesCount}");
+        builder.AppendLine($"No. of threshold candidates: {Threshold}");
+        builder.AppendLine($"Min leaf support: {MinimumLeafSupport}");
+        builder.AppendLine($"Learning rate: {LearningRate}");
+        builder.AppendLine($"Stop early: {StopEarlyRoundCount} rounds without performance gain on validation data");
+        return builder.ToString();
+    }
 }
+
 
 /// <summary>
 /// LambdaMART is a ranking algorithm that combines LambdaRank and gradient-boosted decision trees (GBDT).
