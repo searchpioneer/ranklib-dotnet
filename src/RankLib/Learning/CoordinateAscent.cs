@@ -372,16 +372,16 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 
 	private int[] GetShuffledFeatures()
 	{
-		var fids = new int[Features.Length];
+		var featureIds = new int[Features.Length];
 		var l = new List<int>(Features.Length);
 		for (var i = 0; i < Features.Length; i++)
 			l.Add(i);
 
 		l.Shuffle();
 		for (var i = 0; i < l.Count; i++)
-			fids[i] = l[i];
+			featureIds[i] = l[i];
 
-		return fids;
+		return featureIds;
 
 	}
 

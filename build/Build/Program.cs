@@ -67,6 +67,11 @@ cmd.SetHandler(async () =>
 			Run("dotnet", $"pack src/{project}/{project}.csproj -c {configuration} -o \"{outputDir.FullName}\" --no-build --nologo");
 	});
 
+	Target(Docs, () =>
+	{
+		Run("docfx", "docs/Docs/docfx.json --serve");
+	});
+
 	Target(Default, DependsOn(Test));
 
 	await RunTargetsAndExitAsync(targets, options, messageOnly: ex => ex is SimpleExec.ExitCodeException);
@@ -84,4 +89,5 @@ internal static class BuildTargets
 	public const string Restore = "restore";
 	public const string Format = "format";
 	public const string Pack = "pack";
+	public const string Docs = "docs";
 }

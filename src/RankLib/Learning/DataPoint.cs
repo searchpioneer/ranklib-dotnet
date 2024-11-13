@@ -32,7 +32,7 @@ public abstract class DataPoint
 	private static ReadOnlySpan<char> GetValue(ReadOnlySpan<char> pair) => pair.Slice(pair.LastIndexOf(':') + 1);
 
 	/// <summary>
-	/// Parse the given line of text to construct a dense array of feature values and reset metadata.
+	/// Parses the given line of text to construct a dense array of feature values and reset metadata.
 	/// </summary>
 	/// <param name="span">The text to parse</param>
 	/// <returns>Dense array of feature values</returns>
@@ -125,8 +125,15 @@ public abstract class DataPoint
 	/// </summary>
 	protected abstract float[] GetFeatureVector();
 
+	/// <summary>
+	/// Initializes a new instance of a <see cref="DataPoint"/>
+	/// </summary>
 	protected DataPoint() { }
 
+	/// <summary>
+	/// Initializes a new instance of a <see cref="DataPoint"/> from the given span.
+	/// </summary>
+	/// <param name="span">The span containing data to initialize the instance with</param>
 	protected DataPoint(ReadOnlySpan<char> span)
 	{
 		var featureValues = Parse(span);
@@ -134,12 +141,24 @@ public abstract class DataPoint
 		SetFeatureVector(featureValues);
 	}
 
+	/// <summary>
+	/// Gets or sets the ID of the data point. The ID is typically an identifier for the query.
+	/// </summary>
 	public string Id { get; protected set; } = string.Empty;
 
+	/// <summary>
+	/// Gets the description. The description typically contains the document ID and query text.
+	/// </summary>
 	public string Description { get; protected set; } = string.Empty;
 
+	/// <summary>
+	/// Gets the label
+	/// </summary>
 	public float Label { get; protected set; }
 
+	/// <summary>
+	/// Gets the feature count
+	/// </summary>
 	public int FeatureCount { get; private set; }
 
 	public void ResetCached() => Cached = -1;

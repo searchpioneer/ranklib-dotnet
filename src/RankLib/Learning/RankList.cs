@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics;
 using System.Runtime.Intrinsics.Arm;
 using RankLib.Utilities;
 
@@ -7,6 +8,7 @@ namespace RankLib.Learning;
 /// <summary>
 /// A list of <see cref="DataPoint"/> to be ranked.
 /// </summary>
+[DebuggerDisplay("Count={Count}, FeatureCount={FeatureCount}")]
 public class RankList : IEnumerable<DataPoint>
 {
 	private readonly DataPoint[] _dataPoints;
@@ -97,7 +99,7 @@ public class RankList : IEnumerable<DataPoint>
 	public DataPoint this[int index] => _dataPoints[index];
 
 	/// <summary>
-	/// Get the correct ranking by label
+	/// Get the correct ranking by data point labels
 	/// </summary>
 	public RankList GetCorrectRanking()
 	{
@@ -112,20 +114,17 @@ public class RankList : IEnumerable<DataPoint>
 	/// <summary>
 	/// Gets the ranking based on a specific feature ID
 	/// </summary>
-	/// <param name="fid">The feature ID</param>
+	/// <param name="featureId">The feature ID</param>
 	/// <returns>A new instance of <see cref="RankList"/> with ranking based on the feature ID.</returns>
-	public RankList GetRanking(int fid)
+	public RankList GetRanking(int featureId)
 	{
 		var score = new double[_dataPoints.Length];
 		for (var i = 0; i < _dataPoints.Length; i++)
-			score[i] = _dataPoints[i].GetFeatureValue(fid);
+			score[i] = _dataPoints[i].GetFeatureValue(featureId);
 
 		var idx = Sorter.Sort(score, false);
 		return new RankList(this, idx);
 	}
-
-	/// <inheritdoc />
-	public override string ToString() => $"RankList ({Count}, {FeatureCount})";
 
 	/// <inheritdoc />
 	public IEnumerator<DataPoint> GetEnumerator() => ((IEnumerable<DataPoint>)_dataPoints).GetEnumerator();

@@ -4,7 +4,10 @@ using RankLib.Utilities;
 namespace RankLib.Metric;
 
 /// <summary>
-/// Discounted Cumulative Gain scorer
+/// Discounted Cumulative Gain (DCG) scorer.
+/// DCG considers the position of relevant results in the ranking. Highly relevant documents appearing lower in
+/// a list should be penalized, as the graded relevance value is reduced logarithmically proportional to the position
+/// of the result.
 /// </summary>
 /// <remarks>
 /// <a href="https://en.wikipedia.org/wiki/Discounted_cumulative_gain">

@@ -273,9 +273,9 @@ public class RandomForests : Ranker<RandomForestsParameters>
 			Ensembles[i] = ensembles[i];
 
 			// Obtain used features
-			var fids = ensembles[i].Features;
-			foreach (var fid in fids)
-				uniqueFeatures.Add(fid);
+			var featureIds = ensembles[i].Features;
+			foreach (var featureId in featureIds)
+				uniqueFeatures.Add(featureId);
 		}
 
 		Features = uniqueFeatures.ToArray();

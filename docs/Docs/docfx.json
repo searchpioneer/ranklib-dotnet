@@ -1,0 +1,59 @@
+﻿{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "src/RankLib/RankLib.csproj"
+          ],
+          "src": "../../"
+        }
+      ],
+      "dest": "api",
+      "properties": {
+        "TargetFramework": "net8.0"
+      },
+      "includePrivateMembers": false,
+      "disableGitFeatures": false,
+      "disableDefaultFilter": false,
+      "noRestore": false,
+      "namespaceLayout": "flattened",
+      "memberLayout": "samePage",
+      "allowCompilationErrors": false
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [ "**/*.{md,yml}" ],
+        "exclude": [ "_site/**", "obj/**" ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [ "images/**" ],
+        "exclude": [ "_site/**", "obj/**" ]
+      }
+    ],
+    "globalMetadataFiles": [],
+    "fileMetadataFiles": [],
+    "postProcessors": [ ],
+    "globalMetadata": {
+      "_appTitle": "RankLib for .NET",
+      "_appName": "RankLib for .NET",
+      "_appLogoPath": "images/ranklib_dotnet.png",
+      "_appFaviconPath": "images/ranklib_dotnet.png",
+      "_appFooter": "<span>Made by <a href=\"https://searchpioneer.com\">Search Pioneer</a></span>",
+      "_lang": "en",
+      "_enableSearch": true
+    },
+    "template": [
+      "default",
+      "modern",
+      "template"
+    ],
+    "output": "_site",
+    "disableGitFeatures": false
+  }
+}

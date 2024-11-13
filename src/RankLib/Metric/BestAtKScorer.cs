@@ -7,14 +7,28 @@ namespace RankLib.Metric;
 /// </summary>
 public class BestAtKScorer : MetricScorer
 {
+	/// <summary>
+	/// The default K value
+	/// </summary>
 	public const int DefaultK = 10;
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="BestAtKScorer"/>
+	/// </summary>
+	/// <remarks>
+	/// Uses <c>k</c> value of <see cref="DefaultK"/>
+	/// </remarks>
 	public BestAtKScorer() : this(DefaultK)
 	{
 	}
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="BestAtKScorer"/>
+	/// </summary>
+	/// <param name="k">The depth parameter, or how deep into a ranked list to use to score the measure.</param>
 	public BestAtKScorer(int k) => K = k;
 
+	/// <inheritdoc />
 	public override double Score(RankList rankList)
 	{
 		var k = MaxToK(rankList, K - 1);
@@ -22,9 +36,11 @@ public class BestAtKScorer : MetricScorer
 	}
 
 	/// <summary>
-	/// Return the index of the best item (e.g., docs with highest degree of relevance) among items in the range [0..k].
-	/// NOTE: If you want best-at-k (i.e., best among top-k), you need MaxToK(rl, k-1).
+	/// Return the index of the best item (i.e. docs with the highest degree of relevance) among items in the range <c>[0..k]</c>.
 	/// </summary>
+	/// <remarks>
+	/// If you want best-at-k i.e. best among top-k, you need <c>MaxToK(rl, k-1)</c>.
+	/// </remarks>
 	/// <param name="rl">The rank list.</param>
 	/// <param name="k">The last position of the range.</param>
 	/// <returns>The index of the best object in the specified range.</returns>
@@ -48,8 +64,10 @@ public class BestAtKScorer : MetricScorer
 		return maxI;
 	}
 
+	/// <inheritdoc />
 	public override string Name => $"Best@{K}";
 
+	/// <inheritdoc />
 	public override double[][] SwapChange(RankList rankList)
 	{
 		// TODO: FIXME: Not sure if this implementation is correct!

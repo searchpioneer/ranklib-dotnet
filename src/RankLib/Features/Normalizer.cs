@@ -27,23 +27,28 @@ public abstract class Normalizer
 	/// Normalizes features for the given rank list
 	/// </summary>
 	/// <param name="rankList">The rank list with features to normalize.</param>
-	/// <param name="fids">The feature IDs to normalize</param>
-	public abstract void Normalize(RankList rankList, int[] fids);
+	/// <param name="featureIds">The feature IDs to normalize</param>
+	public abstract void Normalize(RankList rankList, int[] featureIds);
 
 	/// <summary>
 	/// Normalizes features for the given rank lists
 	/// </summary>
 	/// <param name="rankLists">The rank lists with features to normalize.</param>
-	/// <param name="fids">The feature IDs to normalize</param>
-	public void Normalize(List<RankList> rankLists, int[] fids)
+	/// <param name="featureIds">The feature IDs to normalize</param>
+	public void Normalize(List<RankList> rankLists, int[] featureIds)
 	{
 		foreach (var rankList in rankLists)
-			Normalize(rankList, fids);
+			Normalize(rankList, featureIds);
 	}
 
-	protected static int[] RemoveDuplicateFeatures(int[] fids)
+	/// <summary>
+	/// Removes duplicate features, returning a new array instance.
+	/// </summary>
+	/// <param name="featureIds">The features to deduplicate</param>
+	/// <returns>A new instance of an array</returns>
+	protected static int[] RemoveDuplicateFeatures(int[] featureIds)
 	{
-		var uniqueSet = new HashSet<int>(fids);
+		var uniqueSet = new HashSet<int>(featureIds);
 		return uniqueSet.ToArray();
 	}
 

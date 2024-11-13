@@ -6,7 +6,8 @@ using RankLib.Utilities;
 namespace RankLib.Metric;
 
 /// <summary>
-/// Normalized Discounted Cumulative Gain scorer
+/// Normalized Discounted Cumulative Gain (NDCG) scorer. NDCG is calculated by dividing
+/// DCG by ideal DCG.
 /// </summary>
 /// <remarks>
 /// <a href="https://en.wikipedia.org/wiki/Discounted_cumulative_gain#Normalized_DCG">
@@ -25,6 +26,7 @@ public class NDCGScorer : DCGScorer
 	public NDCGScorer(int k, ILogger<NDCGScorer>? logger = null) : base(k) =>
 		_logger = logger ?? NullLogger<NDCGScorer>.Instance;
 
+	/// <inheritdoc />
 	public override void LoadExternalRelevanceJudgment(string queryRelevanceFile)
 	{
 		// Queries with external relevance judgment will have their cached ideal gain value overridden
@@ -81,7 +83,7 @@ public class NDCGScorer : DCGScorer
 	}
 
 	/// <summary>
-	/// Compute NDCG at k. NDCG(k) = DCG(k) / DCG_{perfect}(k).
+	/// Computes NDCG at <see cref="MetricScorer.K"/>. <c>NDCG(k) = DCG(k) / DCG_{perfect}(k)</c>.
 	/// </summary>
 	public override double Score(RankList rankList)
 	{
@@ -108,6 +110,7 @@ public class NDCGScorer : DCGScorer
 		return GetDCG(rel, size) / ideal;
 	}
 
+	/// <inheritdoc />
 	public override double[][] SwapChange(RankList rankList)
 	{
 		var size = rankList.Count > K ? K : rankList.Count;
@@ -136,8 +139,10 @@ public class NDCGScorer : DCGScorer
 		return changes;
 	}
 
+	/// <inheritdoc />
 	public override string Name => $"NDCG@{K}";
 
+	// ReSharper disable once InconsistentNaming
 	private double GetIdealDCG(int[] rel, int topK)
 	{
 		var idx = Sorter.Sort(rel, false);

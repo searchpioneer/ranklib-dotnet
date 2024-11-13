@@ -10,48 +10,48 @@ public class LinearNormalizer : Normalizer
 			throw new ArgumentException("rank list is empty", nameof(rankList));
 
 		var featureCount = rankList.FeatureCount;
-		var fids = new int[featureCount];
+		var featureIds = new int[featureCount];
 		for (var i = 1; i <= featureCount; i++)
-			fids[i - 1] = i;
+			featureIds[i - 1] = i;
 
-		Normalize(rankList, fids);
+		Normalize(rankList, featureIds);
 	}
 
-	public override void Normalize(RankList rankList, int[] fids)
+	public override void Normalize(RankList rankList, int[] featureIds)
 	{
 		if (rankList.Count == 0)
 			throw new ArgumentException("rank list is empty", nameof(rankList));
 
-		// Remove duplicate features from the input fids to avoid normalizing the same features multiple times
-		fids = RemoveDuplicateFeatures(fids);
+		// Remove duplicate features from the input featureIds to avoid normalizing the same features multiple times
+		featureIds = RemoveDuplicateFeatures(featureIds);
 
-		var min = new float[fids.Length];
-		var max = new float[fids.Length];
+		var min = new float[featureIds.Length];
+		var max = new float[featureIds.Length];
 		Array.Fill(min, float.MaxValue);
 		Array.Fill(max, float.MinValue);
 
 		for (var i = 0; i < rankList.Count; i++)
 		{
 			var dataPoint = rankList[i];
-			for (var j = 0; j < fids.Length; j++)
+			for (var j = 0; j < featureIds.Length; j++)
 			{
-				min[j] = Math.Min(min[j], dataPoint.GetFeatureValue(fids[j]));
-				max[j] = Math.Max(max[j], dataPoint.GetFeatureValue(fids[j]));
+				min[j] = Math.Min(min[j], dataPoint.GetFeatureValue(featureIds[j]));
+				max[j] = Math.Max(max[j], dataPoint.GetFeatureValue(featureIds[j]));
 			}
 		}
 
 		for (var i = 0; i < rankList.Count; i++)
 		{
 			var dataPoint = rankList[i];
-			for (var j = 0; j < fids.Length; j++)
+			for (var j = 0; j < featureIds.Length; j++)
 			{
 				if (max[j] > min[j])
 				{
-					var value = (dataPoint.GetFeatureValue(fids[j]) - min[j]) / (max[j] - min[j]);
-					dataPoint.SetFeatureValue(fids[j], value);
+					var value = (dataPoint.GetFeatureValue(featureIds[j]) - min[j]) / (max[j] - min[j]);
+					dataPoint.SetFeatureValue(featureIds[j], value);
 				}
 				else
-					dataPoint.SetFeatureValue(fids[j], 0);
+					dataPoint.SetFeatureValue(featureIds[j], 0);
 			}
 		}
 	}

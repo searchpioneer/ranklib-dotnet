@@ -2,8 +2,15 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// A dense data point
+/// </summary>
 public sealed class DenseDataPoint : DataPoint
 {
+	/// <summary>
+	/// Initializes a new instance of <see cref="DenseDataPoint"/> from the given span.
+	/// </summary>
+	/// <param name="span">The span containing data to initialize the instance with</param>
 	public DenseDataPoint(ReadOnlySpan<char> span) : base(span) { }
 
 	public DenseDataPoint(DenseDataPoint dataPoint)

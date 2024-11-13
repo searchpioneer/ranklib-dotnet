@@ -10,7 +10,7 @@ namespace RankLib.Eval;
 
 /// <summary>
 /// Evaluates rankers and rank lists.
-/// Rankers can be trained or loaded from a model file and evaluated.
+/// Rankers can be trained and optionally saved to a model file, or loaded from a model file, and evaluated.
 /// </summary>
 public class Evaluator
 {
@@ -29,11 +29,11 @@ public class Evaluator
 	/// Initializes a new instance of <see cref="Evaluator"/>
 	/// </summary>
 	/// <param name="rankerFactory">The factory for creating rankers</param>
-	/// <param name="featureManager">The </param>
-	/// <param name="trainScorer"></param>
-	/// <param name="testScorer"></param>
-	/// <param name="trainer"></param>
-	/// <param name="normalizer"></param>
+	/// <param name="featureManager">The feature manager</param>
+	/// <param name="trainScorer">The retrieval metric score used for training</param>
+	/// <param name="testScorer">The retrieval metric score used for testing</param>
+	/// <param name="trainer">The ranker trainer</param>
+	/// <param name="normalizer">The normalizer</param>
 	/// <param name="mustHaveRelevantDocument"></param>
 	/// <param name="useSparseRepresentation"></param>
 	/// <param name="logger"></param>
@@ -87,16 +87,16 @@ public class Evaluator
 	private List<RankList> ReadInput(string inputFile) =>
 		_featureManager.ReadInput(inputFile, _mustHaveRelevantDocument, _useSparseRepresentation);
 
-	private void Normalize(List<RankList> samples, int[] fids)
+	private void Normalize(List<RankList> samples, int[] featureIds)
 	{
 		foreach (var sample in samples)
-			_normalizer.Normalize(sample, fids);
+			_normalizer.Normalize(sample, featureIds);
 	}
 
-	private void NormalizeAll(List<List<RankList>> samples, int[] fids)
+	private void NormalizeAll(List<List<RankList>> samples, int[] featureIds)
 	{
 		foreach (var sample in samples)
-			Normalize(sample, fids);
+			Normalize(sample, featureIds);
 	}
 
 	private int[]? ReadFeature(string? featureDefFile) =>

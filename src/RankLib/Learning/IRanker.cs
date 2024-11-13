@@ -61,8 +61,8 @@ public interface IRanker
 	/// Gets the model for the ranker.
 	/// </summary>
 	/// <remarks>
-	/// When a ranker is loaded from a string with <see cref="LoadFromString"/>, contains the ranker model.
-	/// For a ranker trained using an <see cref="Evaluator"/>, contains the model <b>after</b> training.
+	/// When a ranker is loaded from a string with <see cref="LoadFromString"/>, this returns the ranker model.
+	/// For a ranker trained using an <see cref="Evaluator"/>, this returns the model <b>after training</b>.
 	/// </remarks>
 	string GetModel();
 

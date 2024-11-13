@@ -27,20 +27,20 @@ public class Ensemble
 			var doc = new XmlDocument();
 			doc.Load(stream);
 			var treeNodes = doc.GetElementsByTagName("tree");
-			var fids = new Dictionary<int, int>();
+			var featureIds = new Dictionary<int, int>();
 			foreach (XmlNode node in treeNodes)
 			{
 				// Create a regression tree from this node
-				var root = Create(node.FirstChild, fids);
+				var root = Create(node.FirstChild, featureIds);
 				// Get the weight for this tree
 				var weight = float.Parse(node.Attributes["weight"].Value);
 				// Add it to the ensemble
 				ensemble.Add(new RegressionTree(root), weight);
 			}
 
-			ensemble._features = new int[fids.Keys.Count];
+			ensemble._features = new int[featureIds.Keys.Count];
 			var i = 0;
-			foreach (var fid in fids.Keys)
+			foreach (var fid in featureIds.Keys)
 				ensemble._features[i++] = fid;
 
 			return ensemble;
@@ -118,7 +118,7 @@ public class Ensemble
 		return builder.ToString();
 	}
 
-	private static Split Create(XmlNode node, Dictionary<int, int> fids)
+	private static Split Create(XmlNode node, Dictionary<int, int> featureIds)
 	{
 		if (node.FirstChild is null)
 			throw new InvalidOperationException("Node does not have a first child.");
@@ -131,13 +131,13 @@ public class Ensemble
 			if (childNodes.Count != 4)
 				throw new ArgumentException("Invalid feature");
 
-			var fid = int.Parse(childNodes[0]!.FirstChild.Value.Trim()); // <feature>
-			fids[fid] = 0;
+			var featureId = int.Parse(childNodes[0]!.FirstChild.Value.Trim()); // <feature>
+			featureIds[featureId] = 0;
 			var threshold = float.Parse(childNodes[1].FirstChild.Value.Trim()); // <threshold>
-			split = new Split(fid, threshold, 0)
+			split = new Split(featureId, threshold, 0)
 			{
-				Left = Create(childNodes[2], fids),
-				Right = Create(childNodes[3], fids)
+				Left = Create(childNodes[2], featureIds),
+				Right = Create(childNodes[3], featureIds)
 			};
 		}
 		else // this is a stump

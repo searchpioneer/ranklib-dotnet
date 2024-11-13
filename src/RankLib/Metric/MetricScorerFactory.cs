@@ -22,9 +22,19 @@ public class MetricScorerFactory
 
 	private readonly ILoggerFactory _loggerFactory;
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="MetricScorerFactory"/>
+	/// </summary>
+	/// <param name="loggerFactory">The logger factory used to create loggers for created <see cref="MetricScorer"/></param>
 	public MetricScorerFactory(ILoggerFactory? loggerFactory = null) =>
 		_loggerFactory = loggerFactory ?? NullLoggerFactory.Instance;
 
+	/// <summary>
+	/// Creates a new instance of a <see cref="MetricScorer"/> from a metric and k value.
+	/// </summary>
+	/// <param name="metric">The metric</param>
+	/// <returns>A new instance of a <see cref="MetricScorer"/></returns>
+	/// <exception cref="ArgumentOutOfRangeException">The metric is not in the range of valid values.</exception>
 	public MetricScorer CreateScorer(Metric metric) =>
 		metric switch
 		{
@@ -38,6 +48,12 @@ public class MetricScorerFactory
 			_ => throw new ArgumentOutOfRangeException(nameof(metric), metric, null)
 		};
 
+	/// <summary>
+	/// Creates a new instance of a <see cref="MetricScorer"/> from a metric and k value.
+	/// </summary>
+	/// <param name="metric">The metric</param>
+	/// <param name="k">The k value</param>
+	/// <returns>A new instance of a <see cref="MetricScorer"/></returns>
 	public MetricScorer CreateScorer(Metric metric, int k)
 	{
 		var scorer = CreateScorer(metric);
@@ -45,6 +61,12 @@ public class MetricScorerFactory
 		return scorer;
 	}
 
+	/// <summary>
+	/// Creates a new instance of a <see cref="MetricScorer"/> from a metric string value.
+	/// </summary>
+	/// <param name="metric">The metric string value</param>
+	/// <returns>A new instance of a <see cref="MetricScorer"/></returns>
+	/// <exception cref="ArgumentException">The metric string value does not represent a known metric.</exception>
 	public MetricScorer CreateScorer(string metric)
 	{
 		MetricScorer scorer;
