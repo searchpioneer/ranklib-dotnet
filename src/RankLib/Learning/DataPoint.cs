@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text;
 using RankLib.Utilities;
 
@@ -149,7 +150,7 @@ public abstract class DataPoint
 		if (description != null)
 			Description = description;
 
-		FeatureCount = featureValues.Length - 1;
+		FeatureCount = featureValues.Skip(1).Count(f => !IsUnknown(f));
 		// ReSharper disable once VirtualMemberCallInConstructor
 		SetFeatureVector(featureValues);
 	}
