@@ -13,24 +13,44 @@ namespace RankLib.Learning.Boosting;
 public class AdaRankParameters : IRankerParameters
 {
 	/// <summary>
+	/// Default number of iterations (rounds).
+	/// </summary>
+	public const int DefaultIterationCount = 500;
+
+	/// <summary>
+	/// Default tolerance
+	/// </summary>
+	public const double DefaultTolerance = 0.002;
+
+	/// <summary>
+	/// Default train with enqueue
+	/// </summary>
+	public const bool DefaultTrainWithEnqueue = true;
+
+	/// <summary>
+	/// Default Max number of times a feature can be selected consecutively before being removed
+	/// </summary>
+	public const int DefaultMaximumSelectedCount = 5;
+
+	/// <summary>
 	/// Number of iterations (rounds).
 	/// </summary>
-	public int IterationCount { get; set; } = 500;
+	public int IterationCount { get; set; } = DefaultIterationCount;
 
 	/// <summary>
 	/// Tolerance
 	/// </summary>
-	public double Tolerance { get; set; } = 0.002;
+	public double Tolerance { get; set; } = DefaultTolerance;
 
 	/// <summary>
 	/// Whether to train with enqueue
 	/// </summary>
-	public bool TrainWithEnqueue { get; set; } = true;
+	public bool TrainWithEnqueue { get; set; } = DefaultTrainWithEnqueue;
 
 	/// <summary>
 	/// Max number of times a feature can be selected consecutively before being removed
 	/// </summary>
-	public int MaximumSelectedCount { get; set; } = 5;
+	public int MaximumSelectedCount { get; set; } = DefaultMaximumSelectedCount;
 
 	/// <inheritdoc />
 	public override string ToString()

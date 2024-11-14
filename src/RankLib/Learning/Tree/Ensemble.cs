@@ -7,6 +7,10 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning.Tree;
 
+/// <summary>
+/// A collection of multiple <see cref="RegressionTree"/> that work together to make
+/// a prediction.
+/// </summary>
 public class Ensemble
 {
 	private readonly List<RegressionTree> _trees = [];

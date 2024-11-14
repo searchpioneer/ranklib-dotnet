@@ -1,5 +1,9 @@
 namespace RankLib.Learning.NeuralNet;
 
+/// <summary>
+/// A transfer (activation) function to translate input signals to output signals in
+/// a neural network.
+/// </summary>
 public interface ITransferFunction
 {
 	/// <summary>

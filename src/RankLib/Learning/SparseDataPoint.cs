@@ -23,16 +23,28 @@ public sealed class SparseDataPoint : DataPoint
 
 	public SparseDataPoint(ReadOnlySpan<char> span) : base(span) { }
 
-	public SparseDataPoint(SparseDataPoint dp)
+	/// <summary>
+	/// Initializes a new instance of <see cref="SparseDataPoint"/> from values.
+	/// </summary>
+	/// <param name="label">The relevance label for the data point.</param>
+	/// <param name="id">The ID of the data point. The ID is typically an identifier for the query.</param>
+	/// <param name="featureValues">The feature values.
+	/// Feature Ids are 1-based, so this array is expected to have <see cref="DataPoint.Unknown"/> in index 0,
+	/// and feature values from index 1</param>
+	/// <param name="description">The optional description</param>
+	public SparseDataPoint(float label, string id, float[] featureValues, string? description = null)
+		: base(label, id, featureValues, description) { }
+
+	public SparseDataPoint(SparseDataPoint sparseDataPoint)
 	{
-		Label = dp.Label;
-		Id = dp.Id;
-		Description = dp.Description;
-		Cached = dp.Cached;
-		_featureIds = new int[dp._featureIds.Length];
-		FeatureValues = new float[dp.FeatureValues.Length];
-		Array.Copy(dp._featureIds, 0, _featureIds, 0, dp._featureIds.Length);
-		Array.Copy(dp.FeatureValues, 0, FeatureValues, 0, dp.FeatureValues.Length);
+		Label = sparseDataPoint.Label;
+		Id = sparseDataPoint.Id;
+		Description = sparseDataPoint.Description;
+		Cached = sparseDataPoint.Cached;
+		_featureIds = new int[sparseDataPoint._featureIds.Length];
+		FeatureValues = new float[sparseDataPoint.FeatureValues.Length];
+		Array.Copy(sparseDataPoint._featureIds, 0, _featureIds, 0, sparseDataPoint._featureIds.Length);
+		Array.Copy(sparseDataPoint.FeatureValues, 0, FeatureValues, 0, sparseDataPoint.FeatureValues.Length);
 	}
 
 	private int Locate(int fid)

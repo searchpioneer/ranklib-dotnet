@@ -1,11 +1,28 @@
 namespace RankLib.Learning.NeuralNet;
 
+/// <summary>
+/// A list of neurons in a neural network
+/// </summary>
 public class ListNeuron : Neuron
 {
 	private double[] _d1 = [];
 	private double[] _d2 = [];
 
-	public ListNeuron(double learningRate) : base(learningRate)
+	/// <summary>
+	/// Initializes a new instance of <see cref="ListNeuron"/>, using <see cref="LogisticFunction"/>
+	/// as the transfer function.
+	/// </summary>
+	/// <param name="learningRate">The learning rate</param>
+	public ListNeuron(double learningRate) : base(learningRate, LogisticFunction.Instance)
+	{
+	}
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="ListNeuron"/>
+	/// </summary>
+	/// <param name="learningRate">The learning rate</param>
+	/// <param name="transferFunction">The transfer function</param>
+	public ListNeuron(double learningRate, ITransferFunction transferFunction) : base(learningRate, transferFunction)
 	{
 	}
 

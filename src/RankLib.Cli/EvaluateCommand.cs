@@ -138,7 +138,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 			.FromAmong(RankerType.MART.ToString(), RankerType.LambdaMART.ToString()));
 
 
-		AddOption(new Option<double?>(["-L2", "--l2"], () => LinearRegressionParameters.DefaultLambda, "L2-norm regularization parameter"));
+		AddOption(new Option<double?>(["-L2", "--l2"], () => LinearRegressionParameters.DefaultLambda, "LinearRegression parameter: L2-norm regularization parameter"));
 		AddOption(new Option<bool?>(["-hr", "--must-have-relevant-docs"], () => false, "Whether to ignore ranked list without any relevant document"));
 		AddOption(new Option<int?>(
 			"--random-seed",

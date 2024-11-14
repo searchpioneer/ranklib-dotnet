@@ -1,7 +1,13 @@
 namespace RankLib.Learning.NeuralNet;
 
+/// <summary>
+/// A neuron in a neural network
+/// </summary>
 public class Neuron
 {
+	/// <summary>
+	/// The default learning rate
+	/// </summary>
 	public const double DefaultLearningRate = 0.001;
 
 	protected readonly double LearningRate;
@@ -12,13 +18,34 @@ public class Neuron
 	private double _deltaI;
 	private double[] _deltasJ = [];
 
+	/// <summary>
+	/// Gets the in links
+	/// </summary>
 	public List<Synapse> InLinks { get; } = [];
+
+	/// <summary>
+	/// Gets the out links
+	/// </summary>
 	public List<Synapse> OutLinks { get; } = [];
 
-	public Neuron(double learningRate, ITransferFunction? transferFunction = null)
+	/// <summary>
+	/// Initializes a new instance of <see cref="Neuron"/>, using <see cref="LogisticFunction"/>
+	/// as the transfer function.
+	/// </summary>
+	/// <param name="learningRate">The learning rate</param>
+	public Neuron(double learningRate) : this(learningRate, LogisticFunction.Instance)
+	{
+	}
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="Neuron"/>
+	/// </summary>
+	/// <param name="learningRate">The learning rate</param>
+	/// <param name="transferFunction">The transfer function</param>
+	public Neuron(double learningRate, ITransferFunction transferFunction)
 	{
 		LearningRate = learningRate;
-		_transferFunction = transferFunction ?? new LogisticFunction();
+		_transferFunction = transferFunction;
 		_output = 0.0;
 	}
 

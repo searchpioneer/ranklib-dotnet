@@ -1,13 +1,10 @@
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
 /// <summary>
-/// A datapoint
+/// A data point
 /// </summary>
 public abstract class DataPoint
 {
@@ -15,15 +12,21 @@ public abstract class DataPoint
 	public static bool MissingZero = false;
 	public static int FeatureIncrease = 10;
 
-	protected const float Unknown = float.NaN;
+	public const float Unknown = float.NaN;
 
-	// attributes
-	protected float[] FeatureValues = []; // _fVals[0] is unused. Feature id MUST start from 1
+	/// <summary>
+	/// The feature values. Feature ids MUST start from index 1 (FeatureValues[0] must be <see cref="Unknown"/>).
+	/// </summary>
+	protected float[] FeatureValues = [];
 
-	// helper attributes
-	protected int KnownFeatures; // number of known feature values
+	/// <summary>
+	/// The number of known feature values
+	/// </summary>
+	protected int KnownFeatures;
 
-	// internal to learning procedures
+	/// <summary>
+	/// A cache used internally for learning
+	/// </summary>
 	public double Cached { get; set; } = -1;
 
 	protected static bool IsUnknown(float featureValue) => float.IsNaN(featureValue);
@@ -129,6 +132,27 @@ public abstract class DataPoint
 	/// Initializes a new instance of a <see cref="DataPoint"/>
 	/// </summary>
 	protected DataPoint() { }
+
+	/// <summary>
+	/// Initializes a new instance of <see cref="DataPoint"/> from values.
+	/// </summary>
+	/// <param name="label">The relevance label for the data point.</param>
+	/// <param name="id">The ID of the data point. The ID is typically an identifier for the query.</param>
+	/// <param name="featureValues">The feature values.
+	/// Feature Ids are 1-based, so this array is expected to have <see cref="Unknown"/> in index 0,
+	/// and feature values from index 1</param>
+	/// <param name="description">The optional description</param>
+	protected DataPoint(float label, string id, float[] featureValues, string? description = null)
+	{
+		Label = label;
+		Id = id;
+		if (description != null)
+			Description = description;
+
+		FeatureCount = featureValues.Length - 1;
+		// ReSharper disable once VirtualMemberCallInConstructor
+		SetFeatureVector(featureValues);
+	}
 
 	/// <summary>
 	/// Initializes a new instance of a <see cref="DataPoint"/> from the given span.

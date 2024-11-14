@@ -3,11 +3,12 @@ namespace RankLib.Learning.NeuralNet;
 using System;
 
 /// <summary>
-/// Logistic function, also known as the Sigmoid function, is a mathematical function
-/// that maps input values to an output range between 0 and 1.
+/// Logistic (Sigmoid) function that maps input values to an output range between 0 and 1.
 /// </summary>
 public class LogisticFunction : ITransferFunction
 {
+	public static readonly LogisticFunction Instance = new();
+
 	public double Compute(double x) => 1.0 / (1.0 + Math.Exp(-x));
 
 	public double ComputeDerivative(double x)

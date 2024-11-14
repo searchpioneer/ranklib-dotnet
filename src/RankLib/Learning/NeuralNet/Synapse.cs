@@ -3,8 +3,8 @@ using RankLib.Utilities;
 namespace RankLib.Learning.NeuralNet;
 
 /// <summary>
-/// A Synapse in a neural network represents the connection between two neurons,
-/// transmitting signals from the source neuron to the input of target,
+/// A connection between two neurons,
+/// transmitting signals from the source neuron to the target neuron,
 /// with an associated weight that determines the strength of the connection and
 /// influences the learning process during training.
 /// </summary>
@@ -51,7 +51,7 @@ public class Synapse
 	public double WeightAdjustment { get; private set; }
 
 	/// <summary>
-	/// Updates the weight with the weight adjustment.
+	/// Updates <see cref="WeightAdjustment"/>, and <see cref="Weight"/> with the weight adjustment.
 	/// </summary>
 	/// <param name="weightAdjustment">The weight adjustment.</param>
 	public void UpdateWeight(double weightAdjustment)

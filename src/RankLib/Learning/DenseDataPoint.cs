@@ -13,6 +13,18 @@ public sealed class DenseDataPoint : DataPoint
 	/// <param name="span">The span containing data to initialize the instance with</param>
 	public DenseDataPoint(ReadOnlySpan<char> span) : base(span) { }
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="DenseDataPoint"/> from values.
+	/// </summary>
+	/// <param name="label">The relevance label for the data point.</param>
+	/// <param name="id">The ID of the data point. The ID is typically an identifier for the query.</param>
+	/// <param name="featureValues">The feature values.
+	/// Feature Ids are 1-based, so this array is expected to have <see cref="DataPoint.Unknown"/> in index 0,
+	/// and feature values from index 1</param>
+	/// <param name="description">The optional description</param>
+	public DenseDataPoint(float label, string id, float[] featureValues, string? description = null)
+		: base(label, id, featureValues, description) { }
+
 	public DenseDataPoint(DenseDataPoint dataPoint)
 	{
 		Label = dataPoint.Label;

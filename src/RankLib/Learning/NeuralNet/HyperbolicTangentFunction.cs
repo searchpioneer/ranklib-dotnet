@@ -10,15 +10,22 @@ namespace RankLib.Learning.NeuralNet;
 /// Neural Networks: Tricks of the trade, Springer, 1998,
 /// </a>
 /// </remarks>
-public class HyperTangentFunction : ITransferFunction
+public class HyperbolicTangentFunction : ITransferFunction
 {
-	private const double ScalingFactor = 1.7159;
+	/// <summary>
+	/// The scaling factor
+	/// </summary>
+	public const double ScalingFactor = 1.7159;
 
-	public double Compute(double x) => ScalingFactor * Math.Tanh(x * 2 / 3);
+	private const double TwoThirds = 2.0 / 3.0;
 
+	/// <inheritdoc />
+	public double Compute(double x) => ScalingFactor * Math.Tanh(x * TwoThirds);
+
+	/// <inheritdoc />
 	public double ComputeDerivative(double x)
 	{
-		var output = Math.Tanh(x * 2 / 3);
-		return ScalingFactor * (1.0 - output * output) * 2 / 3;
+		var output = Math.Tanh(x * TwoThirds);
+		return ScalingFactor * (1.0 - output * output) * TwoThirds;
 	}
 }

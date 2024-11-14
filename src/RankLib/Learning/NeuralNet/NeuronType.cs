@@ -1,7 +1,7 @@
 namespace RankLib.Learning.NeuralNet;
 
 /// <summary>
-/// The type of neuron.
+/// The type of neuron
 /// </summary>
 public enum NeuronType
 {

@@ -14,24 +14,44 @@ namespace RankLib.Learning.NeuralNet;
 public class RankNetParameters : IRankerParameters
 {
 	/// <summary>
+	/// Default number of iterations (epochs).
+	/// </summary>
+	public const int DefaultIterationCount = 100;
+
+	/// <summary>
+	/// Default number of hidden layers
+	/// </summary>
+	public const int DefaultHiddenLayerCount = 1;
+
+	/// <summary>
+	/// Default number of hidden nodes per layer
+	/// </summary>
+	public const int DefaultHiddenNodePerLayerCount = 10;
+
+	/// <summary>
+	/// Default learning rate.
+	/// </summary>
+	public const double DefaultLearningRate = 0.00005;
+
+	/// <summary>
 	/// Number of iterations (epochs).
 	/// </summary>
-	public int IterationCount { get; set; } = 100;
+	public int IterationCount { get; set; } = DefaultIterationCount;
 
 	/// <summary>
 	/// Number of hidden layers
 	/// </summary>
-	public int HiddenLayerCount { get; set; } = 1;
+	public int HiddenLayerCount { get; set; } = DefaultHiddenLayerCount;
 
 	/// <summary>
 	/// Number of hidden nodes per layer
 	/// </summary>
-	public int HiddenNodePerLayerCount { get; set; } = 10;
+	public int HiddenNodePerLayerCount { get; set; } = DefaultHiddenNodePerLayerCount;
 
 	/// <summary>
 	/// The learning rate.
 	/// </summary>
-	public double LearningRate { get; set; } = 0.00005;
+	public double LearningRate { get; set; } = DefaultLearningRate;
 
 	public override string ToString()
 	{

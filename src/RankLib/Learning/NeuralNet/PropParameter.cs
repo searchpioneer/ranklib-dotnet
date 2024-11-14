@@ -1,20 +1,49 @@
 namespace RankLib.Learning.NeuralNet;
 
 /// <summary>
-/// Propagation parameters
+/// Propagation parameters used during learning.
 /// </summary>
 public class PropParameter
 {
-	// RankNet
-	public int Current { get; } = -1; // index of current data point in the ranked list
+	/// <summary>
+	/// Gets the index of the current data point in the rank list
+	/// </summary>
+	/// <remarks>
+	/// Used by <see cref="RankNet"/>
+	/// </remarks>
+	public int Current { get; } = -1;
+
+	/// <summary>
+	/// Gets the pair map
+	/// </summary>
+	/// <remarks>
+	/// Used by <see cref="RankNet"/>
+	/// </remarks>
 	public int[][] PairMap { get; } = [];
 
-	// LambdaRank: RankNet + the following
+	/// <summary>
+	/// Gets the pair weight
+	/// </summary>
+	/// <remarks>
+	/// Used by <see cref="LambdaRank"/> and <see cref="RankNet"/>
+	/// </remarks>
 	public float[][]? PairWeight { get; }
+
+	/// <summary>
+	/// Gets the target values
+	/// </summary>
+	/// <remarks>
+	/// Used by <see cref="LambdaRank"/> and <see cref="RankNet"/>
+	/// </remarks>
 	public float[][] TargetValue { get; } = [];
 
-	// ListNet
-	public float[] Labels { get; } = []; // relevance labels
+	/// <summary>
+	/// Gets the relevance labels
+	/// </summary>
+	/// <remarks>
+	/// Used by <see cref="ListNet"/>
+	/// </remarks>
+	public float[] Labels { get; } = [];
 
 	// Constructor for RankNet
 	public PropParameter(int current, int[][] pairMap)

@@ -14,14 +14,24 @@ namespace RankLib.Learning.Boosting;
 public class RankBoostParameters : IRankerParameters
 {
 	/// <summary>
+	/// Default number of iterations (rounds).
+	/// </summary>
+	public const int DefaultIterationCount = 300;
+
+	/// <summary>
+	/// Default number of threshold candidates.
+	/// </summary>
+	public const int DefaultThreshold = 10;
+
+	/// <summary>
 	/// Number of iterations (rounds).
 	/// </summary>
-	public int IterationCount { get; set; } = 300;
+	public int IterationCount { get; set; } = DefaultIterationCount;
 
 	/// <summary>
 	/// Number of threshold candidates
 	/// </summary>
-	public int Threshold { get; set; } = 10;
+	public int Threshold { get; set; } = DefaultThreshold;
 
 
 	public override string ToString()
