@@ -184,7 +184,7 @@ public abstract class DataPoint
 	/// <summary>
 	/// Gets the feature count
 	/// </summary>
-	public int FeatureCount { get; private set; }
+	public int FeatureCount { get; protected set; }
 
 	public void ResetCached() => Cached = -1;
 

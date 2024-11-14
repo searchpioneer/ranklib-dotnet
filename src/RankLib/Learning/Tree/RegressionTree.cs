@@ -24,9 +24,9 @@ public class RegressionTree
 		_leaves = root.Leaves();
 	}
 
-	public RegressionTree(int nLeaves, DataPoint[] trainingSamples, double[] labels, FeatureHistogram hist, int minLeafSupport)
+	public RegressionTree(int treeLeavesCount, DataPoint[] trainingSamples, double[] labels, FeatureHistogram hist, int minLeafSupport)
 	{
-		_nodes = nLeaves;
+		_nodes = treeLeavesCount;
 		_trainingLabels = labels;
 		_hist = hist;
 		_minLeafSupport = minLeafSupport;

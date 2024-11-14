@@ -6,7 +6,7 @@ using RankLib.Utilities;
 namespace RankLib.Learning;
 
 /// <summary>
-/// A list of <see cref="DataPoint"/> to be ranked.
+/// A list of <see cref="DataPoint"/> for ranking.
 /// </summary>
 [DebuggerDisplay("Count={Count}, FeatureCount={FeatureCount}")]
 public class RankList : IEnumerable<DataPoint>

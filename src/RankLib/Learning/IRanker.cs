@@ -51,7 +51,7 @@ public interface IRanker
 	Task LearnAsync();
 
 	/// <summary>
-	/// Evaluates a datapoint.
+	/// Evaluates a data point.
 	/// </summary>
 	/// <param name="dataPoint">The data point.</param>
 	/// <returns>The score for the data point</returns>

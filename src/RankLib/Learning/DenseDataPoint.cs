@@ -25,6 +25,10 @@ public sealed class DenseDataPoint : DataPoint
 	public DenseDataPoint(float label, string id, float[] featureValues, string? description = null)
 		: base(label, id, featureValues, description) { }
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="DenseDataPoint"/> from another dense data point.
+	/// </summary>
+	/// <param name="dataPoint">The data point to copy.</param>
 	public DenseDataPoint(DenseDataPoint dataPoint)
 	{
 		Label = dataPoint.Label;
@@ -32,6 +36,7 @@ public sealed class DenseDataPoint : DataPoint
 		Description = dataPoint.Description;
 		Cached = dataPoint.Cached;
 		FeatureValues = new float[dataPoint.FeatureValues.Length];
+		FeatureCount = dataPoint.FeatureCount;
 		Array.Copy(dataPoint.FeatureValues, FeatureValues, dataPoint.FeatureValues.Length);
 	}
 
@@ -45,15 +50,15 @@ public sealed class DenseDataPoint : DataPoint
 			throw RankLibException.Create($"Error in DenseDataPoint::GetFeatureValue(): requesting unspecified feature, fid={featureId}");
 		}
 
-		return IsUnknown(FeatureValues[featureId]) ? 0 : FeatureValues[featureId];
+		var featureValue = FeatureValues[featureId];
+		return IsUnknown(featureValue) ? 0 : featureValue;
 	}
 
 	public override void SetFeatureValue(int featureId, float featureValue)
 	{
 		if (featureId <= 0 || featureId >= FeatureValues.Length)
-		{
 			throw RankLibException.Create($"Error in DenseDataPoint::SetFeatureValue(): feature (id={featureId}) not found.");
-		}
+
 		FeatureValues[featureId] = featureValue;
 	}
 

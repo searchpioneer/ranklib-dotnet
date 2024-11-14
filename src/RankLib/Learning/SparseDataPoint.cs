@@ -2,6 +2,9 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
+/// <summary>
+/// A sparse data point
+/// </summary>
 public sealed class SparseDataPoint : DataPoint
 {
 	// Access pattern of the feature values
@@ -19,6 +22,10 @@ public sealed class SparseDataPoint : DataPoint
 	private int _lastMinId = -1;
 	private int _lastMinPos = -1;
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="SparseDataPoint"/> from the given span.
+	/// </summary>
+	/// <param name="span">The span containing data to initialize the instance with</param>
 	public SparseDataPoint(ReadOnlySpan<char> span) : base(span) { }
 
 	/// <summary>
@@ -33,16 +40,21 @@ public sealed class SparseDataPoint : DataPoint
 	public SparseDataPoint(float label, string id, float[] featureValues, string? description = null)
 		: base(label, id, featureValues, description) { }
 
-	public SparseDataPoint(SparseDataPoint sparseDataPoint)
+	/// <summary>
+	/// Initializes a new instance of <see cref="SparseDataPoint"/> from another sparse data point.
+	/// </summary>
+	/// <param name="dataPoint">The data point to copy.</param>
+	public SparseDataPoint(SparseDataPoint dataPoint)
 	{
-		Label = sparseDataPoint.Label;
-		Id = sparseDataPoint.Id;
-		Description = sparseDataPoint.Description;
-		Cached = sparseDataPoint.Cached;
-		_featureIds = new int[sparseDataPoint._featureIds.Length];
-		FeatureValues = new float[sparseDataPoint.FeatureValues.Length];
-		Array.Copy(sparseDataPoint._featureIds, 0, _featureIds, 0, sparseDataPoint._featureIds.Length);
-		Array.Copy(sparseDataPoint.FeatureValues, 0, FeatureValues, 0, sparseDataPoint.FeatureValues.Length);
+		Label = dataPoint.Label;
+		Id = dataPoint.Id;
+		Description = dataPoint.Description;
+		Cached = dataPoint.Cached;
+		_featureIds = new int[dataPoint._featureIds.Length];
+		FeatureValues = new float[dataPoint.FeatureValues.Length];
+		FeatureCount = dataPoint.FeatureCount;
+		Array.Copy(dataPoint._featureIds, 0, _featureIds, 0, dataPoint._featureIds.Length);
+		Array.Copy(dataPoint.FeatureValues, 0, FeatureValues, 0, dataPoint.FeatureValues.Length);
 	}
 
 	private int Locate(int fid)

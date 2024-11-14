@@ -34,6 +34,16 @@ public class RandomForestsParameters : IRankerParameters
 	/// </summary>
 	public const float DefaultSubSamplingRate = 1.0f;
 
+	/// <summary>
+	/// Default number of trees in each bag
+	/// </summary>
+	public const int DefaultTreeCount = 1;
+
+	/// <summary>
+	/// Default number of tree leaves
+	/// </summary>
+	public const int DefaultTreeLeavesCount = 100;
+
 	private RankerType _rankerType = DefaultRankerType;
 
 	// Parameters
@@ -75,27 +85,27 @@ public class RandomForestsParameters : IRankerParameters
 	/// <summary>
 	/// Number of trees in each bag
 	/// </summary>
-	public int TreeCount { get; set; } = 1;
+	public int TreeCount { get; set; } = DefaultTreeCount;
 
 	/// <summary>
 	/// Number of leaves in each tree
 	/// </summary>
-	public int TreeLeavesCount { get; set; } = 100;
+	public int TreeLeavesCount { get; set; } = DefaultTreeLeavesCount;
 
 	/// <summary>
-	/// The learning rate, or shrinkage, only matters if <see cref="TreeCount"/> > 1
+	/// The learning rate, or shrinkage, only matters if <see cref="TreeCount"/> is greater than 1
 	/// </summary>
-	public float LearningRate { get; set; } = 0.1F;
+	public float LearningRate { get; set; } = LambdaMARTParameters.DefaultLearningRate;
 
 	/// <summary>
 	/// The number of threshold candidates.
 	/// </summary>
-	public int Threshold { get; set; } = 256;
+	public int Threshold { get; set; } = LambdaMARTParameters.DefaultThreshold;
 
 	/// <summary>
 	/// Minimum leaf support
 	/// </summary>
-	public int MinimumLeafSupport { get; set; } = 1;
+	public int MinimumLeafSupport { get; set; } = LambdaMARTParameters.DefaultMinimumLeafSupport;
 
 	/// <summary>
 	/// Gets or sets the maximum number of concurrent tasks allowed when splitting up workloads

@@ -59,12 +59,15 @@ public class Split
 		_deviance = deviance;
 	}
 
+	/// <summary>
+	/// Gets the feature histogram
+	/// </summary>
 	public FeatureHistogram? Histogram { get; private set; }
 
 	/// <summary>
 	/// Whether this split is a root split.
 	/// </summary>
-	public bool IsRoot { get; set; }
+	public bool IsRoot { get; init; }
 
 	/// <summary>
 	/// Gets or sets the left split.
@@ -160,7 +163,7 @@ public class Split
 
 	// Internal functions (ONLY used during learning)
 	//*DO NOT* attempt to call them once the training is done
-	public async Task<bool> TrySplitAsync(double[] trainingLabels, int minLeafSupport)
+	internal async Task<bool> TrySplitAsync(double[] trainingLabels, int minLeafSupport)
 	{
 		if (Histogram is null)
 			throw new InvalidOperationException("Histogram is null");

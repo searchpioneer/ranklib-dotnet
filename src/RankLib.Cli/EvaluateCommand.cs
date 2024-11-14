@@ -75,7 +75,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<RankerType>(["-ranker", "--ranker"], () => RankerType.CoordinateAscent, "Ranking algorithm to use"));
 		AddOption(new Option<FileInfo>(["-feature", "--feature-description-input-file"], "Feature description file. list features to be considered by the learner, each on a separate line. If not specified, all features will be used.").ExistingOnly());
 		AddOption(new Option<string>(["-metric2t", "--train-metric"], () => "ERR@10", "Metric to optimize on the training data. Supports MAP, NDCG@k, DCG@k, P@k, RR@k, ERR@k."));
-		AddOption(new Option<double?>(["-gmax", "--max-label"], "Highest judged relevance label. It affects the calculation of ERR (default=4, i.e. 5-point scale [0,1,2,3,4] where value used is 2^gmax)"));
+		AddOption(new Option<double?>(["-gmax", "--max-label"], () => ERRScorer.DefaultMax, "Highest judged relevance label. It affects the calculation of ERR i.e. 5-point scale [0,1,2,3,4] where value used is 2^gmax"));
 		AddOption(new Option<FileInfo>(["-qrel", "--query-relevance-input-file"], "TREC-style relevance judgment file").ExistingOnly());
 		AddOption(new Option<bool>(["-missingZero", "--missing-zero"], "Substitute zero for missing feature values rather than throwing an exception."));
 		AddOption(new Option<FileInfo>(["-validate", "--validate-file"], "Specify if you want to tune your system on the validation data").ExistingOnly());
@@ -428,7 +428,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 			if (trainMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase)
 				|| (testMetric != null && testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase)))
-				logger.LogInformation("Highest relevance label (to compute ERR): {HighRelevanceLabel}", (int)SimpleMath.LogBase2(ERRScorer.DefaultMax));
+				logger.LogInformation("Highest relevance label (to compute ERR): {HighRelevanceLabel}", options.MaxLabel ?? ERRScorer.DefaultMax);
 
 			if (options.QueryRelevanceInputFile != null)
 				logger.LogInformation("TREC-format relevance judgment (only affects MAP and NDCG scores): {QueryRelevanceJudgementFile}", options.QueryRelevanceInputFile.FullName);
@@ -554,7 +554,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			{
 				logger.LogInformation("Test metric: {TestMetric}", testMetric);
 				if (testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
-					logger.LogInformation("Highest relevance label (to compute ERR): {HighestRelevanceLabel}", options.MaxLabel ?? (int)SimpleMath.LogBase2(ERRScorer.DefaultMax));
+					logger.LogInformation("Highest relevance label (to compute ERR): {HighestRelevanceLabel}", options.MaxLabel ?? ERRScorer.DefaultMax);
 
 				if (savedModelFiles.Count > 1)
 				{

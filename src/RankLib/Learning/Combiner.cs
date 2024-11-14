@@ -1,4 +1,6 @@
 using System.Text;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using RankLib.Learning.Tree;
 using RankLib.Utilities;
 
@@ -10,12 +12,18 @@ namespace RankLib.Learning;
 public class Combiner
 {
 	private readonly RankerFactory _rankerFactory;
+	private readonly ILogger<Combiner> _logger;
 
 	/// <summary>
 	/// Instantiates a new instance of <see cref="Combiner"/>
 	/// </summary>
 	/// <param name="rankerFactory">The ranker factory to use to read ranker models</param>
-	public Combiner(RankerFactory rankerFactory) => _rankerFactory = rankerFactory;
+	/// <param name="logger">Logger to log messages</param>
+	public Combiner(RankerFactory rankerFactory, ILogger<Combiner>? logger = null)
+	{
+		_rankerFactory = rankerFactory;
+		_logger = logger ?? NullLogger<Combiner>.Instance;
+	}
 
 	/// <summary>
 	/// Combines the first <see cref="Ensemble"/> from each <see cref="RandomForests"/>
@@ -43,6 +51,8 @@ public class Combiner
 					var ensemble = randomForests.Ensembles[0];
 					writer.Write(ensemble.ToString());
 				}
+				else
+					_logger.LogError("{File} is not a a RandomForests ranker. skipping", file);
 			}
 		}
 		catch (Exception ex)

@@ -20,7 +20,7 @@ public partial class Analyzer
 		_logger = logger ?? NullLogger<Analyzer>.Instance;
 	}
 
-	public class Result
+	private class Result
 	{
 		public int Status = 0;
 		public int Win = 0;
@@ -85,8 +85,7 @@ public partial class Analyzer
 
 		_logger.LogInformation("Overall comparison");
 		_logger.LogInformation("System\tPerformance\tImprovement\tWin\tLoss\tp-value");
-
-		_logger.LogInformation($"{Path.GetFileName(baseFile)} [baseline]\t{basePerformance["all"]:F4}");
+		_logger.LogInformation("{FileName} [baseline]\t{Performance}", Path.GetFileName(baseFile), basePerformance["all"].ToString("F4"));
 
 		for (var i = 0; i < results.Length; i++)
 		{
@@ -131,7 +130,7 @@ public partial class Analyzer
 		}
 	}
 
-	public Result[] Compare(Dictionary<string, double> basePerformance, List<Dictionary<string, double>> targets)
+	private Result[] Compare(Dictionary<string, double> basePerformance, List<Dictionary<string, double>> targets)
 	{
 		var results = new Result[targets.Count];
 		for (var i = 0; i < targets.Count; i++)
@@ -140,7 +139,7 @@ public partial class Analyzer
 		return results;
 	}
 
-	public Result Compare(Dictionary<string, double> basePerformance, Dictionary<string, double> target)
+	private Result Compare(Dictionary<string, double> basePerformance, Dictionary<string, double> target)
 	{
 		var result = new Result
 		{
