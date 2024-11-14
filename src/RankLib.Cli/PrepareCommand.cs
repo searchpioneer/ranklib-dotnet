@@ -112,7 +112,7 @@ public class PrepareCommandOptionsHandler : ICommandOptionsHandler<PrepareComman
 				var tests = new List<List<RankList>>();
 				var valis = new List<List<RankList>>();
 				logger.LogInformation("Partitioning... ");
-				_featureManager.PrepareCV(samples, foldCount, tvs, trains, valis, tests);
+				_featureManager.PrepareCrossValidation(samples, foldCount, tvs, trains, valis, tests);
 
 				try
 				{

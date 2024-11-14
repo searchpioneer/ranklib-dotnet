@@ -273,7 +273,7 @@ public class Evaluator
 		var samples = ReadInput(sampleFile);
 		var features = ReadFeature(featureDefinitionFile) ?? _featureManager.GetFeatureFromSampleVector(samples);
 
-		_featureManager.PrepareCV(samples, foldCount, tvs, trainingData, validationData, testData);
+		_featureManager.PrepareCrossValidation(samples, foldCount, tvs, trainingData, validationData, testData);
 
 		if (_normalize)
 		{
@@ -422,7 +422,7 @@ public class Evaluator
 		var samples = ReadInput(testFile);
 
 		_logger.LogInformation($"Preparing {foldCount}-fold test data... ");
-		_featureManager.PrepareCV(samples, foldCount, trainingData, testData);
+		_featureManager.PrepareCrossValidation(samples, foldCount, trainingData, testData);
 
 		var rankScore = 0.0;
 		var ids = new List<string>();
@@ -573,7 +573,7 @@ public class Evaluator
 		var samples = ReadInput(testFile);
 
 		_logger.LogInformation("Preparing {FoldCount}-fold test data...", foldCount);
-		_featureManager.PrepareCV(samples, foldCount, trainingData, testData);
+		_featureManager.PrepareCrossValidation(samples, foldCount, trainingData, testData);
 
 		try
 		{
@@ -692,7 +692,7 @@ public class Evaluator
 		var samples = ReadInput(testFile);
 
 		_logger.LogInformation($"Preparing {foldCount}-fold test data...");
-		_featureManager.PrepareCV(samples, foldCount, trainingData, testData);
+		_featureManager.PrepareCrossValidation(samples, foldCount, trainingData, testData);
 
 		try
 		{

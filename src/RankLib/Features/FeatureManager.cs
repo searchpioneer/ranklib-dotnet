@@ -126,10 +126,20 @@ public class FeatureManager
 		return features;
 	}
 
-	public void PrepareCV(List<RankList> samples, int foldCount, List<List<RankList>> trainingData, List<List<RankList>> testData) =>
-		PrepareCV(samples, foldCount, -1, trainingData, [], testData);
+	public void PrepareCrossValidation(
+		List<RankList> samples,
+		int foldCount,
+		List<List<RankList>> trainingData,
+		List<List<RankList>> testData) =>
+		PrepareCrossValidation(samples, foldCount, -1, trainingData, [], testData);
 
-	public void PrepareCV(List<RankList> samples, int foldCount, float tvs, List<List<RankList>> trainingData, List<List<RankList>> validationData, List<List<RankList>> testData)
+	public void PrepareCrossValidation(
+		List<RankList> samples,
+		int foldCount,
+		float trainValidationSplit,
+		List<List<RankList>> trainingData,
+		List<List<RankList>> validationData,
+		List<List<RankList>> testData)
 	{
 		var trainSamplesIdx = new List<List<int>>();
 		var size = samples.Count / foldCount;
@@ -166,9 +176,9 @@ public class FeatureManager
 					train.Add(new RankList(samples[index]));
 			}
 
-			if (tvs > 0)
+			if (trainValidationSplit > 0)
 			{
-				var validationSize = (int)(train.Count * (1.0f - tvs));
+				var validationSize = (int)(train.Count * (1.0f - trainValidationSplit));
 				for (var i = 0; i < validationSize; i++)
 				{
 					validation.Add(train.Last());
@@ -179,7 +189,7 @@ public class FeatureManager
 			trainingData.Add(train);
 			testData.Add(test);
 
-			if (tvs > 0)
+			if (trainValidationSplit > 0)
 				validationData.Add(validation);
 		}
 
