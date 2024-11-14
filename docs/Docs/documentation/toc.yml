@@ -1,6 +1,8 @@
 ﻿- name: Installation
   href: installation.md
-- name: File Formats
-  href: file-formats.md
+- name: Examples
+  href: examples.md  
 - name: Command Line Interface
   href: cli/toc.yml     
+- name: File Formats
+  href: file-formats/toc.yml

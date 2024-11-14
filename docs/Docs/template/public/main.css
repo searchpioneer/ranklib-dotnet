@@ -1,0 +1,14 @@
+#logo {
+	width: 40px;
+	height: 40px;
+	margin-right: 10px;
+}
+
+#searchpioneer-logo {
+	width: 160px;
+	height: auto;
+}
+
+.commands table td:first-child {
+	width: 150px;
+}

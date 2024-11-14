@@ -32,9 +32,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "root", "root", "{8FC7CA5A-7
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{945D8908-F90B-4ABC-8BB1-A8A7CAB0FCDC}"
-	ProjectSection(SolutionItems) = preProject
-		docs\docfx.json = docs\docfx.json
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Docs", "docs\Docs\Docs.csproj", "{DBBC69A8-E1D5-4A7E-B634-5CAA69936853}"
 EndProject

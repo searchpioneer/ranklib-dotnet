@@ -1,4 +1,4 @@
-﻿# File formats
+﻿# Training File Format
 
 The file format for training, testing, and validation data is the same as for
 [SVM-Rank](https://www.cs.cornell.edu/people/tj/svm_light/svm_rank.html) and
@@ -15,7 +15,32 @@ Each line in a training file represents one training example, and uses the follo
 <info> .=. <string>
 ```
 
-`<info>` typically takes the form of `<document id> <query>`.
+where
+
+- `<target>`
+
+  the relevance label. This is typically a value in the range `[0, 1, 2, 3, 4]` where `0` is not relevant,
+  and `4` is perfect relevance, or in the range `[0, 1]` where `0` is not relevant and `1` is relevant.
+
+- `<qid>`
+
+  An identifier for the query. A common approach is to assign a numeric identifier to each distinct query text,
+  or group related query text under an identifier.
+
+- `<feature>:<value>`
+
+  An identifier for a feature and its value. Features and their values are used to learn a ranking function.
+
+  > [!IMPORTANT]
+  >
+  > Features **must** be ordered by ascending feature identifier on each line.
+
+- `<info>` 
+
+  Comments for the example that are not used in learning, but help in identifying examples and aid in readability.
+  Typically takes the form of `<document id> <query text>`.
+
+## Example
 
 The following example has data for three different queries, where each example has two features.
 
@@ -49,7 +74,3 @@ The following example has data for three different queries, where each example h
 
 The example includes additional whitespace to make it easier to read, but a single whitespace character between
 each piece of data on each line is sufficient.
-
-> ![IMPORTANT]
->
-> Feature IDs must appear in ascending order on each line.

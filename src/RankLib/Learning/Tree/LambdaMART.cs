@@ -346,7 +346,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			//Create training instances for MART:
 			//  - Each document is a training sample
 			//	- The lambda for this document serves as its training label
-			await ComputePseudoResponses().ConfigureAwait(false);
+			await ComputePseudoResponsesAsync().ConfigureAwait(false);
 
 			//update the histogram with these training labels (the feature histogram will be used to find the best tree split)
 			await _hist.UpdateAsync(PseudoResponses).ConfigureAwait(false);
@@ -451,9 +451,9 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	}
 
 	/// <summary>
-	/// Computes the pseudoresponses for an iteration of learning.
+	/// Computes the pseudo responses for an iteration of learning.
 	/// </summary>
-	protected virtual async Task ComputePseudoResponses()
+	protected virtual async Task ComputePseudoResponsesAsync()
 	{
 		Array.Fill(PseudoResponses, 0);
 		Array.Fill(_weights, 0);

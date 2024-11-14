@@ -6,3 +6,7 @@
   href: ranklib-analyze.md
 - name: ranklib combine
   href: ranklib-combine.md
+- name: ranklib prepare
+  href: ranklib-prepare.md
+- name: ranklib stats
+  href: ranklib-stats.md
