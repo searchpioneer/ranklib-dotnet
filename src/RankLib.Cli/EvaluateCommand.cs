@@ -33,7 +33,7 @@ public class EvaluateCommandOptions : ICommandOptions
 	public NormalizerType? Norm { get; set; }
 	public FileInfo? ModelOutputFile { get; set; }
 	public IEnumerable<FileInfo>? ModelInputFiles { get; set; }
-	public int Thread { get; set; }
+	public int? Thread { get; set; }
 	public FileInfo? RankInputFile { get; set; }
 	public FileInfo? IndriRankingOutputFile { get; set; }
 	public bool UseSparseRepresentation { get; set; }
@@ -75,7 +75,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<RankerType>(["-ranker", "--ranker"], () => RankerType.CoordinateAscent, "Ranking algorithm to use"));
 		AddOption(new Option<FileInfo>(["-feature", "--feature-description-input-file"], "Feature description file. list features to be considered by the learner, each on a separate line. If not specified, all features will be used.").ExistingOnly());
 		AddOption(new Option<string>(["-metric2t", "--train-metric"], () => "ERR@10", "Metric to optimize on the training data. Supports MAP, NDCG@k, DCG@k, P@k, RR@k, ERR@k."));
-		AddOption(new Option<double?>(["-gmax", "--max-label"], () => ERRScorer.DefaultMax, "Highest judged relevance label. It affects the calculation of ERR i.e. 5-point scale [0,1,2,3,4] where value used is 2^gmax"));
+		AddOption(new Option<double?>(["-gmax", "--max-label"], $"Highest judged relevance label. It affects the calculation of ERR i.e. 5-point scale [0,1,2,3,4] where value used is 2^gmax [default: {ERRScorer.DefaultMax}"));
 		AddOption(new Option<FileInfo>(["-qrel", "--query-relevance-input-file"], "TREC-style relevance judgment file").ExistingOnly());
 		AddOption(new Option<bool>(["-missingZero", "--missing-zero"], "Substitute zero for missing feature values rather than throwing an exception."));
 		AddOption(new Option<FileInfo>(["-validate", "--validate-file"], "Specify if you want to tune your system on the validation data").ExistingOnly());
@@ -92,7 +92,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<string>(["-kcvmn", "--cross-validation-model-name"], "Name for model learned in each fold. It will be prefix-ed with the fold-number"));
 
 		AddOption(new Option<IEnumerable<FileInfo>>(["-load", "--model-input-files"], "Load saved model file for evaluation").ExistingOnly());
-		AddOption(new Option<int>(["-thread", "--thread"], () => Environment.ProcessorCount, "Number of threads to use. If unspecified, will use all available processors"));
+		AddOption(new Option<int?>(["-thread", "--thread"], "Number of threads to use. If unspecified, will use all available processors"));
 		AddOption(new Option<FileInfo>(["-rank", "--rank-input-file"], "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
 		AddOption(new Option<FileInfo>(["-indri", "--indri-ranking-output-file"], "Indri ranking file").ExistingOnly());
 		AddOption(new Option<bool>(["-sparse", "--use-sparse-representation"], "Use data points with sparse representation"));
@@ -109,36 +109,36 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<int?>(["-tc", "--threshold-candidates"], "MART|LambdaMART|RankBoost parameter: Number of threshold candidates to search or for tree splitting. -1 to use all feature values"));
 
 		// RankBoost / AdaRank specific parameters
-		AddOption(new Option<int?>(["-round", "--round"], "RankBoost|AdaRank parameter: The number of rounds to train"));
+		AddOption(new Option<int?>(["-round", "--round"], $"RankBoost|AdaRank parameter: The number of rounds to train [default: RankBoost:{RankBoostParameters.DefaultIterationCount}, AdaRank:{AdaRankParameters.DefaultIterationCount}]"));
 
 		// AdaRank specific parameters
-		AddOption(new Option<bool?>(["-noeq", "--no-train-enqueue"], "AdaRank parameter: Train without enqueuing too-strong features. Defaults to true"));
-		AddOption(new Option<int?>(["-max", "--max-selections"], "AdaRank parameter: The maximum number of times can a feature be consecutively selected without changing performance"));
+		AddOption(new Option<bool?>(["-noeq", "--no-train-enqueue"], $"AdaRank parameter: Train without enqueuing too-strong features. [default: {AdaRankParameters.DefaultTrainWithEnqueue}]"));
+		AddOption(new Option<int?>(["-max", "--max-selections"], $"AdaRank parameter: The maximum number of times can a feature be consecutively selected without changing performance [default: {AdaRankParameters.DefaultMaximumSelectedCount}]"));
 
 		// AdaRank / Coordinate Ascent specific parameters
-		AddOption(new Option<double?>(["-tolerance", "--tolerance"], "AdaRank|CoordinateAscent parameter: Tolerance between two consecutive rounds of learning. Defaults to 0.002 for AdaRank and 0.001 for CoordinateAscent"));
+		AddOption(new Option<double?>(["-tolerance", "--tolerance"], $"AdaRank|CoordinateAscent parameter: Tolerance between two consecutive rounds of learning. [default: to AdaRank:{AdaRankParameters.DefaultTolerance}, CoordinateAscent:{CoordinateAscentParameters.DefaultTolerance}]"));
 
 		// Coordinate Ascent specific parameters
-		AddOption(new Option<int?>(["-r", "--random-restarts"], () => CoordinateAscentParameters.DefaultRandomRestartCount, "CoordinateAscent parameter: The number of random restarts"));
-		AddOption(new Option<int?>(["-i", "--iterations"], () => CoordinateAscentParameters.DefaultMaximumIterationCount, "CoordinateAscent parameter: The number of iterations to search in each dimension"));
+		AddOption(new Option<int?>(["-r", "--random-restarts"], $"CoordinateAscent parameter: The number of random restarts [default: {CoordinateAscentParameters.DefaultRandomRestartCount}]"));
+		AddOption(new Option<int?>(["-i", "--iterations"], $"CoordinateAscent parameter: The number of iterations to search in each dimension [default: {CoordinateAscentParameters.DefaultMaximumIterationCount}]"));
 		AddOption(new Option<double?>(["-reg", "--regularization"], "CoordinateAscent parameter: Regularization parameter [default: no regularization]"));
 
 		// MART / LambdaMART specific parameters
-		AddOption(new Option<int?>(["-tree", "--tree"], () => LambdaMARTParameters.DefaultTreeCount, "MART|LambdaMART parameter: Number of trees"));
-		AddOption(new Option<int?>(["-leaf", "--leaf"], () => LambdaMARTParameters.DefaultTreeLeavesCount, "MART|LambdaMART parameter: Number of leaves for each tree"));
-		AddOption(new Option<float?>(["-shrinkage", "--shrinkage"], () => LambdaMARTParameters.DefaultLearningRate, "MART|LambdaMART parameter: Shrinkage, or learning rate"));
-		AddOption(new Option<int?>(["-mls", "--minimum-leaf-support"], () => LambdaMARTParameters.DefaultMinimumLeafSupport, "MART|LambdaMART parameter: Minimum leaf support. Minimum number of samples each leaf has to contain"));
-		AddOption(new Option<int?>(["-estop", "--early-stop"], () => LambdaMARTParameters.DefaultStopEarlyRoundCount, "MART|LambdaMART parameter: Stop early when no improvement is observed on validation data in e consecutive rounds"));
+		AddOption(new Option<int?>(["-tree", "--tree"], $"MART|LambdaMART parameter: Number of trees [default: {LambdaMARTParameters.DefaultTreeCount}]"));
+		AddOption(new Option<int?>(["-leaf", "--leaf"], $"MART|LambdaMART parameter: Number of leaves for each tree [default: {LambdaMARTParameters.DefaultTreeLeavesCount}]"));
+		AddOption(new Option<float?>(["-shrinkage", "--shrinkage"], $"MART|LambdaMART parameter: Shrinkage, or learning rate [default: {LambdaMARTParameters.DefaultLearningRate}"));
+		AddOption(new Option<int?>(["-mls", "--minimum-leaf-support"], $"MART|LambdaMART parameter: Minimum leaf support. Minimum number of samples each leaf has to contain [default: {LambdaMARTParameters.DefaultMinimumLeafSupport}]"));
+		AddOption(new Option<int?>(["-estop", "--early-stop"], $"MART|LambdaMART parameter: Stop early when no improvement is observed on validation data in e consecutive rounds [default: {LambdaMARTParameters.DefaultStopEarlyRoundCount}"));
 
 		// Random Forests specific parameters
-		AddOption(new Option<int?>(["-bag", "--bag"], () => RandomForestsParameters.DefaultBagCount, "RandomForests parameter: Number of bags"));
-		AddOption(new Option<float?>(["-srate", "--sub-sampling-rate"], () => RandomForestsParameters.DefaultSubSamplingRate, "RandomForests parameter: Sub-sampling rate"));
-		AddOption(new Option<float?>(["-frate", "--feature-sampling-rate"], () => RandomForestsParameters.DefaultFeatureSamplingRate, "RandomForests parameter: Feature sampling rate"));
-		AddOption(new Option<string>(["-rtype", "--random-forests-ranker"], () => RandomForestsParameters.DefaultRankerType.ToString(), "RandomForests parameter: Ranker type to bag. Random Forests only support MART/LambdaMART")
+		AddOption(new Option<int?>(["-bag", "--bag"], $"RandomForests parameter: Number of bags [default: {RandomForestsParameters.DefaultBagCount}]"));
+		AddOption(new Option<float?>(["-srate", "--sub-sampling-rate"], $"RandomForests parameter: Sub-sampling rate [default: {RandomForestsParameters.DefaultSubSamplingRate}]"));
+		AddOption(new Option<float?>(["-frate", "--feature-sampling-rate"], $"RandomForests parameter: Feature sampling rate [default: {RandomForestsParameters.DefaultFeatureSamplingRate}]"));
+		AddOption(new Option<string>(["-rtype", "--random-forests-ranker"], $"RandomForests parameter: Ranker type to bag. Random Forests only support MART/LambdaMART [default: {RandomForestsParameters.DefaultRankerType}]")
 			.FromAmong(RankerType.MART.ToString(), RankerType.LambdaMART.ToString()));
 
 
-		AddOption(new Option<double?>(["-L2", "--l2"], () => LinearRegressionParameters.DefaultLambda, "LinearRegression parameter: L2-norm regularization parameter"));
+		AddOption(new Option<double?>(["-L2", "--l2"], $"LinearRegression parameter: L2-norm regularization parameter [default: {LinearRegressionParameters.DefaultLambda}]"));
 		AddOption(new Option<bool?>(["-hr", "--must-have-relevant-docs"], () => false, "Whether to ignore ranked list without any relevant document"));
 		AddOption(new Option<int?>(
 			"--random-seed",
@@ -317,10 +317,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		if (options.L2 != null)
 			LinearRegressionParameters.Lambda = options.L2.Value;
 
-		var threads = options.Thread == -1
-			? Environment.ProcessorCount
-			: options.Thread;
-
+		var threads = options.Thread ?? Environment.ProcessorCount;
 		LambdaMARTParameters.MaxDegreeOfParallelism = threads;
 		RandomForestsParameters.MaxDegreeOfParallelism = threads;
 

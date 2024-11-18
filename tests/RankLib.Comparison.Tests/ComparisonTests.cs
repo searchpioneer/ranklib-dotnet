@@ -40,7 +40,7 @@ public class ComparisonTests
 		// - 5: LambdaRank - (maybe use of random values?)
 		// - 6: LambdaMART - (Same with different double string representation up to tree 404. Compounding differences with floating point precision calculations?).
 		// - 7: ListNet - (maybe use of random values?)
-		// - 8: Random Forests - (Same with different double string representation up to tree 404. Compounding differences with floating point precision calculations?).
+		// - 8: Random Forests - (Different splits).
 
 		var javaExecutable = new JavaExecutable("RankyMcRankFace-0.2.0.jar");
 		var dotnetExecutable = new DotnetExecutable("RankLib.Cli.dll");
