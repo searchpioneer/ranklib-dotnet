@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -93,12 +94,23 @@ public class RankNet : Ranker<RankNetParameters>
 
 	public override string Name => RankerName;
 
-	public RankNet(ILogger<RankNet>? logger = null) =>
+	public RankNet(ILogger<RankNet>? logger = null) : this(new RankNetParameters(), logger) { }
+
+	public RankNet(RankNetParameters parameters, ILogger<RankNet>? logger = null)
+	{
+		Parameters = parameters;
 		_logger = logger ?? NullLogger<RankNet>.Instance;
+	}
+
+	public RankNet(RankNetParameters parameters, List<RankList> samples, int[] features, MetricScorer scorer, ILogger<RankNet>? logger = null)
+		: base(samples, features, scorer)
+	{
+		Parameters = parameters;
+		_logger = logger ?? NullLogger<RankNet>.Instance;
+	}
 
 	public RankNet(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<RankNet>? logger = null)
-		: base(samples, features, scorer) =>
-		_logger = logger ?? NullLogger<RankNet>.Instance;
+		: this(new RankNetParameters(), samples, features, scorer) {}
 
 	protected void SetInputOutput(int inputCount, int outputCount)
 	{

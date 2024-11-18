@@ -5,6 +5,9 @@ using RankLib.Stats;
 
 namespace RankLib.Eval;
 
+/// <summary>
+/// Analyzes the performance of saved models by comparing them against a baseline.
+/// </summary>
 public partial class Analyzer
 {
 	[GeneratedRegex(@"\s+")]

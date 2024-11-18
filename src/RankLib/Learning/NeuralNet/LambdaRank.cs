@@ -4,11 +4,24 @@ using RankLib.Metric;
 namespace RankLib.Learning.NeuralNet;
 
 /// <summary>
+/// Parameters for <see cref="LambdaRank"/>
+/// </summary>
+public class LambdaRankParameters : RankNetParameters
+{
+}
+
+/// <summary>
 /// LambdaRank is a learning-to-rank algorithm that optimizes a neural network using
 /// gradient descent to directly maximize NDCG (Normalized Discounted Cumulative Gain).
 /// It extends <see cref="RankNet"/> by incorporating a weighted lambda gradient that accounts for
 /// the position-dependent NDCG gains between document pairs.
 /// </summary>
+/// <remarks>
+/// <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/lambdarank.pdf">
+/// Burges, C. J. C., Ragno, R., & Le, Q. V. (2006). Learning to Rank with Nonsmooth Cost Functions.
+/// Advances in Neural Information Processing Systems 19
+/// </a>
+/// </remarks>
 public class LambdaRank : RankNet
 {
 	internal new const string RankerName = "LambdaRank";
@@ -21,8 +34,17 @@ public class LambdaRank : RankNet
 	{
 	}
 
+	public LambdaRank(LambdaRankParameters parameters, ILogger<LambdaRank>? logger = null) : base(parameters, logger)
+	{
+	}
+
 	public LambdaRank(List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaRank>? logger = null)
 		: base(samples, features, scorer, logger)
+	{
+	}
+
+	public LambdaRank(LambdaRankParameters parameters, List<RankList> samples, int[] features, MetricScorer scorer, ILogger<LambdaRank>? logger = null)
+		: base(parameters, samples, features, scorer, logger)
 	{
 	}
 

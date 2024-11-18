@@ -1,6 +1,6 @@
 ﻿# dotnet-ranklib analyze
 
-Analyze performance comparison of saved models against a baseline.
+Analyzes the performance of saved models by comparing them against a baseline.
 
 ## Usage
 

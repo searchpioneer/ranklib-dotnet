@@ -17,10 +17,10 @@ public class AnalyzeCommandOptions : ICommandOptions
 public class AnalyzeCommand : Command<AnalyzeCommandOptions, AnalyzeCommandOptionsHandler>
 {
 	public AnalyzeCommand()
-	: base("analyze", "Analyze performance comparison of saved models against a baseline")
+	: base("analyze", "Analyzes the performance of saved models by comparing them against a baseline.")
 	{
 		AddOption(new Option<DirectoryInfo>("--all", "Directory of performance files (one per system)").ExistingOnly());
-		AddOption(new Option<FileInfo>("--base", "Performance file for the baseline (MUST be in the same directory)").ExistingOnly());
+		AddOption(new Option<FileInfo>("--base", "Performance file for the baseline. Must be in the same directory as the other performance files").ExistingOnly());
 		AddOption(new Option<int?>("--np", () => RandomPermutationTest.DefaultPermutationCount, "Number of permutation (Fisher randomization test)"));
 	}
 }

@@ -47,12 +47,13 @@ The following ranking algorithms are implemented
 
 1. [MART (Multiple Additive Regression Trees, a.k.a. Gradient Boosted Decision Trees (GBDT))](https://jerryfriedman.su.domains/ftp/trebst.pdf)
 2. [RankNet](https://icml.cc/Conferences/2005/proceedings/papers/012_LearningToRank_BurgesEtAl.pdf)
-3. [RankBoost](https://www.jmlr.org/papers/volume4/freund03a/freund03a.pdf)
-4. [AdaRank](https://dl.acm.org/doi/10.1145/1277741.1277809)
-5. [Coordinate Ascent](https://link.springer.com/content/pdf/10.1007/s10791-006-9019-z.pdf)
-6. [LambdaMART](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/LambdaMART_Final.pdf)
-7. [ListNet](https://dl.acm.org/doi/10.1145/1273496.1273513)
-8. [Random Forests](https://www.stat.berkeley.edu/~breiman/randomforest2001.pdf)
+3. [LambdaRank](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/lambdarank.pdf)
+4. [RankBoost](https://www.jmlr.org/papers/volume4/freund03a/freund03a.pdf)
+5. [AdaRank](https://dl.acm.org/doi/10.1145/1277741.1277809)
+6. [Coordinate Ascent](https://link.springer.com/content/pdf/10.1007/s10791-006-9019-z.pdf)
+7. [LambdaMART](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/LambdaMART_Final.pdf)
+8. [ListNet](https://dl.acm.org/doi/10.1145/1273496.1273513)
+9. [Random Forests](https://www.stat.berkeley.edu/~breiman/randomforest2001.pdf)
 
 The following metrics are implemented to measure the effectiveness of ranking
 
