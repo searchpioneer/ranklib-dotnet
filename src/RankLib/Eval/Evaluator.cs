@@ -511,9 +511,9 @@ public class Evaluator
 			{
 				while (reader.ReadLine() is { } content)
 				{
-					content = content.Trim();
-					if (!string.IsNullOrEmpty(content))
-						scores.Add(double.Parse(content));
+					var contentSpan = content.AsSpan().Trim();
+					if (!contentSpan.IsEmpty)
+						scores.Add(double.Parse(contentSpan));
 				}
 			}
 
