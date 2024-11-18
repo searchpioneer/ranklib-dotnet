@@ -201,7 +201,7 @@ public class ProgramTests
 
 		lock (DataPointLock)
 		{
-			Program.Main([
+			var exitCode = Program.Main([
 				"eval",
 				"-train", dataFile.Path,
 				"-metric2t", measure,
@@ -212,16 +212,22 @@ public class ProgramTests
 				"-epoch", "10",
 				"-save", modelFile.Path
 			]);
+
+			if (exitCode != 0)
+				Assert.Fail();
 		}
 
 		lock (DataPointLock)
 		{
-			Program.Main([
+			var exitCode = Program.Main([
 				"eval",
 				"-rank", dataFile.Path,
 				"-load", modelFile.Path,
 				"-indri", rankFile.Path
 			]);
+
+			if (exitCode != 0)
+				Assert.Fail();
 		}
 
 		var pRank = int.MaxValue;

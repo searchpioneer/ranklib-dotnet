@@ -10,8 +10,9 @@ public class ComparisonTests
 
 	public ComparisonTests(ITestOutputHelper output) => _output = output;
 
-	[Fact]
-	public void CompareToRankyMcRankFace()
+	[Theory]
+	[MemberData(nameof(RankerTypes))]
+	public void CompareToRankyMcRankFace(RankerType rankerType)
 	{
 		// Same (may have same double formatted differently in file)
 		// - Coordinate Ascent
@@ -33,49 +34,45 @@ public class ComparisonTests
 		var dotnetExecutable = new DotnetExecutable("RankLib.Cli.dll");
 		var trainFile = "sample_judgments_with_features.txt";
 		var outputDir = Path.Combine(SolutionPaths.Root, "test_output");
+		var ranker = ((int)rankerType).ToString();
 
-		foreach (var rankerType in Enum.GetValues<RankerType>())
+		_output.WriteLine($"Run java executable for {rankerType}");
+		var (output, error) = javaExecutable.Execute(
+			"-ranker", ranker,
+			"-train", trainFile,
+			"-save", Path.Combine(outputDir, $"model_java_{ranker}.txt"),
+			"-frate", "1.0");
+
+		_output.WriteLine(output);
+
+		if (!string.IsNullOrEmpty(error))
 		{
-			var ranker = ((int)rankerType).ToString();
-			_output.WriteLine($"Run java executable for {rankerType}");
-			var (output, error) = javaExecutable.Execute(
-				"-ranker", ranker,
-				"-train", trainFile,
-				"-save", Path.Combine(outputDir, $"model_java_{ranker}.txt"),
-				"-frate", "1.0");
+			_output.WriteLine("");
+			_output.WriteLine(error);
+			Assert.Fail();
+		}
 
-			_output.WriteLine(output);
+		_output.WriteLine($"Run dotnet executable for {rankerType}");
+		(output, error) = dotnetExecutable.Execute(
+			"eval",
+			"-ranker", ranker,
+			"-train", trainFile,
+			"-save", Path.Combine(outputDir, $"model_dotnet_{ranker}.txt"),
+			"-frate", "1.0");
 
-			if (!string.IsNullOrEmpty(error))
-			{
-				_output.WriteLine("");
-				_output.WriteLine(error);
-				Assert.Fail();
-			}
+		_output.WriteLine(output);
 
-			_output.WriteLine($"Run dotnet executable for {rankerType}");
-			(output, error) = dotnetExecutable.Execute(
-				"eval",
-				"-ranker", ranker,
-				"-train", trainFile,
-				"-save", Path.Combine(outputDir, $"model_dotnet_{ranker}.txt"),
-				"-frate", "1.0");
-
-			_output.WriteLine(output);
-
-			if (!string.IsNullOrEmpty(error))
-			{
-				_output.WriteLine("");
-				_output.WriteLine(error);
-				Assert.Fail();
-			}
+		if (!string.IsNullOrEmpty(error))
+		{
+			_output.WriteLine("");
+			_output.WriteLine(error);
+			Assert.Fail();
 		}
 
 		// No assertions, check the outputs.
 	}
 
-	public static IEnumerable<object[]> RankerTypes =>
-		Enum.GetValues<RankerType>().Select(rankerType => new object[] { rankerType });
+	public static TheoryData<RankerType> RankerTypes => new(Enum.GetValues<RankerType>());
 
 	[Theory]
 	[MemberData(nameof(RankerTypes))]

@@ -259,7 +259,7 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 		_currentFeature = -1;
 		TrainingDataScore = Math.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation($"{Scorer.Name} on training data: {TrainingDataScore}");
+		_logger.LogInformation("{ScorerName} on training data: {TrainingDataScore}", Scorer.Name, TrainingDataScore);
 
 		if (ValidationSamples != null)
 		{
@@ -318,7 +318,11 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 		output.AppendLine($"## Slack = {Parameters.Slack.ToRankLibString()}");
 
 		for (var i = 0; i < Weight.Length; i++)
-			output.Append($"{Features[i]}:{Weight[i]}{(i == Weight.Length - 1 ? "" : " ")}");
+		{
+			output.Append($"{Features[i]}:{Weight[i]}");
+			if (i != Weight.Length - 1)
+				output.Append(' ');
+		}
 
 		output.AppendLine();
 		return output.ToString();
@@ -366,7 +370,7 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 		{
 			var rl = Samples[j];
 			for (var i = 0; i < rl.Count; i++)
-				rl[i].Cached = (rl[i].Cached / sum);
+				rl[i].Cached /= sum;
 		}
 	}
 
@@ -382,7 +386,6 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 			featureIds[i] = l[i];
 
 		return featureIds;
-
 	}
 
 	private static double GetDistance(double[] w1, double[] w2)
