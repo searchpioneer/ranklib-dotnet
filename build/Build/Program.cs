@@ -69,6 +69,10 @@ cmd.SetHandler(async () =>
 
 	Target(Docs, () =>
 	{
+		foreach (var file in Directory.EnumerateFiles("docs/Docs/api")
+			         .Where(file => file.EndsWith(".yml") || file.EndsWith(".manifest")))
+			File.Delete(file);
+
 		Run("docfx", "docs/Docs/docfx.json --serve");
 	});
 

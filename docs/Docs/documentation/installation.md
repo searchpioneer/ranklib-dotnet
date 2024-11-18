@@ -22,5 +22,5 @@ dotnet tool install -g SearchPioneer.RankLib.Cli --prerelease
 To see all the commands supported by the command line tool
 
 ```sh
-dotnet-ranklib --help~~~~
+dotnet-ranklib --help
 ```

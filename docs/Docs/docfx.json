@@ -48,6 +48,11 @@
       "_lang": "en",
       "_enableSearch": true
     },
+    "sitemap": {
+      "baseUrl": "https://searchpioneer.github.io/ranklib-dotnet/",
+      "priority": 0.1,
+      "changefreq": "daily"
+    },
     "template": [
       "default",
       "modern",

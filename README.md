@@ -3,6 +3,7 @@
 [![NuGet Release][nuget image]][nuget url]
 [![Build Status](https://github.com/searchpioneer/lingua-dotnet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/searchpioneer/lingua-dotnet/actions/workflows/dotnet.yml)
 [![license badge][license badge]][license url]
+[![docs][docs badge]][docs url]
 
 Ranklib for .NET is a hardened port to .NET of [RankLib](https://sourceforge.net/p/lemur/wiki/RankLib/),
 a popular open source learning to rank library written in Java. It maintains compatibility with input and output
@@ -73,3 +74,5 @@ The following metrics are implemented to measure the effectiveness of ranking
 [nuget image]: https://img.shields.io/nuget/v/SearchPioneer.RankLib.svg
 [license badge]: https://img.shields.io/badge/license-Apache%202.0-blue.svg
 [license url]: https://www.apache.org/licenses/LICENSE-2.0
+[docs badge]: https://img.shields.io/badge/documentation-gray.svg
+[docs url]: https://searchpioneer.github.io/ranklib-dotnet
