@@ -140,7 +140,7 @@ public abstract class DataPoint
 	/// <param name="label">The relevance label for the data point.</param>
 	/// <param name="id">The ID of the data point. The ID is typically an identifier for the query.</param>
 	/// <param name="featureValues">The feature values.
-	/// Feature Ids are 1-based, so this array is expected to have <see cref="Unknown"/> in index 0,
+	/// Feature Ids are 1-based, so this array is expected to have <see cref="Unknown"/> at index 0,
 	/// and feature values from index 1</param>
 	/// <param name="description">The optional description</param>
 	protected DataPoint(float label, string id, float[] featureValues, string? description = null)
@@ -150,7 +150,7 @@ public abstract class DataPoint
 		if (description != null)
 			Description = description;
 
-		FeatureCount = featureValues.Skip(1).Count(f => !IsUnknown(f));
+		FeatureCount = featureValues.Length - 1;
 		// ReSharper disable once VirtualMemberCallInConstructor
 		SetFeatureVector(featureValues);
 	}
