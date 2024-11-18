@@ -18,7 +18,7 @@ public class LambdaRankParameters : RankNetParameters
 /// </summary>
 /// <remarks>
 /// <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/lambdarank.pdf">
-/// Burges, C. J. C., Ragno, R., & Le, Q. V. (2006). Learning to Rank with Nonsmooth Cost Functions.
+/// Burges, C. J. C., Ragno, R., &amp; Le, Q. V. (2006). Learning to Rank with Nonsmooth Cost Functions.
 /// Advances in Neural Information Processing Systems 19
 /// </a>
 /// </remarks>
