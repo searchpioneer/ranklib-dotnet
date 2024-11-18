@@ -248,13 +248,12 @@ public class RandomForests : Ranker<RandomForestsParameters>
 		var output = new StringBuilder();
 		output.Append($"## {Name}\n");
 		output.Append($"## No. of bags = {Parameters.BagCount}\n");
-		output.Append($"## Sub-sampling = {Parameters.SubSamplingRate}\n");
-		output.Append($"## Feature-sampling = {Parameters.FeatureSamplingRate}\n");
+		output.Append($"## Sub-sampling = {Parameters.SubSamplingRate.ToRankLibString()}\n");
+		output.Append($"## Feature-sampling = {Parameters.FeatureSamplingRate.ToRankLibString()}\n");
 		output.Append($"## No. of trees = {Parameters.TreeCount}\n");
 		output.Append($"## No. of leaves = {Parameters.TreeLeavesCount}\n");
 		output.Append($"## No. of threshold candidates = {Parameters.Threshold}\n");
 		output.Append($"## Learning rate = {Parameters.LearningRate}\n\n");
-		output.Append(ToString());
 
 		for (var i = 0; i < Parameters.BagCount; i++)
 			output.Append(Ensembles[i]).Append('\n');
