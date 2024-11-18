@@ -37,6 +37,7 @@ internal class Program
 					builder.AddConsole(options =>
 						{
 							options.FormatterName = "custom";
+							options.LogToStandardErrorThreshold = LogLevel.Error;
 						})
 						.AddConsoleFormatter<CustomFormatter, ConsoleFormatterOptions>(_ => { });
 

@@ -23,7 +23,7 @@ internal sealed class CustomFormatter : ConsoleFormatter, IDisposable
 		TextWriter textWriter)
 	{
 		var message = logEntry.Formatter.Invoke(logEntry.State, logEntry.Exception);
-		textWriter.WriteLine(message);
+		textWriter.WriteLine(logEntry.LogLevel >= LogLevel.Error ? $"\x1B[1m\x1B[31m{message}\x1B[0m" : message);
 	}
 
 	public void Dispose() => _optionsReloadToken?.Dispose();

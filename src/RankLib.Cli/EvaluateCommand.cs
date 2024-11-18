@@ -202,7 +202,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		var tvSplit = options.TrainValidationSplit;
 		var ttSplit = options.TrainTestSplit;
 
-		var foldCv = options.CrossValidationFolds;
+		var foldCount = options.CrossValidationFolds;
 		var kcvModelDir = options.CrossValidationOutputDirectory;
 		var kcvModelFile = options.CrossValidationModelName;
 
@@ -396,9 +396,9 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		{
 			logger.LogInformation("Training data: {TrainFile}", trainFile);
 
-			if (foldCv != -1)
+			if (foldCount != -1)
 			{
-				logger.LogInformation("Cross validation: {FoldCv} folds.", foldCv);
+				logger.LogInformation("Cross validation: {FoldCv} folds.", foldCount);
 				if (tvSplit > 0)
 					logger.LogInformation("Train-Validation split: {TvSplit}", tvSplit);
 			}
@@ -448,7 +448,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			logger.LogInformation("{RankerParameters}", rankerParameters.ToString());
 
 			// starting to do some work
-			if (foldCv != -1)
+			if (foldCount != -1)
 			{
 				//- Behavioral changes: Write kcv models if kcvmd OR kcvmn defined.  Use
 				//  default names for missing arguments: "kcvmodels" default directory
@@ -464,7 +464,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 					rankerType,
 					trainFile.FullName,
 					featureDescriptionFile?.FullName,
-					foldCv,
+					foldCount,
 					tvSplit,
 					kcvModelDir!.FullName,
 					kcvModelFile!,
@@ -509,7 +509,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		}
 		else
 		{
-			logger.LogInformation("Model file: {SavedModelFile}", string.Join(",", savedModelFiles));
+			logger.LogInformation("Model file: {SavedModelFile}", savedModelFiles.Count > 0 ? string.Join(",", savedModelFiles) : "Not Provided");
 			logger.LogInformation("Feature normalization: {Normalization}", normalizer != null ? normalizer.Name : "No");
 
 			if (rankFile != null)
@@ -558,7 +558,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 				if (testFiles.Count == 0)
 				{
-					logger.LogCritical("Please provide one or more test files with -test");
+					logger.LogCritical("No test files provided. Please provide one or more test files with -test");
 					return 1;
 				}
 
