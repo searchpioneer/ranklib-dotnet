@@ -42,10 +42,7 @@ public class APScorer : MetricScorer
 					var label = (int)Math.Round(double.Parse(parts[3].Trim()));
 
 					if (label > 0)
-					{
-						_relevantDocCount.TryAdd(qid, 0);
-						_relevantDocCount[qid] += 1;
-					}
+						_relevantDocCount[qid] = _relevantDocCount.TryGetValue(qid, out var value) ? value + 1 : 1;
 				}
 			}
 
