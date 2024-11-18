@@ -8,7 +8,7 @@ incorporating into solutions.
 To add as a library to an existing project
 
 ```sh
-dotnet add package RankLib
+dotnet add package SearchPioneer.RankLib
 ```
 
 ## Command Line Tool
@@ -16,7 +16,7 @@ dotnet add package RankLib
 To add as a global .NET command line tool
 
 ```sh
-dotnet tool install -g RankLib.Cli
+dotnet tool install -g SearchPioneer.RankLib.Cli
 ```
 
 To see all the commands supported by the command line tool
