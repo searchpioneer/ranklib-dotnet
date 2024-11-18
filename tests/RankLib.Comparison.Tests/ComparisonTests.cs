@@ -1,3 +1,6 @@
+
+using Microsoft.Extensions.Logging;
+using RankLib.Cli;
 using RankLib.Learning;
 using Xunit;
 using Xunit.Abstractions;
@@ -8,27 +11,36 @@ public class ComparisonTests
 {
 	private readonly ITestOutputHelper _output;
 
-	public ComparisonTests(ITestOutputHelper output) => _output = output;
+	public ComparisonTests(ITestOutputHelper output)
+	{
+		_output = output;
+
+		// Force RankLib.Cli to be copied over.
+		Program.ConfigureLogging = logging =>
+		{
+			logging.ClearProviders();
+		};
+	}
 
 	[Theory]
 	[MemberData(nameof(RankerTypes))]
 	public void CompareToRankyMcRankFace(RankerType rankerType)
 	{
 		// Same (may have same double formatted differently in file)
-		// - Coordinate Ascent
-		// - Linear Regression
-		// - MART
+		// - 0: MART
+		// - 9: Linear Regression
 
 		// Differ by small amounts in some values (differences in floating point precision calculations?)
-		// - RankBoost
-		// - AdaRank
+		// - 2: RankBoost
+		// - 3: AdaRank
 
 		// Different
-		// - RankNet - (maybe use of random values?)
-		// - ListNet - (maybe use of random values?)
-		// - LambdaRank - (maybe use of random values?)
-		// - LambdaMART - (Same with different double string representation up to tree 404. Compounding differences with floating point precision calculations?).
-		// - Random Forests - (Same with different double string representation up to tree 404. Compounding differences with floating point precision calculations?).
+		// - 1: RankNet - (maybe use of random values?)
+		// - 4: Coordinate Ascent (use of random values)
+		// - 5: LambdaRank - (maybe use of random values?)
+		// - 6: LambdaMART - (Same with different double string representation up to tree 404. Compounding differences with floating point precision calculations?).
+		// - 7: ListNet - (maybe use of random values?)
+		// - 8: Random Forests - (Same with different double string representation up to tree 404. Compounding differences with floating point precision calculations?).
 
 		var javaExecutable = new JavaExecutable("RankyMcRankFace-0.2.0.jar");
 		var dotnetExecutable = new DotnetExecutable("RankLib.Cli.dll");
