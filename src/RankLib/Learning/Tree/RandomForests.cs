@@ -195,9 +195,7 @@ public class RandomForests : Ranker<RandomForestsParameters>
 		{
 			// Create a "bag" of samples by random sampling from the training set
 			var (bag, _) = Sampler.Sample(Samples, Parameters.SubSamplingRate, true);
-			var ranker = (LambdaMART)rankerFactory.CreateRanker(Parameters.RankerType, bag, Features, Scorer);
-
-			ranker.Parameters = _lambdaMARTParameters;
+			var ranker = (LambdaMART)rankerFactory.CreateRanker(Parameters.RankerType, bag, Features, Scorer, _lambdaMARTParameters);
 			await ranker.InitAsync().ConfigureAwait(false);
 			await ranker.LearnAsync().ConfigureAwait(false);
 
