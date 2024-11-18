@@ -1,11 +1,11 @@
-﻿# ranklib analyze
+﻿# dotnet-ranklib analyze
 
 Analyze performance comparison of saved models against a baseline.
 
 ## Usage
 
 ```sh
-ranklib analyze [options]
+dotnet-ranklib analyze [options]
 ```
 
 ## Options

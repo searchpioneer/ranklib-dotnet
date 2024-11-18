@@ -1,11 +1,11 @@
-﻿# ranklib combine
+﻿# dotnet-ranklib combine
 
 Combines ensembles from files in a directory into one file.
 
 ## Usage
 
 ```sh
-ranklib combine <directory> <output> [options]
+dotnet-ranklib combine <directory> <output> [options]
 ```
 
 ## Arguments

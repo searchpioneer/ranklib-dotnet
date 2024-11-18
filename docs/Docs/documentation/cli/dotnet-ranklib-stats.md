@@ -1,11 +1,11 @@
-﻿# ranklib stats
+﻿# dotnet-ranklib stats
 
 Feature statistics for the given model.
 
 ## Usage  
 
 ```sh
-ranklib stats <model> [options]
+dotnet-ranklib stats <model> [options]
 ```
 
 ## Arguments  

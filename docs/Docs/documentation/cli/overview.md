@@ -1,6 +1,6 @@
 ﻿# Overview
 
-`ranklib` is used to train and evaluate rankers using Learning to Rank (LTR). It has the ability to
+`dotnet-ranklib` is used to train and evaluate rankers using Learning to Rank (LTR). It has the ability to
 
 1. Train and evaluate rankers, allowing ranker models to be saved, and subsequently loaded into applications
    to perform ranking.
@@ -18,22 +18,22 @@ dotnet tool install -g RankLib.Cli
 After installation, the tool can be run with
 
 ```sh
-ranklib
+dotnet-ranklib
 ```
 
 to see the help documentation and available commands.
 
-## `ranklib` commands~~~~
+## `dotnet-ranklib` commands
 
 <div class="commands">
 
 | Command                               | Description                                                                                                      |
 |---------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| [ranklib eval](ranklib-eval.md)       | Trains and evaluates a ranker, or evaluates a previously saved ranker model.                                     |
-| [ranklib analyze](ranklib-analyze.md) | Analyze performance comparison of saved models against a baseline.                                               |
-| [ranklib combine](ranklib-combine.md) | Combines ensembles from files in a directory into one file.                                                      |
-| [ranklib prepare](ranklib-prepare.md) | Split the input sample set into k chunks (folds) of roughly equal size and create train/test data for each fold. |
-| [ranklib stats](ranklib-stats.md)     | Feature statistics for the given model.                                                                          |
+| [dotnet-ranklib eval](dotnet-ranklib-eval.md)       | Trains and evaluates a ranker, or evaluates a previously saved ranker model.                                     |
+| [dotnet-ranklib analyze](dotnet-ranklib-analyze.md) | Analyze performance comparison of saved models against a baseline.                                               |
+| [dotnet-ranklib combine](dotnet-ranklib-combine.md) | Combines ensembles from files in a directory into one file.                                                      |
+| [dotnet-ranklib prepare](dotnet-ranklib-prepare.md) | Split the input sample set into k chunks (folds) of roughly equal size and create train/test data for each fold. |
+| [dotnet-ranklib stats](dotnet-ranklib-stats.md)     | Feature statistics for the given model.                                                                          |
 
 </div>
 
@@ -52,8 +52,7 @@ Tab completion can be enabled for the ranklib CLI by following the
     3. For PowerShell, add the contents of [dotnet-suggest-shim.ps1](https://github.com/dotnet/command-line-api/blob/main/src/System.CommandLine.Suggest/dotnet-suggest-shim.ps1) 
        to your PowerShell profile. You can find the expected path to your PowerShell profile by running the following command in your console:
 
-
-    ```powershell
-    echo $PROFILE
-    ```
+        ```powershell
+        echo $PROFILE
+        ```
 

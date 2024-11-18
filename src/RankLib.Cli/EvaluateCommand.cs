@@ -94,7 +94,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<IEnumerable<FileInfo>>(["-load", "--model-input-files"], "Load saved model file for evaluation").ExistingOnly());
 		AddOption(new Option<int?>(["-thread", "--thread"], "Number of threads to use. If unspecified, will use all available processors"));
 		AddOption(new Option<FileInfo>(["-rank", "--rank-input-file"], "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
-		AddOption(new Option<FileInfo>(["-indri", "--indri-ranking-output-file"], "Indri ranking file").ExistingOnly());
+		AddOption(new Option<FileInfo>(["-indri", "--rank-output-file"], "Indri ranking file").ExistingOnly());
 		AddOption(new Option<bool>(["-sparse", "--use-sparse-representation"], "Use data points with sparse representation"));
 		AddOption(new Option<FileInfo>(["-idv", "--individual-ranklist-performance-output-file"], "Individual rank list model performance (in test metric). Has to be used with -test").ExistingOnly());
 		AddOption(new Option<FileInfo>(["-score", "--score"], "Store ranker's score for each object being ranked. Has to be used with -rank"));
@@ -183,26 +183,29 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 
 		var logger = _loggerFactory.CreateLogger<Evaluator>();
 
-		var trainFile = options.TrainInputFile;
-		var foldCv = options.CrossValidationFolds;
+		var trainMetric = options.TrainMetric;
 		var testMetric = !string.IsNullOrEmpty(options.TestMetric)
 			? options.TestMetric
-			: options.TrainMetric;
-		var trainMetric = options.TrainMetric;
-		var testFile = options.TestInputFiles?.LastOrDefault();
-		var testFiles = options.TestInputFiles;
+			: trainMetric;
+
+		var trainFile = options.TrainInputFile;
+		var testFiles = options.TestInputFiles != null
+			? options.TestInputFiles.Select(f => f.FullName).ToList()
+			: [];
+		var validationFile = options.ValidateFile;
+		var savedModelFiles = options.ModelInputFiles != null
+			? options.ModelInputFiles.Select(f => f.FullName).ToList()
+			: [];
+
 		var rankFile = options.RankInputFile;
 
 		var tvSplit = options.TrainValidationSplit;
 		var ttSplit = options.TrainTestSplit;
 
-		var savedModelFiles = options.ModelInputFiles != null
-			? options.ModelInputFiles.Select(f => f.FullName).ToList()
-			: [];
-
+		var foldCv = options.CrossValidationFolds;
 		var kcvModelDir = options.CrossValidationOutputDirectory;
 		var kcvModelFile = options.CrossValidationModelName;
-		var validationFile = options.ValidateFile;
+
 		var featureDescriptionFile = options.FeatureDescriptionInputFile;
 		var indriRankingFile = options.IndriRankingOutputFile;
 		var prpFile = options.IndividualRanklistPerformanceOutputFile;
@@ -309,7 +312,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			}
 			catch (ArgumentException)
 			{
-				logger.LogCritical($"{options.RandomForestsRanker} cannot be bagged. Random Forests only supports MART/LambdaMART.");
+				logger.LogCritical("{RandomForestsRanker} cannot be bagged. Random Forests only supports MART/LambdaMART.", options.RandomForestsRanker);
 				return 1;
 			}
 		}
@@ -401,8 +404,8 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 			}
 			else
 			{
-				if (testFile != null)
-					logger.LogInformation("Test data: {TestFile}", testFile);
+				if (testFiles.Count > 0)
+					logger.LogInformation("Test data: {TestFile}", string.Join(", ", testFiles));
 				else if (ttSplit > 0)
 					logger.LogInformation("Train-Test split: {TrainTestSplit}", ttSplit);
 
@@ -486,7 +489,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 						rankerType,
 						trainFile.FullName,
 						tvSplit,
-						testFile?.FullName,
+						testFiles.LastOrDefault(),
 						featureDescriptionFile?.FullName,
 						options.ModelOutputFile?.FullName,
 						rankerParameters).ConfigureAwait(false);
@@ -497,7 +500,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 						rankerType,
 						trainFile.FullName,
 						validationFile?.FullName,
-						testFile?.FullName,
+						testFiles.LastOrDefault(),
 						featureDescriptionFile?.FullName,
 						options.ModelOutputFile?.FullName,
 						rankerParameters).ConfigureAwait(false);
@@ -553,19 +556,25 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 				if (testMetric.StartsWith("ERR", StringComparison.OrdinalIgnoreCase))
 					logger.LogInformation("Highest relevance label (to compute ERR): {HighestRelevanceLabel}", options.MaxLabel ?? ERRScorer.DefaultMax);
 
+				if (testFiles.Count == 0)
+				{
+					logger.LogCritical("Please provide one or more test files with -test");
+					return 1;
+				}
+
 				if (savedModelFiles.Count > 1)
 				{
-					if (testFiles.Count() > 1)
-						evaluator.Test(savedModelFiles, testFiles.Select(f => f.FullName).ToList(), prpFile.FullName);
-					else
-						evaluator.Test(savedModelFiles, testFile.FullName, prpFile.FullName);
+					if (testFiles.Count > 1)
+						evaluator.Test(savedModelFiles, testFiles, prpFile.FullName);
+					else if (testFiles.Count > 0)
+						evaluator.Test(savedModelFiles, testFiles.Last(), prpFile.FullName);
 				}
 				else if (savedModelFiles.Count == 1)
-					evaluator.Test(savedModelFiles[0], testFile.FullName, prpFile?.FullName);
+					evaluator.Test(savedModelFiles[0], testFiles.Last(), prpFile?.FullName);
 				else if (scoreFile != null)
-					evaluator.TestWithScoreFile(testFile!.FullName, scoreFile.FullName);
+					evaluator.TestWithScoreFile(testFiles.Last(), scoreFile.FullName);
 				else
-					evaluator.Test(testFile!.FullName, prpFile?.FullName);
+					evaluator.Test(testFiles.Last(), prpFile?.FullName);
 			}
 		}
 

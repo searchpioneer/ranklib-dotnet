@@ -1,11 +1,11 @@
-﻿# ranklib prepare
+﻿# dotnet-ranklib prepare
 
 Splits the input sample set into k chunks (folds) of roughly equal size and create train/ test data for each fold.
 
 ## Usage
 
 ```sh
-ranklib prepare [options]
+dotnet-ranklib prepare [options]
 ```
 
 ## Options

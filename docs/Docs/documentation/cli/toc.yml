@@ -1,12 +1,12 @@
 ﻿- name: Overview
   href: overview.md
-- name: ranklib eval
-  href: ranklib-eval.md
-- name: ranklib analyze
-  href: ranklib-analyze.md
-- name: ranklib combine
-  href: ranklib-combine.md
-- name: ranklib prepare
-  href: ranklib-prepare.md
-- name: ranklib stats
-  href: ranklib-stats.md
+- name: dotnet-ranklib eval
+  href: dotnet-ranklib-eval.md
+- name: dotnet-ranklib analyze
+  href: dotnet-ranklib-analyze.md
+- name: dotnet-ranklib combine
+  href: dotnet-ranklib-combine.md
+- name: dotnet-ranklib prepare
+  href: dotnet-ranklib-prepare.md
+- name: dotnet-ranklib stats
+  href: dotnet-ranklib-stats.md

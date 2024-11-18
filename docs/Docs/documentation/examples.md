@@ -1,5 +1,8 @@
 # Examples
 
+> The following examples are an amended version of the 
+> [RankLib examples documentation](https://sourceforge.net/p/lemur/wiki/RankLib%20How%20to%20use/).
+
 Download one of the [Microsoft Learning to Rank Datasets](https://www.microsoft.com/en-us/research/project/mslr/). 
 
 For these examples, we'll use the MSLR-WEB10K dataset. Unzip it to a directory, and navigate to the directory on
@@ -9,8 +12,8 @@ the command line.
 
 Run the following on the command line
 
-```shell
-ranklib eval -train Fold1/train.txt -test Fold1/test.txt -validate Fold1/vali.txt -ranker LambdaMART --train-metric NDCG@10 --test-metric ERR@10 -save mymodel.txt
+```sh
+dotnet-ranklib eval -train Fold1/train.txt -test Fold1/test.txt -validate Fold1/vali.txt -ranker LambdaMART --train-metric NDCG@10 --test-metric ERR@10 -save mymodel.txt
 ```
 
 This command trains a [LambdaMART](../api/RankLib.Learning.Tree.LambdaMART.yml) ranker on the training data and
@@ -19,43 +22,53 @@ completed, the trained model is evaluated on the test data using ERR@10. Finally
 named mymodel.txt in the current directory.
 
 The parameter `-validate` is _optional_, but it often leads to better models. In particular, `-validate` is very important
-for RankNet, MART, and LambdaMART. CoordinateAscent, on the other hand, works pretty well without validation data.
+for [RankNet](../api/RankLib.Learning.NeuralNet.RankNet.yml), [MART](../api/RankLib.Learning.Tree.MART.yml), 
+and [LambdaMART](../api/RankLib.Learning.Tree.LambdaMART.yml). [Coordinate Ascent](../api/RankLib.Learning.CoordinateAscent.yml),
+on the other hand, works pretty well without validation data.
 
 > [!IMPORTANT]
 > `--train-metric` only applies to _list-wise_ algorithms 
-> (AdaRank, Coordinate Ascent and LambdaMART). _Point-wise_ and _pair-wise_ techniques (MART, RankNet, RankBoost),
+> ([AdaRank](../api/RankLib.Learning.Boosting.AdaRank.yml),
+> [Coordinate Ascent](../api/RankLib.Learning.CoordinateAscent.yml) and
+> [LambdaMART](../api/RankLib.Learning.Tree.LambdaMART.yml)). _Point-wise_ and _pair-wise_ techniques 
+> ([MART](../api/RankLib.Learning.Tree.MART.yml), [RankNet](../api/RankLib.Learning.NeuralNet.RankNet.yml),
+> [RankBoost](../api/RankLib.Learning.Boosting.RankBoost.yml)),
 > due to their nature, always use their internal RMSE / pair-wise loss as the optimization criteria.
-> Thus, `--train-metric` has no effect on them. ListNet is a special case. Despite being a list-wise algorithm,
+> Thus, `--train-metric` has no effect on them. [ListNet](../api/RankLib.Learning.NeuralNet.ListNet.yml) is a special case.
+> Despite being a list-wise algorithm,
 > it has its own optimization criteria as well. Therefore, `--train-metric` also has no effect on ListNet.
 
 > [!TIP]
-> Instead of using a separate validation dataset, you can use `-tvs`
+> Instead of using a separate validation dataset, you can use the `-tvs` option to perform a split of the training
+> data into train and validation datasets.
 
 > [!TIP]
-> Instead of using a separate test dataset, you can use `-tts`
+> Instead of using a separate test dataset, you can use the `-tts` option to perform a split of the training data
+> into train and test datasets.
 
 ## k-Fold Cross Validation
 
-Although the MSLR-WEB10K dataset comes with train, test, and validation data, in this example, let's pretend that we only
+Although the MSLR-WEB10K dataset comes with train, test, and validation data, let's pretend that we
 had MSLR-WEB10K/Fold1/train.txt as the only dataset. We now want to do 5-fold cross validation experiment.
 
 ### Sequential partition
 
-```shell
-ranklib eval -train Fold1/train.txt -ranker CoordinateAscent -kcv 5 -kcvmd models/ -kcvmn ca --train-metric NDCG@10 --test-metric ERR@10
+```sh
+dotnet-ranklib eval -train Fold1/train.txt -ranker CoordinateAscent -kcv 5 -kcvmd models/ -kcvmn ca --train-metric NDCG@10 --test-metric ERR@10
 ```
 
 The command above will sequentially split the training data into 5 chunks of roughly equal size. 
 The `i`-th chunk is used as the test data for the `i`-th fold. The training data for each fold consists of the test data
 from all other folds.
 
-RankLib will train a Coordinate Ascent model on each fold that optimizes for NDCG@10.
+This example trains a Coordinate Ascent model on each fold that optimizes for NDCG@10.
 This model is then evaluated on the corresponding test data for the current fold using ERR@10.
-After the training process completes, RankLib will report the overall performance across all folds and save all
-5 models (one for each fold) to the specified directory models/: f1.ca, f2.ca, f3.ca, f4.ca, and f5.ca
+After the training process completes, the overall performance across all folds is reported and all
+5 models (one for each fold) are saved to the specified models directory, using the naming convention:
+f1.ca, f2.ca, f3.ca, f4.ca, and f5.ca.
 
 > [!TIP]
-> You can use `-tvs` to reserve a portion of training data in each fold for validation
+> You can use the `-tvs` option to reserve a portion of training data in each fold for validation
 
 ### Randomized partition
 
@@ -63,39 +76,39 @@ Let's say in the training data, rank lists are ordered in a certain way such tha
 partitioning them might introduce some bias. We want `k` partitions such that each partition contains a random
 portion of the input data. We can do this simply by shuffling the order of rank lists in the training data:
 
-```shell
-ranklib prepare -input Fold1/train.txt -output mydata -shuffle
+```sh
+dotnet-ranklib prepare -input Fold1/train.txt -output mydata -shuffle
 ```
 
 The command above will create the shuffled copy of the training data called "train.txt.shuffled" which is saved to 
 the `mydata` directory. Cross validation can then be done using the shuffled data
 
-```shell
-ranklib eval -train Fold1/mydata/train.txt.shuffled -ranker CoordinateAscent -kcv 5 -kcvmd models -kcvmn ca --train-metric NDCG@10 --test-metric ERR@10
+```sh
+dotnet-ranklib eval -train Fold1/mydata/train.txt.shuffled -ranker CoordinateAscent -kcv 5 -kcvmd models -kcvmn ca --train-metric NDCG@10 --test-metric ERR@10
 ```
 
 ### How do I obtain the data used in each fold?
 
 You can obtain the data used in each fold with `ranklib prepare`
 
-```shell
-ranklib prepare -input MQ2008/Fold1/train.txt.shuffled -output mydata/ -k 5
+```sh
+dotnet-ranklib prepare -input MQ2008/Fold1/train.txt.shuffled -output mydata/ -k 5
 ```
 
 This will extract and store the train/test data used in each fold, which is exactly the same as the in-memory
 partitions used for learning (partitioning is always done sequentially).
 
 > [!TIP]
-> See [ranklib prepare](cli/ranklib-prepare.md) for more details, or run
+> See [dotnet-ranklib prepare](cli/dotnet-ranklib-prepare.md) for more details, or run
 > 
 > ```sh
-> ranklib prepare --help
+> dotnet-ranklib prepare --help
 > ```
 
 ## Evaluating previously trained models
 
-```shell
-ranklib eval -load mymodel.txt -test Fold1/test.txt --test-metric ERR@10
+```sh
+dotnet-ranklib eval -load mymodel.txt -test Fold1/test.txt --test-metric ERR@10
 ```
 
 This will evaluate the pre-trained model stored in mymodel.txt on the specified test data using ERR@10.
@@ -110,10 +123,10 @@ lists will improve retrieval effectiveness (NDCG@10).
 
 It goes like this:
 
-```shell
-ranklib eval -test Fold1/test.txt --test-metric NDCG@10 -idv output/baseline.ndcg.txt
-ranklib eval -load ca.model.txt -test Fold1/test.txt --test-metric NDCG@10 -idv output/ca.ndcg.txt
-ranklib eval -load lm.model.txt -test Fold1/test.txt --test-metric NDCG@10 -idv output/lm.ndcg.txt
+```sh
+dotnet-ranklib eval -test Fold1/test.txt --test-metric NDCG@10 -idv output/baseline.ndcg.txt
+dotnet-ranklib eval -load ca.model.txt -test Fold1/test.txt --test-metric NDCG@10 -idv output/ca.ndcg.txt
+dotnet-ranklib eval -load lm.model.txt -test Fold1/test.txt --test-metric NDCG@10 -idv output/lm.ndcg.txt
 ```
 
 Each of the output files (specified with -idv) provides the ndcg@10 each system achieves for each of the test queries.
@@ -144,8 +157,8 @@ NDCG@10   all   0.5193204478059303
     
 Now to compare them, do this:
 
-```shell
-ranklib analyze -all output/ -base baseline.ndcg.txt > analysis.txt
+```sh
+dotnet-ranklib analyze -all output -base baseline.ndcg.txt > analysis.txt
 ```
 
 The output file analysis.txt is tab separated. Copy and paste it into any spreadsheet program for easy viewing.
@@ -176,10 +189,10 @@ Again, only queries that provided differences in metric values are listed and th
 difference values between base and test in chosen metric X 100.
 
 > [!TIP]
-> See [ranklib analyze](cli/ranklib-analyze.md) for more details, or run
+> See [dotnet-ranklib analyze](cli/dotnet-ranklib-analyze.md) for more details, or run
 >
 > ```sh
-> ranklib analyze --help
+> dotnet-ranklib analyze --help
 > ```
 
 ## Using trained models to do re-ranking
@@ -195,8 +208,8 @@ a model.
 
 This can be achieved using the following RankLib command:
 
-```shell
-ranklib eval -load mymodel.txt -rank myResultLists.txt -score myScoreFile.txt
+```sh
+dotnet-ranklib eval -load mymodel.txt -rank myResultLists.txt -score myScoreFile.txt
 ```
 
 The output file myScoreFile.txt provides the score that the ranker assigns to each of the documents as presented in
@@ -236,17 +249,17 @@ list from an already defined model, not developing the model itself or doing an 
 ...
 ```
 
-To obtain a direct re-ranking of the input data using a saved model, one must print the output using the indri switch,
+To obtain a direct re-ranking of the input data using a saved model, one must print the output using the `-indri` option,
 which will include the description field of the input data. If this data includes a document ID, it will be in the
 display. If not, one must do one's own processing to figure out the original document IDs for the input data.
 
-The following example re-ranks the input data using the indri switch. One can see the description field is printed
+The following example re-ranks the input data using the `-indri` option. One can see the description field is printed
 between the Q0 and document rank fields. This format is identical to the format used for TREC evaluations if the
 description contains only a document ID, although the indri label may not be what is desired if doing an actual
 TREC submission.
 
-```shell
-ranklib eval -rank myResultList.txt -load myModel.txt -indri myNewRankedLists.txt
+```sh
+dotnet-ranklib eval -rank myResultList.txt -load myModel.txt -indri myNewRankedLists.txt
 ```
 
 ```
@@ -258,7 +271,6 @@ ranklib eval -rank myResultList.txt -load myModel.txt -indri myNewRankedLists.tx
 1 Q0 docid=GX068-48-12934837 inc=1 prob=0.659932 6 0.67412 indri
 1 Q0 docid=GX265-53-7328411 inc=1 prob=0.416294 7 0.08022 indri
 1 Q0 docid=GX261-90-2024545 inc=0.600318836372593 prob=0.451932 8 -0.20906 indri
-...
 ```
 
 ## Generating Model Feature Statistics
@@ -270,7 +282,7 @@ number of features, then those features are not contributing towards development
 new, features might be substituted to improve the model. As always, experimentation is needed to confirm whether
 specific features aid or hinder effective model creation.
 
-The `ranklib stats` command along with the path to a saved LTR model, generates
+The `dotnet-ranklib stats` command along with the path to a saved LTR model, generates
 feature use frequencies as well as minimum, maximum, mean and mode freature frequency values along with frequency
 variation and standard deviation. Feature statistics are only generated for models that do not use all the defined
 features in creating a model, so these statistics are not available for Coordinate Ascent, LambdaRank,
@@ -279,12 +291,12 @@ Linear Regression, ListNet and RankNet models.
 Print out feature use statistics for a saved RankLib MART model. This model is tree based and does not use all
 features that were defined for it.
 
-```shell
-ranklib stats /models/MARTmodel.txt
+```sh
+dotnet-ranklib stats models/mart_model.txt
 ```
 
 ```
-Model File: /models/MARTmodel.txt
+Model File: models/mart_model.txt
 Algorithm : MART
 
 Feature frequencies :
@@ -340,7 +352,7 @@ Variance         :    7811.06
 STD              :      88.38
 ```
 
-The training data used to create this MART model defined a total of 46 features. One will note that only 41 of the
+The training data used to create this MART model defined a total of 46 features. Note however that only 41 of the
 features were actually used. In the feature frequency distributions, there is no output for features 6-10 indicating
 0 frequency. The minimum feature frequency was for feature 46, which was used only 7 times in the model.
 The maximum feature occurrence was for feature 45 which occurred 380 times in the model. Given the mean and

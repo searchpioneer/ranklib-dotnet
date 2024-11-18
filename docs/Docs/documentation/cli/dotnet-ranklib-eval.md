@@ -1,11 +1,11 @@
-﻿# ranklib eval
+﻿# dotnet-ranklib eval
 
 Trains and evaluates a ranker, or evaluates a previously saved ranker model.
 
 ## Usage
 
 ```sh
-ranklib eval [options]
+dotnet-ranklib eval [options]
 ```
 
 ## Options
@@ -41,15 +41,21 @@ ranklib eval [options]
   - `RR@k` 
   - `ERR@k`
 
+  > [!IMPORTANT]
+  > Use `--train-metric` as the current implementation does not case-sensitive
+
 - **-metric2T | --test-metric `<test-metric>`**  
   Metric to evaluate on the test data. The default is same as **-metric2t | --train-metric**
+
+  > [!IMPORTANT]
+  > Use `--test-metric` as the current implementation does not case-sensitive
 
 - **-gmax | --max-label `<max-label>`**  
   Highest judged relevance label. It affects the calculation of ERR. The default is `4` i.e. 
   5-point scale `[0,1,2,3,4]` where value used is $2^{gmax}$
 
 - **-qrel | --query-relevance-input-file `<query-relevance-input-file>`**  
-  TREC-style relevance judgment file
+  [TREC-style relevance judgment file](../file-formats/relevance-judgment-file-format.md)
 
 - **-missingZero | --missing-zero**  
   Substitute zero for missing feature values rather than throwing an exception.
@@ -98,8 +104,8 @@ ranklib eval [options]
 - **-rank | --rank-input-file `<rank-input-file>`**  
   Rank the samples in the specified file. Specify either this or **-test | --test-input-files**, but not both
 
-- **-indri | --indri-ranking-output-file `<indri-ranking-output-file>`**  
-  Indri ranking file
+- **-indri | --rank-output-file `<indri-ranking-output-file>`**  
+  [Indri ranking file](../file-formats/ranking-file-format.md) with ranking outputs.
 
 - **-sparse | --use-sparse-representation**  
   Use data points with sparse representation. Default is `false` which uses dense data points.
@@ -114,7 +120,7 @@ ranklib eval [options]
   L2-norm regularization parameter. Defaults to `1E-10`
 
 - **-hr | --must-have-relevant-docs**  
-  Whether to ignore ranked list without any relevant document. Defaults to `false`
+  Whether to ignore ranked lists without any relevant document. Defaults to `false`
 
 - **-? | -h | --help**  
   Show help and usage information
@@ -208,8 +214,17 @@ The following are parameters specific to using `RandomForests` as the ranker.
 - **-srate | --sub-sampling-rate `<sub-sampling-rate>`**  
   Sub-sampling rate. Must be between 0 and 1. The default is `1`
 
-- **-frate | --feature-sampling-rate <feature-sampling-rate>**  
+- **-frate | --feature-sampling-rate `<feature-sampling-rate>`**  
   Feature sampling rate. Must be between 0 and 1. The default is `0.3`
 
-- **-rtype | --random-forests-ranker <LambdaMART|MART>**  
+- **-rtype | --random-forests-ranker `<LambdaMART|MART>`**  
   Ranker type to bag. Random Forests only support MART/LambdaMART. The default is `MART`
+
+## Examples
+
+Train a ranker using LambdaMART on the train data, using NDCG@10 as the metric score. Model is tested against
+the test data and validated against the validation data. Finally, the model is saved to file:
+
+```sh
+dotnet-ranklib eval -ranker LambdaMART -train train.txt -test test.txt -validate validate.txt --train-metric NDCG@10 -save lambdamart_model.txt
+```

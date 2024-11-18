@@ -5,7 +5,7 @@ a popular open source learning to rank library written in Java. It maintains com
 files of RankLib, allowing it to be used to integrate with systems that use RankLib, such as the
 [Elasticsearch Learning to Rank plugin](http://github.com/o19s/elasticsearch-learning-to-rank).
 
-RankLib is available as both a command line tool for training and evaluating rankers, as well as a library for
+RankLib for .NET is available as both a command line tool for training and evaluating rankers, as well as a library for
 incorporating into solutions.
 
 ## What is Learning to Rank (LTR)?
