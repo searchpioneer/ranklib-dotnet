@@ -6,7 +6,7 @@
     <Copyright>Search Pioneer</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/searchpioneer/ranklib-dotnet</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/searchpioneer/ranklib-dotnet</PackageProjectUrl>
+    <PackageProjectUrl>https://searchpioneer.github.io/ranklib-dotnet/</PackageProjectUrl>
     <PackageReleaseNotes>https://github.com/searchpioneer/ranklib-dotnet/releases</PackageReleaseNotes>
     <PackageTags>search;ranking;learning-to-rank;ranklib;machine-learning;ltr;ml;lambdamart;mart;ranknet;rankboost;adarank;lambdarank</PackageTags>
     <LangVersion>latest</LangVersion>

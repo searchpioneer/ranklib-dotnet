@@ -12,7 +12,7 @@
 It's recommended to add as a global .NET command line tool
 
 ```sh
-dotnet tool install -g RankLib.Cli
+dotnet tool install -g SearchPioneer.RankLib.Cli
 ```
 
 After installation, the tool can be run with
