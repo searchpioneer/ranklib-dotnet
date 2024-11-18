@@ -1,5 +1,4 @@
 using System.Text;
-using RankLib.Eval;
 using RankLib.Metric;
 using RankLib.Utilities;
 
@@ -9,44 +8,8 @@ namespace RankLib.Learning;
 /// Base class for a generic ranker with typed ranker parameters.
 /// </summary>
 /// <typeparam name="TRankerParameters">The type of ranker parameters</typeparam>
-public abstract class Ranker<TRankerParameters> : Ranker, IRanker<TRankerParameters>
+public abstract class Ranker<TRankerParameters> : IRanker<TRankerParameters>
 	where TRankerParameters : IRankerParameters, new()
-{
-	/// <summary>
-	/// Initializes a new instance of <see cref="Ranker{TRankerParameters}"/>
-	/// </summary>
-	protected Ranker()
-	{
-	}
-
-	/// <summary>
-	/// Initializes a new instance of <see cref="Ranker{TRankerParameters}"/>
-	/// </summary>
-	/// <param name="samples">The training samples</param>
-	/// <param name="features">The features</param>
-	/// <param name="scorer">The scorer to use for training</param>
-	protected Ranker(List<RankList> samples, int[] features, MetricScorer scorer)
-	: base(samples, features, scorer)
-	{
-	}
-
-	/// <summary>
-	/// Gets or sets the ranker parameters used to train the ranker
-	/// </summary>
-	public TRankerParameters Parameters { get; set; } = new();
-
-	/// <inheritdoc />
-	IRankerParameters IRanker.Parameters
-	{
-		get => Parameters;
-		set => Parameters = (TRankerParameters)value;
-	}
-}
-
-/// <summary>
-/// Base class for a ranker
-/// </summary>
-public abstract class Ranker : IRanker
 {
 	private MetricScorer? _scorer;
 
@@ -74,18 +37,27 @@ public abstract class Ranker : IRanker
 		set => _scorer = value;
 	}
 
+	/// <summary>
+	/// Gets or sets the ranker parameters used to train the ranker
+	/// </summary>
+	public TRankerParameters Parameters { get; set; } = new();
+
 	/// <inheritdoc />
-	IRankerParameters IRanker.Parameters { get; set; } = default!;
+	IRankerParameters IRanker.Parameters
+	{
+		get => Parameters;
+		set => Parameters = (TRankerParameters)value;
+	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="Ranker"/>
+	/// Initializes a new instance of <see cref="Ranker{TRankerParameters}"/>
 	/// </summary>
 	protected Ranker()
 	{
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="Ranker"/>
+	/// Initializes a new instance of <see cref="Ranker{TRankerParameters}"/>
 	/// </summary>
 	/// <param name="samples">The training samples</param>
 	/// <param name="features">The features</param>

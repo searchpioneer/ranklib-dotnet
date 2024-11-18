@@ -130,5 +130,5 @@ public interface IRanker<TParameters> : IRanker
 	/// Gets or sets the parameters for the ranker.
 	/// The ranker uses parameters for training
 	/// </summary>
-	public new TParameters Parameters { get; set; }
+	new TParameters Parameters { get; set; }
 }
