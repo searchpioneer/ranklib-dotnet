@@ -1,5 +1,9 @@
 # RankLib for .NET
 
+[![NuGet Release][nuget image]][nuget url]
+[![Build Status](https://github.com/searchpioneer/lingua-dotnet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/searchpioneer/lingua-dotnet/actions/workflows/dotnet.yml)
+[![license badge][license badge]][license url]
+
 Ranklib for .NET is a hardened port to .NET of [RankLib](https://sourceforge.net/p/lemur/wiki/RankLib/),
 a popular open source learning to rank library written in Java. It maintains compatibility with input and output
 files of RankLib, allowing it to be used to integrate with systems that use RankLib, such as the
@@ -15,7 +19,7 @@ incorporating into solutions.
 To add as a library to an existing project
 
 ```sh
-dotnet add package SearchPioneer.RankLib
+dotnet add package SearchPioneer.RankLib --prerelease
 ```
 
 ### Command Line Tool
@@ -23,7 +27,7 @@ dotnet add package SearchPioneer.RankLib
 To add as a global .NET command line tool
 
 ```sh
-dotnet tool install -g SearchPioneer.RankLib.Cli
+dotnet tool install -g SearchPioneer.RankLib.Cli --prerelease
 ```
 
 To see all the commands supported by the command line tool
@@ -64,3 +68,8 @@ The following metrics are implemented to measure the effectiveness of ranking
 5. Normalized Discounted Cumulative Gain (`NDCG@K`)
 6. Precision at K (`P@K`)
 7. Reciprocal Rank (`RR`)
+
+[nuget url]: https://www.nuget.org/packages/SearchPioneer.RankLib/
+[nuget image]: https://img.shields.io/nuget/v/SearchPioneer.RankLib.svg
+[license badge]: https://img.shields.io/badge/license-Apache%202.0-blue.svg
+[license url]: https://www.apache.org/licenses/LICENSE-2.0

@@ -42,20 +42,21 @@ dotnet-ranklib eval [options]
   - `ERR@k`
 
   > [!IMPORTANT]
-  > Use `--train-metric` as the current implementation does not case-sensitive
+  > Use `--train-metric` as the current implementation is not case-sensitive when parsing options
 
 - **-metric2T | --test-metric `<test-metric>`**  
   Metric to evaluate on the test data. The default is same as **-metric2t | --train-metric**
 
   > [!IMPORTANT]
-  > Use `--test-metric` as the current implementation does not case-sensitive
+  > Use `--test-metric` as the current implementation is not case-sensitive when parsing options
 
 - **-gmax | --max-label `<max-label>`**  
   Highest judged relevance label. It affects the calculation of ERR. The default is `4` i.e. 
   5-point scale `[0,1,2,3,4]` where value used is $2^{gmax}$
 
 - **-qrel | --query-relevance-input-file `<query-relevance-input-file>`**  
-  [TREC-style relevance judgment file](../file-formats/relevance-judgment-file-format.md)
+  [TREC-style relevance judgment file](../file-formats/relevance-judgment-file-format.md) used to provide external judgments to MAP and NDCG
+  metrics for scoring.
 
 - **-missingZero | --missing-zero**  
   Substitute zero for missing feature values rather than throwing an exception.
@@ -86,7 +87,7 @@ dotnet-ranklib eval [options]
 
 - **-kcv | --cross-validation-folds `<cross-validation-folds>`**  
   Specify how many folds to perform for k-fold cross validation using the specified training data. 
-  The default is k-fold cross validation.
+  The default is no k-fold cross validation.
 
 - **-kcvmd | --cross-validation-output-directory `<cross-validation-output-directory>`**  
   Directory for models trained via cross-validation
@@ -95,7 +96,7 @@ dotnet-ranklib eval [options]
   Name for model learned in each fold. It will be prefixed with the fold-number
 
 - **-load | --model-input-files `<model-input-files>`**  
-  Load saved model file for evaluation
+  Load saved model file for evaluation.
 
 - **-thread | --thread `<thread>`**  
   Number of threads to use. The performance of some algorithms can be improved by parallelizing computation.
