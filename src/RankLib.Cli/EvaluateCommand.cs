@@ -35,7 +35,7 @@ public class EvaluateCommandOptions : ICommandOptions
 	public IEnumerable<FileInfo>? ModelInputFiles { get; set; }
 	public int? Thread { get; set; }
 	public FileInfo? RankInputFile { get; set; }
-	public FileInfo? IndriRankingOutputFile { get; set; }
+	public FileInfo? RankOutputFile { get; set; }
 	public bool UseSparseRepresentation { get; set; }
 	public bool MissingZero { get; set; }
 	public FileInfo? IndividualRanklistPerformanceOutputFile { get; set; }
@@ -94,7 +94,7 @@ public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOp
 		AddOption(new Option<IEnumerable<FileInfo>>(["-load", "--model-input-files"], "Load saved model file for evaluation").ExistingOnly());
 		AddOption(new Option<int?>(["-thread", "--thread"], "Number of threads to use. If unspecified, will use all available processors"));
 		AddOption(new Option<FileInfo>(["-rank", "--rank-input-file"], "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
-		AddOption(new Option<FileInfo>(["-indri", "--rank-output-file"], "Indri ranking file").ExistingOnly());
+		AddOption(new Option<FileInfo>(["-indri", "--rank-output-file"], "Indri ranking file"));
 		AddOption(new Option<bool>(["-sparse", "--use-sparse-representation"], "Use data points with sparse representation"));
 		AddOption(new Option<FileInfo>(["-idv", "--individual-ranklist-performance-output-file"], "Individual rank list model performance (in test metric). Has to be used with -test").ExistingOnly());
 		AddOption(new Option<FileInfo>(["-score", "--score"], "Store ranker's score for each object being ranked. Has to be used with -rank"));
@@ -207,7 +207,7 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 		var kcvModelFile = options.CrossValidationModelName;
 
 		var featureDescriptionFile = options.FeatureDescriptionInputFile;
-		var indriRankingFile = options.IndriRankingOutputFile;
+		var indriRankingFile = options.RankOutputFile;
 		var prpFile = options.IndividualRanklistPerformanceOutputFile;
 		var scoreFile = options.Score;
 
