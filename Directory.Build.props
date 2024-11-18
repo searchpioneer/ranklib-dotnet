@@ -10,10 +10,13 @@
     <PackageReleaseNotes>https://github.com/searchpioneer/ranklib-dotnet/releases</PackageReleaseNotes>
     <PackageTags>search;ranking;learning-to-rank;ranklib;machine-learning;ltr;ml;lambdamart;mart;ranknet;rankboost;adarank;lambdarank</PackageTags>
     <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
   <PropertyGroup>
     <SolutionRoot>$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), RankLib.sln))</SolutionRoot>
+    <AssemblyOriginatorKeyFile>$(SolutionRoot)build\keys\keypair.snk</AssemblyOriginatorKeyFile>
+    <PublicKey>0024000004800000940000000602000000240000525341310004000001000100190c74f306768e3fb8f83a87bad2bd8629d2c7e1632dc9122bdd142e949899d0c0955417f7864a71ec6baa64ab2d77dd73440778672a3575005912cec51f7fafe904d0e168645766084730f9c31b41498ec9084cd7c11f5562af4e3a9e1786de2932b9d5347b78ec0c66a3f04298a8fa92da26b430b50690ac8898ffff3697f8</PublicKey>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Nullable>enable</Nullable>

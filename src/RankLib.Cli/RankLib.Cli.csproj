@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <PackageId>SearchPioneer.RankLib.Cli</PackageId>
+    <Title>RankLib.Cli</Title>
+    <Description>Learning to Rank (LTR) command line interface (CLI) tool for .NET, with implementations of popular ranking algorithms</Description>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -24,8 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="$(AssemblyName).Tests"/>
-    <InternalsVisibleTo Include="RankLib.Comparison.Tests"/>
+    <InternalsVisibleTo Include="$(AssemblyName).Tests" Key="$(PublicKey)" />
+    <InternalsVisibleTo Include="RankLib.Comparison.Tests" Key="$(PublicKey)" />
   </ItemGroup>
 
 </Project>

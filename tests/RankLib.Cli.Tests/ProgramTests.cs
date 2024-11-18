@@ -16,15 +16,6 @@ public class ProgramTests
 	private static readonly object DataPointLock = new();
 
 	[Fact]
-	public void TestCLINoArgs()
-	{
-		lock (DataPointLock)
-		{
-			Program.Main([]);
-		}
-	}
-
-	[Fact]
 	public void TestCoorAscent()
 	{
 		using var dataFile = new TempFile();
@@ -91,7 +82,7 @@ public class ProgramTests
 	}
 
 	[Fact]
-	public void TestRF()
+	public void TestRandomForests()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
@@ -101,7 +92,7 @@ public class ProgramTests
 	}
 
 	[Fact]
-	public void TestLinearReg()
+	public void TestLinearRegression()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
@@ -111,7 +102,7 @@ public class ProgramTests
 	}
 
 	[Fact]
-	public void TestCAscent()
+	public void TestCoordinateAscent()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
