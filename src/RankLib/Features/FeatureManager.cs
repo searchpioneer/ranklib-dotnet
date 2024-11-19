@@ -133,11 +133,9 @@ public class FeatureManager
 				if (contentSpan.IsEmpty || contentSpan[0] == '#')
 					continue;
 
-				var firstTab = contentSpan.IndexOf('\t');
-				if (firstTab == -1)
-					throw new ArgumentException("feature definition file is not valid", nameof(featureDefinitionFile));
-
-				var featureId = contentSpan.Slice(0, firstTab).Trim();
+				var enumerator = contentSpan.SplitOnWhitespace();
+				enumerator.MoveNext();
+				var featureId = enumerator.Current;
 				featureIds.Add(int.Parse(featureId));
 			}
 		}
