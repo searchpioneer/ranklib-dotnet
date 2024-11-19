@@ -1,20 +1,26 @@
 using System.Text;
+using RankLib.Eval;
 using RankLib.Metric;
 using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
 /// <summary>
-/// Base class for a generic ranker with typed ranker parameters.
+/// Base class for a generic ranker that can score <see cref="DataPoint"/> and rank data points in a <see cref="RankList"/>.
+/// A ranker can be trained by a <see cref="RankerTrainer"/>, or a trained ranker model can be loaded
+/// from file
 /// </summary>
 /// <typeparam name="TRankerParameters">The type of ranker parameters</typeparam>
+/// <remarks>
+/// Use <see cref="EvaluatorFactory"/> to create an <see cref="Evaluator"/> for training and evaluation.
+/// </remarks>
 public abstract class Ranker<TRankerParameters> : IRanker<TRankerParameters>
 	where TRankerParameters : IRankerParameters, new()
 {
 	private MetricScorer? _scorer;
 
-	protected double TrainingDataScore = 0.0;
-	protected double ValidationDataScore = 0.0;
+	protected double TrainingDataScore = 0;
+	protected double ValidationDataScore = 0;
 
 	/// <inheritdoc />
 	public List<RankList> Samples { get; set; } = [];

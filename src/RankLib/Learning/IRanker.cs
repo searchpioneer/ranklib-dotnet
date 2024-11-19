@@ -14,8 +14,13 @@ public interface IRankerParameters
 }
 
 /// <summary>
-/// A ranker
+/// A ranker that can score <see cref="DataPoint"/> and rank data points in a <see cref="RankList"/>.
+/// A ranker can be trained by a <see cref="RankerTrainer"/>, or a trained ranker model can be loaded
+/// from file
 /// </summary>
+/// <remarks>
+/// Use <see cref="EvaluatorFactory"/> to create an <see cref="Evaluator"/> for training and evaluation.
+/// </remarks>
 public interface IRanker
 {
 	/// <summary>
@@ -120,15 +125,20 @@ public interface IRanker
 }
 
 /// <summary>
-/// A generic ranker
+/// A generic ranker that can score <see cref="DataPoint"/> and rank data points in a <see cref="RankList"/>.
+/// A ranker can be trained by a <see cref="RankerTrainer"/>, or a trained ranker model can be loaded
+/// from file
 /// </summary>
-/// <typeparam name="TParameters">The type of rank parameters</typeparam>
-public interface IRanker<TParameters> : IRanker
-	where TParameters : IRankerParameters
+/// <typeparam name="TRankerParameters">The type of ranker parameters</typeparam>
+/// <remarks>
+/// Use <see cref="EvaluatorFactory"/> to create an <see cref="Evaluator"/> for training and evaluation.
+/// </remarks>
+public interface IRanker<TRankerParameters> : IRanker
+	where TRankerParameters : IRankerParameters
 {
 	/// <summary>
 	/// Gets or sets the parameters for the ranker.
 	/// The ranker uses parameters for training
 	/// </summary>
-	new TParameters Parameters { get; set; }
+	new TRankerParameters Parameters { get; set; }
 }

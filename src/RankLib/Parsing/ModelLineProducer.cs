@@ -20,9 +20,7 @@ internal class ModelLineProducer
 		if (fullTextChar[beginOfLineCursor] != '#')
 		{
 			for (var j = beginOfLineCursor; j <= endOfLineCursor; j++)
-			{
 				model.Append(fullTextChar[j]);
-			}
 		}
 
 		// Check for ensemble tag

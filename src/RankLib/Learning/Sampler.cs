@@ -2,10 +2,6 @@ using RankLib.Utilities;
 
 namespace RankLib.Learning;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 /// <summary>
 /// Samples rank lists from a pool of rank lists
 /// </summary>

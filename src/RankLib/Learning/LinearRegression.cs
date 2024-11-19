@@ -36,7 +36,7 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 	private readonly ILogger<LinearRegression> _logger;
 	private double[] _weight = [];
 
-	public LinearRegression(ILogger<LinearRegression>? logger = null) : base() =>
+	public LinearRegression(ILogger<LinearRegression>? logger = null) =>
 		_logger = logger ?? NullLogger<LinearRegression>.Instance;
 
 	public LinearRegression(List<RankList> samples, int[] features, MetricScorer scorer,
@@ -44,14 +44,17 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 		: base(samples, features, scorer) =>
 		_logger = logger ?? NullLogger<LinearRegression>.Instance;
 
+	/// <inheritdoc />
 	public override string Name => RankerName;
 
+	/// <inheritdoc />
 	public override Task InitAsync()
 	{
 		_logger.LogInformation("Initializing...");
 		return Task.CompletedTask;
 	}
 
+	/// <inheritdoc />
 	public override Task LearnAsync()
 	{
 		_logger.LogInformation("Training starts...");
@@ -110,17 +113,18 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 
 		TrainingDataScore = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
-		_logger.LogInformation("{ScorerName} on training data: {ScoreOnTrainingData}", Scorer.Name, TrainingDataScore);
+		_logger.LogInformation("{Scorer} on training data: {TrainingScore}", Scorer.Name, TrainingDataScore);
 
 		if (ValidationSamples != null)
 		{
 			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation("{ScorerName} on validation data: {BestScoreOnValidationData}", Scorer.Name, SimpleMath.Round(ValidationDataScore, 4));
+			_logger.LogInformation("{Scorer} on validation data: {ValidationScore}", Scorer.Name, SimpleMath.Round(ValidationDataScore, 4));
 		}
 
 		return Task.CompletedTask;
 	}
 
+	/// <inheritdoc />
 	public override double Eval(DataPoint dataPoint)
 	{
 		var score = _weight[^1];
@@ -130,6 +134,7 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 		return score;
 	}
 
+	/// <inheritdoc />
 	public override string GetModel()
 	{
 		var output = new StringBuilder()
@@ -147,6 +152,7 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 		return output.ToString();
 	}
 
+	/// <inheritdoc />
 	public override void LoadFromString(string model)
 	{
 		try

@@ -10,9 +10,9 @@ public class RankerTrainer
 	private readonly RankerFactory _rankerFactory;
 
 	/// <summary>
-	/// Initializes a new instance of <see cref="RankerTrainer"/>
+	/// Instantiates a new instance of <see cref="RankerTrainer"/>
 	/// </summary>
-	/// <param name="rankerFactory"></param>
+	/// <param name="rankerFactory">The ranker factory used to create rankers</param>
 	public RankerTrainer(RankerFactory rankerFactory) => _rankerFactory = rankerFactory;
 
 	/// <summary>
