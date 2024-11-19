@@ -1,7 +1,7 @@
 # RankLib for .NET
 
 [![NuGet Release][nuget image]][nuget url]
-[![Build Status](https://github.com/searchpioneer/lingua-dotnet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/searchpioneer/lingua-dotnet/actions/workflows/dotnet.yml)
+[![Build Status](https://github.com/searchpioneer/ranklib-dotnet/actions/workflows/dotnet.yml/badge.svg)](https://github.com/searchpioneer/ranklib-dotnet/actions/workflows/dotnet.yml)
 [![license badge][license badge]][license url]
 [![docs][docs badge]][docs url]
 
