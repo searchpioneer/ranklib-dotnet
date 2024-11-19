@@ -46,7 +46,8 @@
       "_appFaviconPath": "images/ranklib_dotnet_favicon.png",
       "_appFooter": "<span>Made by <a href=\"https://searchpioneer.com\"><img id=\"searchpioneer-logo\" src=\"https://searchpioneer.github.io/ranklib-dotnet/images/searchpioneer_logo.svg\" alt=\"Search Pioneer\"/></a></span>",
       "_lang": "en",
-      "_enableSearch": true
+      "_enableSearch": true,
+      "_googleAnalyticsTagId": "G-YRNZ8GQ0TR"
     },
     "sitemap": {
       "baseUrl": "https://searchpioneer.github.io/ranklib-dotnet/",
