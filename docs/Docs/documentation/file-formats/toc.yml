@@ -1,6 +1,8 @@
 ﻿- name: Training File
   href: training-file-format.md
 - name: Relevance Judgment File
-  href: relevance-judgment-file-format.md  
+  href: relevance-judgment-file-format.md
+- name: Feature Definition File
+  href: feature-definition-file-format.md  
 - name: Ranking File
   href: ranking-file-format.md
