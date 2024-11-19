@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using MathNet.Numerics.Statistics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -6,33 +5,37 @@ using RankLib.Learning;
 using RankLib.Learning.Boosting;
 using RankLib.Learning.NeuralNet;
 using RankLib.Learning.Tree;
+using RankLib.Utilities;
 
 namespace RankLib.Features;
 
 public class FeatureStats
 {
 	private readonly ILogger<FeatureStats> _logger;
-
 	private readonly string _modelFileName;
-	private readonly FileInfo _file;
 	private static readonly string[] ModelsThatUseAllFeatures = [CoordinateAscent.RankerName, LambdaRank.RankerName, LinearRegression.RankerName, ListNet.RankerName, RankNet.RankerName];
 	private static readonly string[] FeatureWeightModels = [AdaRank.RankerName, RankBoost.RankerName];
 	private static readonly string[] TreeModels = [LambdaMART.RankerName, MART.RankerName, RandomForests.RankerName];
 
-	public FeatureStats(string modelFileName, ILogger<FeatureStats>? logger = null)
+	/// <summary>
+	/// Instantiates a new instance of <see cref="FeatureStats"/>
+	/// </summary>
+	/// <param name="modelFile">The path of the model file to load the ranker from.</param>
+	/// <param name="logger">Logger to log events</param>
+	public FeatureStats(string modelFile, ILogger<FeatureStats>? logger = null)
 	{
 		_logger = logger ?? NullLogger<FeatureStats>.Instance;
-		_file = new FileInfo(modelFileName);
-		_modelFileName = _file.FullName;
+		var file = new FileInfo(modelFile);
+		_modelFileName = file.FullName;
 	}
 
-	private SortedDictionary<int, int> GetFeatureWeightFeatureFrequencies(StreamReader sr)
+	private static SortedDictionary<int, int> GetFeatureWeightFeatureFrequencies(StreamReader reader)
 	{
 		var featureFrequencies = new SortedDictionary<int, int>();
 
 		try
 		{
-			while (sr.ReadLine() is { } line)
+			while (reader.ReadLine() is { } line)
 			{
 				var lineSpan = line.AsSpan().Trim();
 				if (lineSpan.IsEmpty || lineSpan.IsWhiteSpace() || lineSpan.Contains("##", StringComparison.Ordinal))
@@ -65,7 +68,7 @@ public class FeatureStats
 		return featureFrequencies;
 	}
 
-	private SortedDictionary<int, int> GetTreeFeatureFrequencies(StreamReader reader)
+	private static SortedDictionary<int, int> GetTreeFeatureFrequencies(StreamReader reader)
 	{
 		var featureFrequencies = new SortedDictionary<int, int>();
 
@@ -98,14 +101,18 @@ public class FeatureStats
 		return featureFrequencies;
 	}
 
+	/// <summary>
+	/// Writes the feature statistics to the logger specified in the constructor.
+	/// </summary>
+	/// <exception cref="RankLibException">Exception reading model file</exception>
 	public void WriteFeatureStats()
 	{
-		SortedDictionary<int, int>? featureFrequencies = null;
+		SortedDictionary<int, int>? featureFrequencies;
 		string? modelName;
 
 		try
 		{
-			using var reader = new StreamReader(_file.FullName);
+			using var reader = new StreamReader(_modelFileName);
 
 			// Read model name from the file
 			var modelLine = reader.ReadLine().AsSpan();
@@ -126,15 +133,12 @@ public class FeatureStats
 				featureFrequencies = GetTreeFeatureFrequencies(reader);
 			// Anything else
 			else
-				throw new Exception($"Expected to find model name on first line, but found {modelLine}");
+				throw RankLibException.Create($"Expected to find model name on first line, but found {modelLine}");
 		}
 		catch (IOException exception)
 		{
-			throw new Exception($"IOException on file {_modelFileName}: {exception.Message}", exception);
+			throw RankLibException.Create($"Error reading file {_modelFileName}: {exception.Message}", exception);
 		}
-
-		if (featureFrequencies is null)
-			throw new Exception("No feature frequencies defined.");
 
 		// Calculate feature statistics
 		var featuresUsed = featureFrequencies.Count;
@@ -144,11 +148,8 @@ public class FeatureStats
 		_logger.LogInformation("Feature frequencies:");
 
 		var data = new List<double>(featuresUsed);
-
-		foreach (var entry in featureFrequencies)
+		foreach (var (featureId, freq) in featureFrequencies)
 		{
-			var featureId = entry.Key;
-			var freq = entry.Value;
 			_logger.LogInformation("\tFeature[{FeatureId}] : {Freq}", featureId, freq);
 			data.Add(freq);
 		}

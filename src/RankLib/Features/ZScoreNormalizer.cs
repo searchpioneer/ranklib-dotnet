@@ -4,6 +4,7 @@ namespace RankLib.Features;
 
 public class ZScoreNormalizer : Normalizer
 {
+	/// <inheritdoc />
 	public override void Normalize(RankList rankList)
 	{
 		if (rankList.Count == 0)
@@ -46,6 +47,7 @@ public class ZScoreNormalizer : Normalizer
 		}
 	}
 
+	/// <inheritdoc />
 	public override void Normalize(RankList rankList, int[] featureIds)
 	{
 		if (rankList.Count == 0)
@@ -90,5 +92,6 @@ public class ZScoreNormalizer : Normalizer
 		}
 	}
 
+	/// <inheritdoc />
 	public override string Name => "zscore";
 }

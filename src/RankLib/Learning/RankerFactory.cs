@@ -109,7 +109,7 @@ public class RankerFactory
 	public IRanker CreateRanker(Type rankerType)
 	{
 		if (!typeof(IRanker).IsAssignableFrom(rankerType))
-			throw new ArgumentException($"Ranker of type '{rankerType.Name}' is not a ranker. It must implement {typeof(IRanker<>).FullName}.", nameof(rankerType));
+			throw new ArgumentException($"Ranker of type '{rankerType.Name}' is not a ranker. It must implement {typeof(IRanker).FullName}.", nameof(rankerType));
 
 		if (!_rankers.TryGetValue(rankerType, out var factory))
 			throw new ArgumentException($"Ranker of type '{rankerType.Name}' is not registered.", nameof(rankerType));

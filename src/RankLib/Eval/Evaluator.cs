@@ -12,6 +12,9 @@ namespace RankLib.Eval;
 /// Evaluates rankers and rank lists.
 /// Rankers can be trained and optionally saved to a model file, or loaded from a model file, and evaluated.
 /// </summary>
+/// <remarks>
+/// Use <see cref="EvaluatorFactory"/> to create instances of <see cref="Evaluator"/>
+/// </remarks>
 public class Evaluator
 {
 	private readonly ILogger<Evaluator> _logger;
@@ -35,8 +38,10 @@ public class Evaluator
 	/// <param name="trainer">The ranker trainer</param>
 	/// <param name="normalizer">The normalizer</param>
 	/// <param name="mustHaveRelevantDocument"></param>
-	/// <param name="useSparseRepresentation"></param>
-	/// <param name="logger"></param>
+	/// <param name="useSparseRepresentation">
+	/// Whether data points use a sparse representation.
+	/// The default is <c>false</c>, resulting in data points with a dense representation</param>
+	/// <param name="logger">The logger to log events</param>
 	public Evaluator(
 		RankerFactory rankerFactory,
 		FeatureManager featureManager,
@@ -61,6 +66,19 @@ public class Evaluator
 		_normalizer = normalizer ?? SumNormalizer.Instance;
 	}
 
+	/// <summary>
+	/// Initializes a new instance of <see cref="Evaluator"/>
+	/// </summary>
+	/// <param name="rankerFactory">The factory for creating rankers</param>
+	/// <param name="featureManager">The feature manager</param>
+	/// <param name="scorer">The retrieval metric score used for training and testing</param>
+	/// <param name="trainer">The ranker trainer</param>
+	/// <param name="normalizer">The normalizer</param>
+	/// <param name="mustHaveRelevantDocument"></param>
+	/// <param name="useSparseRepresentation">
+	/// Whether data points use a sparse representation.
+	/// The default is <c>false</c>, resulting in data points with a dense representation</param>
+	/// <param name="logger">The logger to log events</param>
 	public Evaluator(
 		RankerFactory rankerFactory,
 		FeatureManager featureManager,
@@ -102,12 +120,30 @@ public class Evaluator
 	private int[]? ReadFeature(string? featureDefFile) =>
 		string.IsNullOrEmpty(featureDefFile) ? null : _featureManager.ReadFeature(featureDefFile);
 
+	/// <summary>
+	/// Scores the rank lists, ranking first with the specified ranker.
+	/// </summary>
+	/// <param name="ranker"></param>
+	/// <param name="rankLists"></param>
+	/// <returns></returns>
 	public double Evaluate(IRanker? ranker, List<RankList> rankLists)
 	{
 		var rankedList = ranker != null ? ranker.Rank(rankLists) : rankLists;
 		return _testScorer.Score(rankedList);
 	}
 
+	/// <summary>
+	/// Evaluates a new instance of <see cref="IRanker"/> specified by <paramref name="rankerType"/> and
+	/// configured with the specified <paramref name="parameters"/>, using the specified data.
+	/// </summary>
+	/// <param name="rankerType">The type of <see cref="IRanker"/></param>
+	/// <param name="trainFile">The training data</param>
+	/// <param name="validationFile">The validation data</param>
+	/// <param name="testFile">The test data</param>
+	/// <param name="featureDefinitionFile">The feature definitions</param>
+	/// <param name="modelFile">A path to save the trained ranker to</param>
+	/// <param name="parameters">The ranker parameters</param>
+	/// <exception cref="ArgumentException">The ranker type is not an <see cref="IRanker"/></exception>
 	public async Task EvaluateAsync(
 		Type rankerType,
 		string trainFile,
@@ -150,6 +186,16 @@ public class Evaluator
 		}
 	}
 
+	/// <summary>
+	/// Evaluates a new instance of <see cref="IRanker"/> specified by <typeparamref name="TRanker"/> and
+	/// configured with the specified <typeparamref name="TRankerParameters"/>, using the specified data.
+	/// </summary>
+	/// <param name="trainFile">The training data</param>
+	/// <param name="validationFile">The validation data</param>
+	/// <param name="testFile">The test data</param>
+	/// <param name="featureDefinitionFile">The feature definitions</param>
+	/// <param name="modelFile">A path to save the trained ranker to</param>
+	/// <param name="parameters">The ranker parameters</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string trainFile,
 		string? validationFile,
@@ -161,6 +207,18 @@ public class Evaluator
 		where TRankerParameters : IRankerParameters =>
 		EvaluateAsync(typeof(TRanker), trainFile, validationFile, testFile, featureDefinitionFile, modelFile, parameters);
 
+	/// <summary>
+	/// Evaluates a new instance of <see cref="IRanker"/> specified by <paramref name="rankerType"/> and
+	/// configured with the specified <paramref name="parameters"/>, using the specified data.
+	/// </summary>
+	/// <param name="rankerType">The type of <see cref="IRanker"/></param>
+	/// <param name="sampleFile">The data to split into training and testing data</param>
+	/// <param name="validationFile">The validation data</param>
+	/// <param name="featureDefinitionFile">The feature definitions</param>
+	/// <param name="percentTrain">The percentage of <paramref name="sampleFile"/> to use for training data.</param>
+	/// <param name="modelFile">A path to save the trained ranker to</param>
+	/// <param name="parameters">The ranker parameters</param>
+	/// <exception cref="ArgumentException">The ranker type is not an <see cref="IRanker"/></exception>
 	public async Task EvaluateAsync(
 		Type rankerType,
 		string sampleFile,
@@ -191,6 +249,16 @@ public class Evaluator
 		}
 	}
 
+	/// <summary>
+	/// Evaluates a new instance of <see cref="IRanker"/> specified by <typeparamref name="TRanker"/> and
+	/// configured with the specified <typeparamref name="TRankerParameters"/>, using the specified data.
+	/// </summary>
+	/// <param name="sampleFile">The data to split into training and testing data</param>
+	/// <param name="validationFile">The validation data</param>
+	/// <param name="featureDefinitionFile">The feature definitions</param>
+	/// <param name="percentTrain">The percentage of <paramref name="sampleFile"/> to use for training data.</param>
+	/// <param name="modelFile">A path to save the trained ranker to</param>
+	/// <param name="parameters">The ranker parameters</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string? validationFile,
@@ -202,9 +270,21 @@ public class Evaluator
 		where TRankerParameters : IRankerParameters =>
 		EvaluateAsync(typeof(TRanker), sampleFile, validationFile, featureDefinitionFile, percentTrain, modelFile, parameters);
 
+	/// <summary>
+	/// Evaluates a new instance of <see cref="IRanker"/> specified by <paramref name="rankerType"/> and
+	/// configured with the specified <paramref name="parameters"/>, using the specified data.
+	/// </summary>
+	/// <param name="rankerType">The type of <see cref="IRanker"/></param>
+	/// <param name="sampleFile">The data to split into training and testing data</param>
+	/// <param name="percentTrain">The percentage of <paramref name="sampleFile"/> to use for training data. The remaining samples are used for validation data</param>
+	/// <param name="testFile">The test data</param>
+	/// <param name="featureDefinitionFile">The feature definitions</param>
+	/// <param name="modelFile">A path to save the trained ranker to</param>
+	/// <param name="parameters">The ranker parameters</param>
+	/// <exception cref="ArgumentException">The ranker type is not an <see cref="IRanker"/></exception>
 	public async Task EvaluateAsync(
 		Type rankerType,
-		string trainFile,
+		string sampleFile,
 		double percentTrain,
 		string? testFile,
 		string? featureDefinitionFile,
@@ -213,7 +293,7 @@ public class Evaluator
 	{
 		var train = new List<RankList>();
 		var validation = new List<RankList>();
-		var features = PrepareSplit(trainFile, featureDefinitionFile, percentTrain, _normalize, train, validation);
+		var features = PrepareSplit(sampleFile, featureDefinitionFile, percentTrain, _normalize, train, validation);
 		var test = !string.IsNullOrEmpty(testFile) ? ReadInput(testFile) : null;
 
 		if (_normalize && test != null)
@@ -235,6 +315,16 @@ public class Evaluator
 		}
 	}
 
+	/// <summary>
+	/// Evaluates a new instance of <see cref="IRanker"/> specified by <typeparamref name="TRanker"/> and
+	/// configured with the specified <typeparamref name="TRankerParameters"/>, using the specified data.
+	/// </summary>
+	/// <param name="trainFile">The data to split into training and validation data</param>
+	/// <param name="percentTrain">The percentage of <paramref name="trainFile"/> to use for training data. The remaining samples are used for validation data</param>
+	/// <param name="testFile">The test data</param>
+	/// <param name="featureDefinitionFile">The feature definitions</param>
+	/// <param name="modelFile">A path to save the trained ranker to</param>
+	/// <param name="parameters">The ranker parameters</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string trainFile,
 		double percentTrain,
@@ -246,6 +336,16 @@ public class Evaluator
 		where TRankerParameters : IRankerParameters =>
 		EvaluateAsync(typeof(TRanker), trainFile, percentTrain, testFile, featureDefinitionFile, modelFile, parameters);
 
+	/// <summary>
+	/// Evaluates a new instance of <see cref="IRanker"/> specified by <typeparamref name="TRanker"/> and
+	/// configured with the specified <typeparamref name="TRankerParameters"/>, using the specified data.
+	/// </summary>
+	/// <param name="sampleFile">The data to split into folds</param>
+	/// <param name="featureDefinitionFile">The feature definitions</param>
+	/// <param name="foldCount">The number of folds to split the sample data into for k-fold cross-validation</param>
+	/// <param name="modelDir">The directory to save trained ranker models</param>
+	/// <param name="modelFile">The name prefix of trained ranker models</param>
+	/// <param name="parameters">The ranker parameters</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string featureDefinitionFile,
@@ -257,12 +357,24 @@ public class Evaluator
 		where TRankerParameters : IRankerParameters =>
 		EvaluateAsync(typeof(TRanker), sampleFile, featureDefinitionFile, foldCount, -1, modelDir, modelFile, parameters);
 
+	/// <summary>
+	/// Evaluates a new instance of <see cref="IRanker"/> specified by <paramref name="rankerType"/> and
+	/// configured with the specified <paramref name="parameters"/>, using the specified data.
+	/// </summary>
+	/// <param name="rankerType">The type of <see cref="IRanker"/></param>
+	/// <param name="sampleFile">The data to split into folds</param>
+	/// <param name="featureDefinitionFile">The feature definitions</param>
+	/// <param name="foldCount">The number of folds to split the sample data into for k-fold cross-validation</param>
+	/// <param name="trainValidationSplit">The train-validation split percentage</param>
+	/// <param name="modelDir">The directory to save trained ranker models</param>
+	/// <param name="modelFile">The name prefix of trained ranker models</param>
+	/// <param name="parameters">The ranker parameters</param>
 	public async Task EvaluateAsync(
 		Type rankerType,
 		string sampleFile,
 		string? featureDefinitionFile,
 		int foldCount,
-		float tvs,
+		float trainValidationSplit,
 		string modelDir,
 		string modelFile,
 		IRankerParameters? parameters = default)
@@ -273,7 +385,7 @@ public class Evaluator
 		var samples = ReadInput(sampleFile);
 		var features = ReadFeature(featureDefinitionFile) ?? _featureManager.GetFeatureFromSampleVector(samples);
 
-		_featureManager.PrepareCrossValidation(samples, foldCount, tvs, trainingData, validationData, testData);
+		_featureManager.PrepareCrossValidation(samples, foldCount, trainValidationSplit, trainingData, validationData, testData);
 
 		if (_normalize)
 		{
@@ -295,7 +407,7 @@ public class Evaluator
 		{
 			scores[i] = new double[2];
 			var train = trainingData[i];
-			var validation = tvs > 0 ? validationData[i] : null;
+			var validation = trainValidationSplit > 0 ? validationData[i] : null;
 			var test = testData[i];
 
 			var ranker = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters)
@@ -313,8 +425,8 @@ public class Evaluator
 			if (!string.IsNullOrEmpty(modelDir))
 			{
 				var foldModelFile = Path.Combine(modelDir, $"f{i + 1}.{modelFile}");
-				await ranker.SaveAsync(foldModelFile);
-				_logger.LogInformation($"Fold-{i + 1} model saved to: {foldModelFile}");
+				await ranker.SaveAsync(foldModelFile).ConfigureAwait(false);
+				_logger.LogInformation("Fold-{Fold} model saved to: {FoldModelFile}", i + 1, foldModelFile);
 			}
 		}
 
@@ -322,23 +434,34 @@ public class Evaluator
 		_logger.LogInformation("{Scorer}\t|   Train\t| Test", _testScorer.Name);
 
 		for (var i = 0; i < foldCount; i++)
-			_logger.LogInformation($"Fold {i + 1}\t|   {Math.Round(scores[i][0], 4)}\t|  {Math.Round(scores[i][1], 4)}\t");
+			_logger.LogInformation("Fold {Fold}\t|   {TrainScore}\t|  {TestScore}\t", i + 1, Math.Round(scores[i][0], 4), Math.Round(scores[i][1], 4));
 
-		_logger.LogInformation($"Avg.\t|   {Math.Round(scoreOnTrain / foldCount, 4)}\t|  {Math.Round(scoreOnTest / foldCount, 4)}\t");
-		_logger.LogInformation($"Total\t|   \t\t|  {Math.Round(totalScoreOnTest / totalTestSampleSize, 4)}\t");
+		_logger.LogInformation("Avg.\t|   {AvgTrainScore}\t|  {AvgTestScore}\t", Math.Round(scoreOnTrain / foldCount, 4), Math.Round(scoreOnTest / foldCount, 4));
+		_logger.LogInformation("Total\t|   \t\t|  {TotalScore}\t", Math.Round(totalScoreOnTest / totalTestSampleSize, 4));
 	}
 
+	/// <summary>
+	/// Evaluates a new instance of <see cref="IRanker"/> specified by <typeparamref name="TRanker"/> and
+	/// configured with the specified <typeparamref name="TRankerParameters"/>, using the specified data.
+	/// </summary>
+	/// <param name="sampleFile">The data to split into folds</param>
+	/// <param name="featureDefinitionFile">The feature definitions</param>
+	/// <param name="foldCount">The number of folds to split the sample data into for k-fold cross-validation</param>
+	/// <param name="trainValidationSplit">The train-validation split percentage</param>
+	/// <param name="modelDir">The directory to save trained ranker models</param>
+	/// <param name="modelFile">The name prefix of trained ranker models</param>
+	/// <param name="parameters">The ranker parameters</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string? featureDefinitionFile,
 		int foldCount,
-		float tvs,
+		float trainValidationSplit,
 		string modelDir,
 		string modelFile,
 		TRankerParameters? parameters = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), sampleFile, featureDefinitionFile, foldCount, tvs, modelDir, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, featureDefinitionFile, foldCount, trainValidationSplit, modelDir, modelFile, parameters);
 
 	public void Test(string testFile)
 	{
