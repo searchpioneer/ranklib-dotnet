@@ -91,7 +91,7 @@ public class FeatureManager
 	}
 
 	/// <summary>
-	/// Read a list of rank lists from the specified <see cref="inputFiles"/> and merge them together
+	/// Read a list of rank lists from the specified <paramref name="inputFiles"/> and merge them together
 	/// into a single list of rank lists.
 	/// </summary>
 	/// <param name="inputFiles">The files containing rank lists</param>
@@ -117,10 +117,10 @@ public class FeatureManager
 	/// Read features from the specified <paramref name="featureDefinitionFile"/>. There must be one
 	/// feature per line.
 	/// </summary>
-	/// <param name="featureDefinitionFile"></param>
-	/// <returns></returns>
-	/// <exception cref="ArgumentException"></exception>
-	/// <exception cref="RankLibException"></exception>
+	/// <param name="featureDefinitionFile">The file containing the feature definitions</param>
+	/// <returns>A new instance of an array of features</returns>
+	/// <exception cref="ArgumentException">The file is not a valid feature definition file</exception>
+	/// <exception cref="RankLibException">There was an error reading the feature definition file</exception>
 	public int[] ReadFeature(string featureDefinitionFile)
 	{
 		var featureIds = new List<int>();
