@@ -5,16 +5,33 @@ using RankLib.Utilities;
 
 namespace RankLib.Features;
 
+/// <summary>
+/// Manages rank lists and features, including reading from and writing to file,
+/// and preparing rank lists for learning and cross validation.
+/// </summary>
 public class FeatureManager
 {
 	private readonly ILogger<FeatureManager> _logger;
 
+	/// <summary>
+	/// Instantiates a new instance of <see cref="FeatureManager"/>
+	/// </summary>
+	/// <param name="logger">Logger to log messages</param>
 	public FeatureManager(ILogger<FeatureManager>? logger = null) =>
 		_logger = logger ?? NullLogger<FeatureManager>.Instance;
 
-	public List<RankList> ReadInput(string inputFile) => ReadInput(inputFile, false, false);
-
-	public List<RankList> ReadInput(string inputFile, bool mustHaveRelevantDocument, bool useSparseRepresentation)
+	/// <summary>
+	/// Read a list of rank lists from the specified <paramref name="inputFile"/>
+	/// </summary>
+	/// <param name="inputFile">The file containing rank lists</param>
+	/// <param name="mustHaveRelevantDocument">Whether to ignore rank lists that do not have
+	/// any relevant documents. The default is <c>false</c>
+	/// </param>
+	/// <param name="useSparseRepresentation">
+	/// Whether data points use a sparse representation.
+	/// The default is <c>false</c>, resulting in data points with a dense representation</param>
+	/// <returns>A new instance of a list of <see cref="RankList"/></returns>
+	public List<RankList> ReadInput(string inputFile, bool mustHaveRelevantDocument = false, bool useSparseRepresentation = false)
 	{
 		var rankLists = new List<RankList>();
 		var countEntries = 0;
@@ -73,17 +90,37 @@ public class FeatureManager
 		return rankLists;
 	}
 
-	public List<RankList> ReadInput(List<string> inputFiles)
+	/// <summary>
+	/// Read a list of rank lists from the specified <see cref="inputFiles"/> and merge them together
+	/// into a single list of rank lists.
+	/// </summary>
+	/// <param name="inputFiles">The files containing rank lists</param>
+	/// <param name="mustHaveRelevantDocument">Whether to ignore rank lists that do not have
+	/// any relevant documents. The default is <c>false</c>
+	/// </param>
+	/// <param name="useSparseRepresentation">
+	/// Whether data points use a sparse representation.
+	/// The default is <c>false</c>, resulting in data points with a dense representation</param>
+	/// <returns>A new instance of a list of <see cref="RankList"/></returns>
+	public List<RankList> ReadInput(List<string> inputFiles, bool mustHaveRelevantDocument = false, bool useSparseRepresentation = false)
 	{
 		var rankLists = new List<RankList>();
 		foreach (var inputFile in inputFiles)
 		{
-			var rankList = ReadInput(inputFile, false, false);
+			var rankList = ReadInput(inputFile, mustHaveRelevantDocument, useSparseRepresentation);
 			rankLists.AddRange(rankList);
 		}
 		return rankLists;
 	}
 
+	/// <summary>
+	/// Read features from the specified <paramref name="featureDefinitionFile"/>. There must be one
+	/// feature per line.
+	/// </summary>
+	/// <param name="featureDefinitionFile"></param>
+	/// <returns></returns>
+	/// <exception cref="ArgumentException"></exception>
+	/// <exception cref="RankLibException"></exception>
 	public int[] ReadFeature(string featureDefinitionFile)
 	{
 		var featureIds = new List<int>();

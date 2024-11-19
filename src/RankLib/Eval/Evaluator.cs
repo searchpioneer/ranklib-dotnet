@@ -37,7 +37,9 @@ public class Evaluator
 	/// <param name="testScorer">The retrieval metric score used for testing</param>
 	/// <param name="trainer">The ranker trainer</param>
 	/// <param name="normalizer">The normalizer</param>
-	/// <param name="mustHaveRelevantDocument"></param>
+	/// <param name="mustHaveRelevantDocument">Whether to ignore rank lists that do not have
+	/// any relevant documents. The default is <c>false</c>
+	/// </param>
 	/// <param name="useSparseRepresentation">
 	/// Whether data points use a sparse representation.
 	/// The default is <c>false</c>, resulting in data points with a dense representation</param>
