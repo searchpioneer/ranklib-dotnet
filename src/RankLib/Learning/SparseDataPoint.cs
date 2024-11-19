@@ -92,7 +92,7 @@ public sealed class SparseDataPoint : DataPoint
 			if (MissingZero)
 				return 0f;
 
-			throw RankLibException.Create("Error in SparseDataPoint::GetFeatureValue(): requesting unspecified feature, fid=" + featureId);
+			throw RankLibException.Create($"Requesting unspecified feature: {featureId}");
 		}
 
 		var pos = Locate(featureId);
@@ -105,13 +105,13 @@ public sealed class SparseDataPoint : DataPoint
 	public override void SetFeatureValue(int featureId, float featureValue)
 	{
 		if (featureId <= 0 || featureId > FeatureCount)
-			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + featureId + ") out of range.");
+			throw RankLibException.Create($"Feature out of range: {featureId}");
 
 		var pos = Locate(featureId);
 		if (pos >= 0)
 			FeatureValues[pos] = featureValue;
 		else
-			throw RankLibException.Create("Error in SparseDataPoint::SetFeatureValue(): feature (id=" + featureId + ") not found.");
+			throw RankLibException.Create($"Feature not found: {featureId}");
 	}
 
 	protected override void SetFeatureVector(float[] featureValues)

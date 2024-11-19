@@ -47,7 +47,7 @@ public sealed class DenseDataPoint : DataPoint
 			if (MissingZero)
 				return 0f;
 
-			throw RankLibException.Create($"Error in DenseDataPoint::GetFeatureValue(): requesting unspecified feature, fid={featureId}");
+			throw RankLibException.Create($"Requesting unspecified feature: {featureId}");
 		}
 
 		var featureValue = FeatureValues[featureId];
@@ -57,7 +57,7 @@ public sealed class DenseDataPoint : DataPoint
 	public override void SetFeatureValue(int featureId, float featureValue)
 	{
 		if (featureId <= 0 || featureId >= FeatureValues.Length)
-			throw RankLibException.Create($"Error in DenseDataPoint::SetFeatureValue(): feature (id={featureId}) not found.");
+			throw RankLibException.Create($"Feature not found: {featureId}");
 
 		FeatureValues[featureId] = featureValue;
 	}
