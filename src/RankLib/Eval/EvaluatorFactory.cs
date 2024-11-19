@@ -76,21 +76,21 @@ public class EvaluatorFactory
 		Metric.Metric testMetric,
 		int testK,
 		Normalizer? normalizer = null,
-		double? gMax = null,
-		bool mustHaveRelDoc = false,
+		double? maxLabel = null,
+		bool mustHaveRelevantDocs = false,
 		bool useSparseRepresentation = false,
 		string? queryRelevanceFile = null)
 	{
 		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric, trainK);
 		var testScorer = _metricScorerFactory.CreateScorer(testMetric, testK);
 
-		if (gMax != null)
+		if (maxLabel != null)
 		{
 			if (trainScorer is ERRScorer errTrainScorer)
-				errTrainScorer.Max = gMax.Value;
+				errTrainScorer.Max = maxLabel.Value;
 
 			if (testScorer is ERRScorer errTestScorer)
-				errTestScorer.Max = gMax.Value;
+				errTestScorer.Max = maxLabel.Value;
 		}
 
 		if (queryRelevanceFile != null)
@@ -106,7 +106,7 @@ public class EvaluatorFactory
 			testScorer,
 			_trainer,
 			normalizer,
-			mustHaveRelDoc,
+			mustHaveRelevantDocs,
 			useSparseRepresentation,
 			_loggerFactory.CreateLogger<Evaluator>());
 	}
@@ -116,21 +116,21 @@ public class EvaluatorFactory
 		Metric.Metric testMetric,
 		int k,
 		Normalizer? normalizer = null,
-		double? gMax = null,
-		bool mustHaveRelDoc = false,
+		double? maxLabel = null,
+		bool mustHaveRelevantDocs = false,
 		bool useSparseRepresentation = false,
 		string? queryRelevanceFile = null)
 	{
 		var trainScorer = _metricScorerFactory.CreateScorer(trainMetric, k);
 		var testScorer = _metricScorerFactory.CreateScorer(testMetric, k);
 
-		if (gMax != null)
+		if (maxLabel != null)
 		{
 			if (trainScorer is ERRScorer errTrainScorer)
-				errTrainScorer.Max = gMax.Value;
+				errTrainScorer.Max = maxLabel.Value;
 
 			if (testScorer is ERRScorer errTestScorer)
-				errTestScorer.Max = gMax.Value;
+				errTestScorer.Max = maxLabel.Value;
 		}
 
 		if (queryRelevanceFile != null)
@@ -146,7 +146,7 @@ public class EvaluatorFactory
 			testScorer,
 			_trainer,
 			normalizer,
-			mustHaveRelDoc,
+			mustHaveRelevantDocs,
 			useSparseRepresentation,
 			_loggerFactory.CreateLogger<Evaluator>());
 	}
