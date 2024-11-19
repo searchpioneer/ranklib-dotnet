@@ -133,7 +133,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	private double[][] _modelScoresOnValidation = [];
 	private int _bestModelOnValidation = int.MaxValue - 2;
 	private int[][] _sortedIdx = [];
-	private FeatureHistogram _hist;
+	private FeatureHistogram _histogram;
 	private double[] _weights = [];
 
 	/// <summary>
@@ -319,8 +319,8 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			}
 		}
 
-		_hist = new FeatureHistogram(Parameters.SamplingRate, Parameters.MaxDegreeOfParallelism);
-		await _hist.ConstructAsync(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts).ConfigureAwait(false);
+		_histogram = new FeatureHistogram(Parameters.SamplingRate, Parameters.MaxDegreeOfParallelism);
+		await _histogram.ConstructAsync(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts).ConfigureAwait(false);
 
 		//we no longer need the sorted indexes of samples
 		_sortedIdx = [];
@@ -349,20 +349,20 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			await ComputePseudoResponsesAsync().ConfigureAwait(false);
 
 			//update the histogram with these training labels (the feature histogram will be used to find the best tree split)
-			await _hist.UpdateAsync(PseudoResponses).ConfigureAwait(false);
+			await _histogram.UpdateAsync(PseudoResponses).ConfigureAwait(false);
 
 			//Fit a regression tree
-			var rt = new RegressionTree(Parameters.TreeLeavesCount, MARTSamples, PseudoResponses, _hist, Parameters.MinimumLeafSupport);
-			await rt.FitAsync().ConfigureAwait(false);
+			var tree = new RegressionTree(Parameters.TreeLeavesCount, MARTSamples, PseudoResponses, _histogram, Parameters.MinimumLeafSupport);
+			await tree.FitAsync().ConfigureAwait(false);
 
 			//Add this tree to the ensemble (our model)
-			_ensemble.Add(rt, Parameters.LearningRate);
+			_ensemble.Add(tree, Parameters.LearningRate);
 
 			//update the outputs of the tree (with gamma computed using the Newton-Raphson method)
-			UpdateTreeOutput(rt);
+			UpdateTreeOutput(tree);
 
 			//Update the model's outputs on all training samples
-			var leaves = rt.Leaves;
+			var leaves = tree.Leaves;
 			for (var i = 0; i < leaves.Count; i++)
 			{
 				var s = leaves[i];
@@ -372,7 +372,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			}
 
 			//clear references to data that is no longer used
-			rt.ClearSamples();
+			tree.ClearSamples();
 
 			//Evaluate the current model
 			TrainingDataScore = ComputeModelScoreOnTraining();
@@ -384,7 +384,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 				for (var i = 0; i < _modelScoresOnValidation.Length; i++)
 				{
 					for (var j = 0; j < _modelScoresOnValidation[i].Length; j++)
-						_modelScoresOnValidation[i][j] += Parameters.LearningRate * rt.Eval(ValidationSamples[i][j]);
+						_modelScoresOnValidation[i][j] += Parameters.LearningRate * tree.Eval(ValidationSamples[i][j]);
 				}
 
 				double score = ComputeModelScoreOnValidation();
@@ -406,20 +406,21 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			_ensemble.RemoveAt(_ensemble.TreeCount - 1);
 
 		TrainingDataScore = Scorer.Score(Rank(Samples));
-		_logger.LogInformation($"Finished successfully. {Scorer.Name} on training data: {SimpleMath.Round(TrainingDataScore, 4)}");
+		_logger.LogInformation("Finished successfully. {Scorer} on training data: {TrainingScore}",
+			Scorer.Name, SimpleMath.Round(TrainingDataScore, 4));
 
 		if (ValidationSamples != null)
 		{
 			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
-			_logger.LogInformation($"{Scorer.Name} on validation data: {SimpleMath.Round(ValidationDataScore, 4)}");
+			_logger.LogInformation("{Scorer} on validation data: {ValidationScore}", Scorer.Name, SimpleMath.Round(ValidationDataScore, 4));
 		}
 
 		_logger.LogInformation("-- FEATURE IMPACTS");
-		var ftrsSorted = MergeSorter.Sort(Impacts, false);
-		for (var index = 0; index < ftrsSorted.Length; index++)
+		var sortedImpacts = MergeSorter.Sort(Impacts, false);
+		for (var index = 0; index < sortedImpacts.Length; index++)
 		{
-			var ftr = ftrsSorted[index];
-			_logger.LogInformation($"Feature {Features[ftr]} reduced error {Impacts[ftr]}");
+			var ftr = sortedImpacts[index];
+			_logger.LogInformation("Feature {FeatureId} reduced error {Impact}", Features[ftr], Impacts[ftr]);
 		}
 	}
 
@@ -616,7 +617,8 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		return new RankList(orig, idx);
 	}
 
-	private float ComputeModelScoreOnTraining() => ComputeModelScoreOnTraining(0, Samples.Count - 1, 0) / Samples.Count;
+	private float ComputeModelScoreOnTraining() =>
+		ComputeModelScoreOnTraining(0, Samples.Count - 1, 0) / Samples.Count;
 
 	private float ComputeModelScoreOnTraining(int start, int end, int current)
 	{
