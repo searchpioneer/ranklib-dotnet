@@ -7,7 +7,8 @@
 Ranklib for .NET is a hardened open source port to .NET of [RankLib](https://sourceforge.net/p/lemur/wiki/RankLib/),
 a popular open source learning to rank library written in Java. It maintains compatibility with input and output
 files of RankLib, allowing it to be used to integrate with systems that use RankLib, such as the
-[Elasticsearch Learning to Rank plugin](http://github.com/o19s/elasticsearch-learning-to-rank).
+[Elasticsearch Learning to Rank](http://github.com/o19s/elasticsearch-learning-to-rank) and
+[OpenSearch Learning to Rank](https://opensearch.org/docs/latest/search-plugins/ltr/index/) plugins.
 
 RankLib for .NET is available as both a command line tool for training and evaluating rankers, as well as a library for
 incorporating into solutions.
