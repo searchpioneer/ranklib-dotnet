@@ -16,7 +16,7 @@ internal class Program
 	// allows unit tests to inject a logger to capture output in the test
 	internal static Action<ILoggingBuilder>? ConfigureLogging { get; set; }
 
-	public static int Main(string[] args)
+	public static async Task<int> Main(string[] args)
 	{
 		var rootCommand = new RootCommand
 		{
@@ -51,6 +51,6 @@ internal class Program
 				services.AddSingleton<RankerTrainer>();
 			});
 
-		return builder.Build().Invoke(args);
+		return await builder.Build().InvokeAsync(args);
 	}
 }

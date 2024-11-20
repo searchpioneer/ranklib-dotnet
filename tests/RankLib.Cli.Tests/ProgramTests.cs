@@ -13,10 +13,8 @@ public class ProgramTests
 
 	public ProgramTests(ITestOutputHelper testOutputHelper) => _testOutputHelper = testOutputHelper;
 
-	private static readonly object DataPointLock = new();
-
 	[Fact]
-	public void TestCoorAscent()
+	public async Task TestCoorAscent()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
@@ -28,16 +26,13 @@ public class ProgramTests
 			logging.AddProvider(new XUnitLoggerProvider(_testOutputHelper));
 		};
 
-		lock (DataPointLock)
-		{
-			Program.Main([
-				"eval",
-				"-train", dataFile.Path,
-				"-metric2t", "map",
-				"-ranker", "4",
-				"-save", modelFile.Path
-			]);
-		}
+		await Program.Main([
+			"eval",
+			"-train", dataFile.Path,
+			"-metric2t", "map",
+			"-ranker", "4",
+			"-save", modelFile.Path
+		]);
 
 		var rankerFactory = new RankerFactory();
 		var model = rankerFactory.LoadRankerFromFile(modelFile.Path);
@@ -82,106 +77,106 @@ public class ProgramTests
 	}
 
 	[Fact]
-	public void TestRandomForests()
+	public async Task  TestRandomForests()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
-		TestRanker(dataFile, modelFile, rankFile, 8, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 8, "map");
 	}
 
 	[Fact]
-	public void TestLinearRegression()
+	public async Task  TestLinearRegression()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
-		TestRanker(dataFile, modelFile, rankFile, 9, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 9, "map");
 	}
 
 	[Fact]
-	public void TestCoordinateAscent()
+	public async Task  TestCoordinateAscent()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
-		TestRanker(dataFile, modelFile, rankFile, 4, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 4, "map");
 	}
 
 	[Fact]
-	public void TestMART()
+	public async Task  TestMART()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
-		TestRanker(dataFile, modelFile, rankFile, 0, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 0, "map");
 	}
 
 	[Fact(Skip = "Fails with NaN")]
-	public void TestRankBoost()
+	public async Task  TestRankBoost()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
-		TestRanker(dataFile, modelFile, rankFile, 1, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 1, "map");
 	}
 
 	[Fact(Skip = "Fails with NaN")]
-	public void TestRankNet()
+	public async Task  TestRankNet()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
-		TestRanker(dataFile, modelFile, rankFile, 2, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 2, "map");
 	}
 
 	[Fact(Skip = "Fails with Infinity or doesn't learn")]
-	public void TestAdaRank()
+	public async Task  TestAdaRank()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomDataCount(dataFile, 20, 20);
-		TestRanker(dataFile, modelFile, rankFile, 3, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 3, "map");
 	}
 
 	[Fact(Skip = "Unstable based on initial conditions")]
-	public void TestLambdaRank()
+	public async Task  TestLambdaRank()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomDataCount(dataFile, 10, 50);
-		TestRanker(dataFile, modelFile, rankFile, 5, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 5, "map");
 	}
 
 	[Fact]
-	public void TestLambdaMART()
+	public async Task  TestLambdaMART()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
-		TestRanker(dataFile, modelFile, rankFile, 6, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 6, "map");
 	}
 
 	[Fact(Skip = "Sometimes fails Assert.True(pRank < nRank)")]
-	public void TestListNet()
+	public async Task TestListNet()
 	{
 		using var dataFile = new TempFile();
 		using var modelFile = new TempFile();
 		using var rankFile = new TempFile();
 		WriteRandomData(dataFile);
-		TestRanker(dataFile, modelFile, rankFile, 7, "map");
+		await TestRanker(dataFile, modelFile, rankFile, 7, "map");
 	}
 
-	private void TestRanker(TempFile dataFile, TempFile modelFile, TempFile rankFile, int rnum, string measure)
+	private async Task TestRanker(TempFile dataFile, TempFile modelFile, TempFile rankFile, int rnum, string measure)
 	{
 		_testOutputHelper.WriteLine($"Test Ranker: {rnum}");
 		Program.ConfigureLogging = logging =>
@@ -190,41 +185,36 @@ public class ProgramTests
 			logging.AddProvider(new XUnitLoggerProvider(_testOutputHelper));
 		};
 
-		lock (DataPointLock)
-		{
-			var exitCode = Program.Main([
-				"eval",
-				"-train", dataFile.Path,
-				"-metric2t", measure,
-				"-ranker", rnum.ToString(),
-				"-frate", "1.0",
-				"-bag", "10",
-				"-round", "10",
-				"-epoch", "10",
-				"-save", modelFile.Path
-			]);
+		var exitCode = await Program.Main([
+			"eval",
+			"-train", dataFile.Path,
+			"-metric2t", measure,
+			"-ranker", rnum.ToString(),
+			"-frate", "1.0",
+			"-bag", "10",
+			"-round", "10",
+			"-epoch", "10",
+			"-save", modelFile.Path
+		]);
 
-			if (exitCode != 0)
-				Assert.Fail();
-		}
+		if (exitCode != 0)
+			Assert.Fail();
 
-		lock (DataPointLock)
-		{
-			var exitCode = Program.Main([
-				"eval",
-				"-rank", dataFile.Path,
-				"-load", modelFile.Path,
-				"-indri", rankFile.Path
-			]);
 
-			if (exitCode != 0)
-				Assert.Fail();
-		}
+		exitCode = await Program.Main([
+			"eval",
+			"-rank", dataFile.Path,
+			"-load", modelFile.Path,
+			"-indri", rankFile.Path
+		]);
+
+		if (exitCode != 0)
+			Assert.Fail();
 
 		var pRank = int.MaxValue;
 		var nRank = int.MaxValue;
 
-		var trecrun = File.ReadAllLines(rankFile.Path);
+		var trecrun = await File.ReadAllLinesAsync(rankFile.Path);
 		foreach (var line in trecrun)
 		{
 			var row = line.Split([' '], StringSplitOptions.RemoveEmptyEntries);
