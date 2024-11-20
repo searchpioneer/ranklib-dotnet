@@ -291,15 +291,19 @@ public class RankNet : Ranker<RankNetParameters>
 		_lastError = _error;
 	}
 
-	public override Task InitAsync()
+	public override Task InitAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Initializing...");
+
+		CheckCancellation(_logger, cancellationToken);
 
 		SetInputOutput(Features.Length, 1);
 		for (var i = 0; i < Parameters.HiddenLayerCount; i++)
 			AddHiddenLayer(Parameters.HiddenNodePerLayerCount);
 
 		Wire();
+
+		CheckCancellation(_logger, cancellationToken);
 
 		_totalPairs = 0;
 		foreach (var rl in Samples)
@@ -318,7 +322,7 @@ public class RankNet : Ranker<RankNetParameters>
 		return Task.CompletedTask;
 	}
 
-	public override Task LearnAsync()
+	public override Task LearnAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Training starts...");
 		_logger.PrintLog([7, 14, 9, 9],
@@ -329,6 +333,8 @@ public class RankNet : Ranker<RankNetParameters>
 
 		for (var i = 1; i <= Parameters.IterationCount; i++)
 		{
+			CheckCancellation(_logger, cancellationToken);
+
 			for (var j = 0; j < Samples.Count; j++)
 			{
 				var rl = InternalReorder(Samples[j]);
@@ -359,6 +365,8 @@ public class RankNet : Ranker<RankNetParameters>
 
 			bufferedLogger.FlushLog();
 		}
+
+		CheckCancellation(_logger, cancellationToken);
 
 		// Restore the best model if validation data was specified
 		if (ValidationSamples != null)

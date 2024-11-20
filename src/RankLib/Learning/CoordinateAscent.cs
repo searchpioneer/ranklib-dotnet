@@ -115,7 +115,7 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 		: base(samples, features, scorer) =>
 		_logger = logger ?? NullLogger<CoordinateAscent>.Instance;
 
-	public override Task InitAsync()
+	public override Task InitAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Initializing...");
 		Weight = new double[Features.Length];
@@ -123,7 +123,7 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 		return Task.CompletedTask;
 	}
 
-	public override Task LearnAsync()
+	public override Task LearnAsync(CancellationToken cancellationToken = default)
 	{
 		var regVector = new double[Weight.Length];
 		Array.Copy(Weight, regVector, Weight.Length); // Uniform weight distribution
@@ -136,6 +136,8 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 
 		for (var r = 0; r < Parameters.RandomRestartCount; r++)
 		{
+			CheckCancellation(_logger, cancellationToken);
+
 			_logger.LogInformation($"[+] Random restart #{r + 1}/{Parameters.RandomRestartCount}...");
 			var consecutiveFails = 0;
 
@@ -151,6 +153,8 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 
 			while ((Weight.Length > 1 && consecutiveFails < Weight.Length - 1) || (Weight.Length == 1 && consecutiveFails == 0))
 			{
+				CheckCancellation(_logger, cancellationToken);
+
 				_logger.LogInformation("Shuffling features' order...");
 				_logger.LogInformation("Optimizing weight vector... ");
 				_logger.PrintLog([7, 8, 7], ["Feature", "weight", Scorer.Name]);
@@ -255,6 +259,7 @@ public class CoordinateAscent : Ranker<CoordinateAscentParameters>
 			}
 		}
 
+		CheckCancellation(_logger, cancellationToken);
 		Array.Copy(bestModel!, Weight, bestModel!.Length);
 		_currentFeature = -1;
 		TrainingDataScore = Math.Round(Scorer.Score(Rank(Samples)), 4);

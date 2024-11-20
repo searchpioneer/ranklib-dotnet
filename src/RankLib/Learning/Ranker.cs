@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.Extensions.Logging;
 using RankLib.Eval;
 using RankLib.Metric;
 using RankLib.Utilities;
@@ -103,18 +104,20 @@ public abstract class Ranker<TRankerParameters> : IRanker<TRankerParameters>
 	}
 
 	/// <inheritdoc />
-	public async Task SaveAsync(string modelFile)
+	public async Task SaveAsync(string modelFile, CancellationToken cancellationToken = default)
 	{
 		var directory = Path.GetDirectoryName(Path.GetFullPath(modelFile));
 		Directory.CreateDirectory(directory!);
 		await File.WriteAllTextAsync(modelFile, GetModel(), Encoding.ASCII);
 	}
 
+	/// <param name="cancellationToken"></param>
 	/// <inheritdoc />
-	public abstract Task InitAsync();
+	public abstract Task InitAsync(CancellationToken cancellationToken = default);
 
+	/// <param name="cancellationToken"></param>
 	/// <inheritdoc />
-	public abstract Task LearnAsync();
+	public abstract Task LearnAsync(CancellationToken cancellationToken = default);
 
 	/// <inheritdoc />
 	public abstract double Eval(DataPoint dataPoint);
@@ -127,4 +130,13 @@ public abstract class Ranker<TRankerParameters> : IRanker<TRankerParameters>
 
 	/// <inheritdoc />
 	public abstract string Name { get; }
+
+	internal static void CheckCancellation(ILogger logger, CancellationToken cancellationToken)
+	{
+		if (cancellationToken.IsCancellationRequested)
+		{
+			logger.LogInformation("The operation was cancelled.");
+			cancellationToken.ThrowIfCancellationRequested();
+		}
+	}
 }

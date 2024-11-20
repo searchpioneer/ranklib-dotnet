@@ -145,6 +145,7 @@ public class Evaluator
 	/// <param name="featureDefinitionFile">The feature definitions</param>
 	/// <param name="modelFile">A path to save the trained ranker to</param>
 	/// <param name="parameters">The ranker parameters</param>
+	/// <param name="cancellationToken">Token that can be used to cancel the operation</param>
 	/// <exception cref="ArgumentException">The ranker type is not an <see cref="IRanker"/></exception>
 	public async Task EvaluateAsync(
 		Type rankerType,
@@ -153,7 +154,8 @@ public class Evaluator
 		string? testFile,
 		string? featureDefinitionFile,
 		string? modelFile = null,
-		IRankerParameters? parameters = default)
+		IRankerParameters? parameters = default,
+		CancellationToken cancellationToken = default)
 	{
 		if (!typeof(IRanker).IsAssignableFrom(rankerType))
 			throw new ArgumentException($"Ranker type {rankerType} is not a ranker");
@@ -172,7 +174,7 @@ public class Evaluator
 				Normalize(test, features);
 		}
 
-		var ranker = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters)
+		var ranker = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters, cancellationToken)
 			.ConfigureAwait(false);
 
 		if (test != null)
@@ -183,7 +185,7 @@ public class Evaluator
 
 		if (!string.IsNullOrEmpty(modelFile))
 		{
-			await ranker.SaveAsync(modelFile);
+			await ranker.SaveAsync(modelFile, cancellationToken).ConfigureAwait(false);
 			_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 		}
 	}
@@ -198,16 +200,18 @@ public class Evaluator
 	/// <param name="featureDefinitionFile">The feature definitions</param>
 	/// <param name="modelFile">A path to save the trained ranker to</param>
 	/// <param name="parameters">The ranker parameters</param>
+	/// <param name="cancellationToken">Token that can be used to cancel the operation</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string trainFile,
 		string? validationFile,
 		string? testFile,
 		string? featureDefinitionFile,
 		string? modelFile = null,
-		TRankerParameters? parameters = default)
+		TRankerParameters? parameters = default,
+		CancellationToken cancellationToken = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), trainFile, validationFile, testFile, featureDefinitionFile, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), trainFile, validationFile, testFile, featureDefinitionFile, modelFile, parameters, cancellationToken);
 
 	/// <summary>
 	/// Evaluates a new instance of <see cref="IRanker"/> specified by <paramref name="rankerType"/> and
@@ -220,6 +224,7 @@ public class Evaluator
 	/// <param name="percentTrain">The percentage of <paramref name="sampleFile"/> to use for training data.</param>
 	/// <param name="modelFile">A path to save the trained ranker to</param>
 	/// <param name="parameters">The ranker parameters</param>
+	/// <param name="cancellationToken">Token that can be used to cancel the operation</param>
 	/// <exception cref="ArgumentException">The ranker type is not an <see cref="IRanker"/></exception>
 	public async Task EvaluateAsync(
 		Type rankerType,
@@ -228,7 +233,8 @@ public class Evaluator
 		string? featureDefinitionFile,
 		double percentTrain,
 		string? modelFile = null,
-		IRankerParameters? parameters = default)
+		IRankerParameters? parameters = default,
+		CancellationToken cancellationToken = default)
 	{
 		var train = new List<RankList>();
 		var test = new List<RankList>();
@@ -238,7 +244,7 @@ public class Evaluator
 		if (_normalize && validation != null)
 			Normalize(validation, features);
 
-		var ranker = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters)
+		var ranker = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters, cancellationToken)
 			.ConfigureAwait(false);
 
 		var rankScore = Evaluate(ranker, test);
@@ -246,7 +252,7 @@ public class Evaluator
 
 		if (!string.IsNullOrEmpty(modelFile))
 		{
-			await ranker.SaveAsync(modelFile);
+			await ranker.SaveAsync(modelFile, cancellationToken);
 			_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 		}
 	}
@@ -261,16 +267,18 @@ public class Evaluator
 	/// <param name="percentTrain">The percentage of <paramref name="sampleFile"/> to use for training data.</param>
 	/// <param name="modelFile">A path to save the trained ranker to</param>
 	/// <param name="parameters">The ranker parameters</param>
+	/// <param name="cancellationToken">Token that can be used to cancel the operation</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string? validationFile,
 		string featureDefinitionFile,
 		double percentTrain,
 		string? modelFile = null,
-		TRankerParameters? parameters = default)
+		TRankerParameters? parameters = default,
+		CancellationToken cancellationToken = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), sampleFile, validationFile, featureDefinitionFile, percentTrain, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, validationFile, featureDefinitionFile, percentTrain, modelFile, parameters, cancellationToken);
 
 	/// <summary>
 	/// Evaluates a new instance of <see cref="IRanker"/> specified by <paramref name="rankerType"/> and
@@ -283,6 +291,7 @@ public class Evaluator
 	/// <param name="featureDefinitionFile">The feature definitions</param>
 	/// <param name="modelFile">A path to save the trained ranker to</param>
 	/// <param name="parameters">The ranker parameters</param>
+	/// <param name="cancellationToken">Token that can be used to cancel the operation</param>
 	/// <exception cref="ArgumentException">The ranker type is not an <see cref="IRanker"/></exception>
 	public async Task EvaluateAsync(
 		Type rankerType,
@@ -291,7 +300,8 @@ public class Evaluator
 		string? testFile,
 		string? featureDefinitionFile,
 		string? modelFile = null,
-		IRankerParameters? parameters = default)
+		IRankerParameters? parameters = default,
+		CancellationToken cancellationToken = default)
 	{
 		var train = new List<RankList>();
 		var validation = new List<RankList>();
@@ -301,7 +311,7 @@ public class Evaluator
 		if (_normalize && test != null)
 			Normalize(test, features);
 
-		var ranker = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters)
+		var ranker = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters, cancellationToken)
 			.ConfigureAwait(false);
 
 		if (test != null)
@@ -312,7 +322,7 @@ public class Evaluator
 
 		if (!string.IsNullOrEmpty(modelFile))
 		{
-			await ranker.SaveAsync(modelFile);
+			await ranker.SaveAsync(modelFile, cancellationToken).ConfigureAwait(false);
 			_logger.LogInformation("Model saved to: {ModelFile}", modelFile);
 		}
 	}
@@ -327,16 +337,18 @@ public class Evaluator
 	/// <param name="featureDefinitionFile">The feature definitions</param>
 	/// <param name="modelFile">A path to save the trained ranker to</param>
 	/// <param name="parameters">The ranker parameters</param>
+	/// <param name="cancellationToken">Token that can be used to cancel the operation</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string trainFile,
 		double percentTrain,
 		string? testFile,
 		string featureDefinitionFile,
 		string? modelFile = null,
-		TRankerParameters? parameters = default)
+		TRankerParameters? parameters = default,
+		CancellationToken cancellationToken = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), trainFile, percentTrain, testFile, featureDefinitionFile, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), trainFile, percentTrain, testFile, featureDefinitionFile, modelFile, parameters, cancellationToken);
 
 	/// <summary>
 	/// Evaluates a new instance of <see cref="IRanker"/> specified by <typeparamref name="TRanker"/> and
@@ -348,16 +360,18 @@ public class Evaluator
 	/// <param name="modelDir">The directory to save trained ranker models</param>
 	/// <param name="modelFile">The name prefix of trained ranker models</param>
 	/// <param name="parameters">The ranker parameters</param>
+	/// <param name="cancellationToken">Token that can be used to cancel the operation</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string featureDefinitionFile,
 		int foldCount,
 		string modelDir,
 		string modelFile,
-		TRankerParameters? parameters = default)
+		TRankerParameters? parameters = default,
+		CancellationToken cancellationToken = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), sampleFile, featureDefinitionFile, foldCount, -1, modelDir, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, featureDefinitionFile, foldCount, -1, modelDir, modelFile, parameters, cancellationToken);
 
 	/// <summary>
 	/// Evaluates a new instance of <see cref="IRanker"/> specified by <paramref name="rankerType"/> and
@@ -371,6 +385,7 @@ public class Evaluator
 	/// <param name="modelDir">The directory to save trained ranker models</param>
 	/// <param name="modelFile">The name prefix of trained ranker models</param>
 	/// <param name="parameters">The ranker parameters</param>
+	/// <param name="cancellationToken">Token that can be used to cancel the operation</param>
 	public async Task EvaluateAsync(
 		Type rankerType,
 		string sampleFile,
@@ -379,7 +394,8 @@ public class Evaluator
 		float trainValidationSplit,
 		string modelDir,
 		string modelFile,
-		IRankerParameters? parameters = default)
+		IRankerParameters? parameters = default,
+		CancellationToken cancellationToken = default)
 	{
 		var trainingData = new List<List<RankList>>();
 		var validationData = new List<List<RankList>>();
@@ -412,7 +428,7 @@ public class Evaluator
 			var validation = trainValidationSplit > 0 ? validationData[i] : null;
 			var test = testData[i];
 
-			var ranker = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters)
+			var ranker = await _trainer.TrainAsync(rankerType, train, validation, features, _trainScorer, parameters, cancellationToken)
 				.ConfigureAwait(false);
 
 			var testScore = Evaluate(ranker, test);
@@ -427,7 +443,7 @@ public class Evaluator
 			if (!string.IsNullOrEmpty(modelDir))
 			{
 				var foldModelFile = Path.Combine(modelDir, $"f{i + 1}.{modelFile}");
-				await ranker.SaveAsync(foldModelFile).ConfigureAwait(false);
+				await ranker.SaveAsync(foldModelFile, cancellationToken).ConfigureAwait(false);
 				_logger.LogInformation("Fold-{Fold} model saved to: {FoldModelFile}", i + 1, foldModelFile);
 			}
 		}
@@ -453,6 +469,7 @@ public class Evaluator
 	/// <param name="modelDir">The directory to save trained ranker models</param>
 	/// <param name="modelFile">The name prefix of trained ranker models</param>
 	/// <param name="parameters">The ranker parameters</param>
+	/// <param name="cancellationToken">Token that can be used to cancel the operation</param>
 	public Task EvaluateAsync<TRanker, TRankerParameters>(
 		string sampleFile,
 		string? featureDefinitionFile,
@@ -460,10 +477,11 @@ public class Evaluator
 		float trainValidationSplit,
 		string modelDir,
 		string modelFile,
-		TRankerParameters? parameters = default)
+		TRankerParameters? parameters = default,
+		CancellationToken cancellationToken = default)
 		where TRanker : IRanker<TRankerParameters>
 		where TRankerParameters : IRankerParameters =>
-		EvaluateAsync(typeof(TRanker), sampleFile, featureDefinitionFile, foldCount, trainValidationSplit, modelDir, modelFile, parameters);
+		EvaluateAsync(typeof(TRanker), sampleFile, featureDefinitionFile, foldCount, trainValidationSplit, modelDir, modelFile, parameters, cancellationToken);
 
 	public void Test(string testFile)
 	{
@@ -776,8 +794,7 @@ public class Evaluator
 				for (var j = 0; j < idx.Length; j++)
 				{
 					var k = idx[j];
-					var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {j + 1} {SimpleMath.Round(scores[k], 5)} indri";
-					outWriter.WriteLine(str);
+					outWriter.WriteLine($"{l.Id} Q0 {l[k].Description.AsSpan().Trim("#").Trim().ToString()} {j + 1} {SimpleMath.Round(scores[k], 5)} indri");
 				}
 			}
 		}
@@ -797,10 +814,7 @@ public class Evaluator
 			foreach (var l in test)
 			{
 				for (var j = 0; j < l.Count; j++)
-				{
-					var str = $"{l.Id} Q0 {l[j].Description.Replace("#", "").Trim()} {j + 1} {SimpleMath.Round(1.0 - 0.0001 * j, 5)} indri";
-					outWriter.WriteLine(str);
-				}
+					outWriter.WriteLine($"{l.Id} Q0 {l[j].Description.AsSpan().Trim("#").Trim().ToString()} {j + 1} {SimpleMath.Round(1.0 - 0.0001 * j, 5)} indri");
 			}
 		}
 		catch (IOException ex)
@@ -848,7 +862,7 @@ public class Evaluator
 		}
 		catch (IOException ex)
 		{
-			throw RankLibException.Create("Error in Evaluator::Rank(): ", ex);
+			throw RankLibException.Create("Error ranking and writing indri ranking file", ex);
 		}
 	}
 
@@ -878,15 +892,14 @@ public class Evaluator
 					for (var j = 0; j < idx.Length; j++)
 					{
 						var k = idx[j];
-						var str = $"{l.Id} Q0 {l[k].Description.Replace("#", "").Trim()} {j + 1} {SimpleMath.Round(scores[k], 5)} indri";
-						outWriter.WriteLine(str);
+						outWriter.WriteLine($"{l.Id} Q0 {l[k].Description.AsSpan().Trim("#").Trim().ToString()} {j + 1} {SimpleMath.Round(scores[k], 5)} indri");
 					}
 				}
 			}
 		}
 		catch (IOException ex)
 		{
-			throw RankLibException.Create("Error in Evaluator::Rank(): ", ex);
+			throw RankLibException.Create("Error ranking and writing indri ranking file", ex);
 		}
 	}
 

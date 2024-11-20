@@ -95,7 +95,7 @@ public class ListNet : RankNet
 		_lastError = _error;
 	}
 
-	public override Task InitAsync()
+	public override Task InitAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -106,13 +106,13 @@ public class ListNet : RankNet
 		if (ValidationSamples != null)
 		{
 			for (var i = 0; i < _layers.Count; i++)
-				_bestModelOnValidation.Add(new List<double>());
+				_bestModelOnValidation.Add([]);
 		}
 
 		return Task.CompletedTask;
 	}
 
-	public override Task LearnAsync()
+	public override Task LearnAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Training starts...");
 		_logger.PrintLog([7, 14, 9, 9], ["#epoch", "C.E. Loss", Scorer.Name + "-T", Scorer.Name + "-V"]);
@@ -121,6 +121,8 @@ public class ListNet : RankNet
 
 		for (var i = 1; i <= Parameters.IterationCount; i++)
 		{
+			CheckCancellation(_logger, cancellationToken);
+
 			for (var j = 0; j < Samples.Count; j++)
 			{
 				var labels = FeedForward(Samples[j]);
@@ -146,6 +148,8 @@ public class ListNet : RankNet
 
 			bufferedLogger.FlushLog();
 		}
+
+		CheckCancellation(_logger, cancellationToken);
 
 		// Restore the best model if validation data is used
 		if (ValidationSamples != null)

@@ -47,15 +47,17 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 	/// <inheritdoc />
 	public override string Name => RankerName;
 
+	/// <param name="cancellationToken"></param>
 	/// <inheritdoc />
-	public override Task InitAsync()
+	public override Task InitAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Initializing...");
 		return Task.CompletedTask;
 	}
 
+	/// <param name="cancellationToken"></param>
 	/// <inheritdoc />
-	public override Task LearnAsync()
+	public override Task LearnAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Training starts...");
 		_logger.LogInformation("Learning the least square model...");
@@ -81,6 +83,8 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 
 		for (var s = 0; s < Samples.Count; s++)
 		{
+			CheckCancellation(_logger, cancellationToken);
+
 			var rl = Samples[s];
 			for (var i = 0; i < rl.Count; i++)
 			{
@@ -109,6 +113,7 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 				xTx[i][i] += Parameters.Lambda;
 		}
 
+		CheckCancellation(_logger, cancellationToken);
 		_weight = Solve(xTx, xTy);
 
 		TrainingDataScore = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);

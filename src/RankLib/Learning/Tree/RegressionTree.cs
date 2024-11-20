@@ -39,7 +39,7 @@ public class RegressionTree
 	/// <summary>
 	/// Fits the tree from the specified training data.
 	/// </summary>
-	public async Task FitAsync()
+	public async Task FitAsync(CancellationToken cancellationToken = default)
 	{
 		var queue = new List<Split>();
 		_root = new Split(_index, _hist, float.MaxValue, 0)
@@ -48,7 +48,7 @@ public class RegressionTree
 		};
 
 		// Ensure inserts occur only after successful splits
-		if (await _root.TrySplitAsync(_trainingLabels, _minLeafSupport).ConfigureAwait(false))
+		if (await _root.TrySplitAsync(_trainingLabels, _minLeafSupport, cancellationToken).ConfigureAwait(false))
 		{
 			Insert(queue, _root.Left);
 			Insert(queue, _root.Right);
@@ -67,7 +67,7 @@ public class RegressionTree
 			}
 
 			// unsplit-able (i.e. variance(s)==0; or after-split variance is higher than before)
-			if (!await leaf.TrySplitAsync(_trainingLabels, _minLeafSupport).ConfigureAwait(false))
+			if (!await leaf.TrySplitAsync(_trainingLabels, _minLeafSupport, cancellationToken).ConfigureAwait(false))
 				taken++;
 			else
 			{

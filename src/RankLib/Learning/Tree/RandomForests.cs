@@ -161,7 +161,7 @@ public class RandomForests : Ranker<RandomForestsParameters>
 		_logger = _loggerFactory.CreateLogger<RandomForests>();
 	}
 
-	public override Task InitAsync()
+	public override Task InitAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Initializing...");
 		Ensembles = new Ensemble[Parameters.BagCount];
@@ -182,7 +182,7 @@ public class RandomForests : Ranker<RandomForestsParameters>
 		return Task.CompletedTask;
 	}
 
-	public override async Task LearnAsync()
+	public override async Task LearnAsync(CancellationToken cancellationToken = default)
 	{
 		var rankerFactory = new RankerFactory(_loggerFactory);
 		_logger.LogInformation("Training starts...");
@@ -193,11 +193,13 @@ public class RandomForests : Ranker<RandomForestsParameters>
 		// Start the bagging process
 		for (var i = 0; i < Parameters.BagCount; i++)
 		{
+			CheckCancellation(_logger, cancellationToken);
+
 			// Create a "bag" of samples by random sampling from the training set
 			var (bag, _) = Sampler.Sample(Samples, Parameters.SubSamplingRate, true);
 			var ranker = (LambdaMART)rankerFactory.CreateRanker(Parameters.RankerType, bag, Features, Scorer, _lambdaMARTParameters);
-			await ranker.InitAsync().ConfigureAwait(false);
-			await ranker.LearnAsync().ConfigureAwait(false);
+			await ranker.InitAsync(cancellationToken).ConfigureAwait(false);
+			await ranker.LearnAsync(cancellationToken).ConfigureAwait(false);
 
 			// Accumulate impacts
 			if (impacts == null)
@@ -211,6 +213,8 @@ public class RandomForests : Ranker<RandomForestsParameters>
 			Ensembles[i] = ranker.Ensemble;
 		}
 
+		CheckCancellation(_logger, cancellationToken);
+
 		// Finishing up
 		TrainingDataScore = Scorer.Score(Rank(Samples));
 		_logger.LogInformation("Finished successfully.");
@@ -221,6 +225,8 @@ public class RandomForests : Ranker<RandomForestsParameters>
 			ValidationDataScore = Scorer.Score(Rank(ValidationSamples));
 			_logger.LogInformation(Scorer.Name + " on validation data: " + SimpleMath.Round(ValidationDataScore, 4));
 		}
+
+		CheckCancellation(_logger, cancellationToken);
 
 		// Print feature impacts
 		_logger.LogInformation("-- FEATURE IMPACTS");

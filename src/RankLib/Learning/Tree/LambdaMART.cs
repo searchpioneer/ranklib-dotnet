@@ -211,7 +211,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	public Ensemble Ensemble => _ensemble;
 
 	/// <inheritdoc />
-	public override async Task InitAsync()
+	public override async Task InitAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -239,6 +239,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		// Sort samples by each feature
 		_sortedIdx = new int[Features.Length][];
 
+		CheckCancellation(_logger, cancellationToken);
 		if (Parameters.MaxDegreeOfParallelism == 1)
 			SortSamplesByFeature(0, Features.Length - 1);
 		else
@@ -247,11 +248,11 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 				Partitioner.PartitionEnumerable(Features.Length, Parameters.MaxDegreeOfParallelism);
 			await Parallel.ForEachAsync(
 				partitions,
-				new ParallelOptions { MaxDegreeOfParallelism = Parameters.MaxDegreeOfParallelism },
-				async (range, cancellationToken) =>
+				new ParallelOptions { MaxDegreeOfParallelism = Parameters.MaxDegreeOfParallelism, CancellationToken = cancellationToken },
+				async (range, ct) =>
 			{
 				await Task.Run(() =>
-					SortSamplesByFeature(range.Start.Value, range.End.Value), cancellationToken).ConfigureAwait(false);
+					SortSamplesByFeature(range.Start.Value, range.End.Value), ct).ConfigureAwait(false);
 			}).ConfigureAwait(false);
 		}
 
@@ -259,6 +260,8 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		_thresholds = new float[Features.Length][];
 		for (var f = 0; f < Features.Length; f++)
 		{
+			CheckCancellation(_logger, cancellationToken);
+
 			//For this feature, keep track of the list of unique values and the max/min
 			var values = new List<float>(MARTSamples.Length);
 			var fMax = float.NegativeInfinity;
@@ -309,6 +312,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			}
 		}
 
+		CheckCancellation(_logger, cancellationToken);
 		if (ValidationSamples != null)
 		{
 			_modelScoresOnValidation = new double[ValidationSamples.Count][];
@@ -319,16 +323,19 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			}
 		}
 
+		CheckCancellation(_logger, cancellationToken);
 		_histogram = new FeatureHistogram(Parameters.SamplingRate, Parameters.MaxDegreeOfParallelism);
-		await _histogram.ConstructAsync(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts).ConfigureAwait(false);
+		await _histogram.ConstructAsync(MARTSamples, PseudoResponses, _sortedIdx, Features, _thresholds, Impacts, cancellationToken).ConfigureAwait(false);
 
 		//we no longer need the sorted indexes of samples
 		_sortedIdx = [];
 	}
 
 	/// <inheritdoc />
-	public override async Task LearnAsync()
+	public override async Task LearnAsync(CancellationToken cancellationToken = default)
 	{
+		CheckCancellation(_logger, cancellationToken);
+
 		_ensemble = new Ensemble();
 		_logger.LogInformation("Training starts...");
 
@@ -340,20 +347,25 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 		var bufferedLogger = new BufferedLogger(_logger, new StringBuilder());
 		for (var m = 0; m < Parameters.TreeCount; m++)
 		{
+			CheckCancellation(_logger, cancellationToken);
 			bufferedLogger.PrintLog([7], [(m + 1).ToString()]);
 
 			//Compute lambdas (which act as the "pseudo responses")
 			//Create training instances for MART:
 			//  - Each document is a training sample
 			//	- The lambda for this document serves as its training label
-			await ComputePseudoResponsesAsync().ConfigureAwait(false);
+			await ComputePseudoResponsesAsync(cancellationToken).ConfigureAwait(false);
+
+			CheckCancellation(_logger, cancellationToken);
 
 			//update the histogram with these training labels (the feature histogram will be used to find the best tree split)
-			await _histogram.UpdateAsync(PseudoResponses).ConfigureAwait(false);
+			await _histogram.UpdateAsync(PseudoResponses, cancellationToken).ConfigureAwait(false);
+
+			CheckCancellation(_logger, cancellationToken);
 
 			//Fit a regression tree
 			var tree = new RegressionTree(Parameters.TreeLeavesCount, MARTSamples, PseudoResponses, _histogram, Parameters.MinimumLeafSupport);
-			await tree.FitAsync().ConfigureAwait(false);
+			await tree.FitAsync(cancellationToken).ConfigureAwait(false);
 
 			//Add this tree to the ensemble (our model)
 			_ensemble.Add(tree, Parameters.LearningRate);
@@ -454,7 +466,7 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 	/// <summary>
 	/// Computes the pseudo responses for an iteration of learning.
 	/// </summary>
-	protected virtual async Task ComputePseudoResponsesAsync()
+	protected virtual async Task ComputePseudoResponsesAsync(CancellationToken cancellationToken = default)
 	{
 		Array.Fill(PseudoResponses, 0);
 		Array.Fill(_weights, 0);
@@ -483,11 +495,11 @@ public class LambdaMART : Ranker<LambdaMARTParameters>
 			var parallelOptions = new ParallelOptions
 			{
 				MaxDegreeOfParallelism = Parameters.MaxDegreeOfParallelism,
-				CancellationToken = default
+				CancellationToken = cancellationToken
 			};
 
-			await Parallel.ForEachAsync(tuples, parallelOptions, async (values, cancellationToken) =>
-				await Task.Run(() => ComputePseudoResponses(values.start, values.end, values.current), cancellationToken).ConfigureAwait(false))
+			await Parallel.ForEachAsync(tuples, parallelOptions, async (values, ct) =>
+				await Task.Run(() => ComputePseudoResponses(values.start, values.end, values.current), ct).ConfigureAwait(false))
 				.ConfigureAwait(false);
 		}
 	}

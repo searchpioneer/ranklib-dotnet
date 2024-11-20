@@ -46,14 +46,16 @@ public interface IRanker
 	/// <summary>
 	/// Initializes the ranker for training.
 	/// </summary>
+	/// <param name="cancellationToken">Token used to cancel the operation</param>
 	/// <returns>a new instance of <see cref="Task"/> that can be awaited.</returns>
-	Task InitAsync();
+	Task InitAsync(CancellationToken cancellationToken = default);
 
 	/// <summary>
 	/// Trains the ranker to learn from the training samples.
 	/// </summary>
+	/// <param name="cancellationToken">Token used to cancel the operation</param>
 	/// <returns>a new instance of <see cref="Task"/> that can be awaited.</returns>
-	Task LearnAsync();
+	Task LearnAsync(CancellationToken cancellationToken = default);
 
 	/// <summary>
 	/// Evaluates a data point.
@@ -108,8 +110,9 @@ public interface IRanker
 	/// Saves the model to file.
 	/// </summary>
 	/// <param name="modelFile">The file path to save the model to.</param>
+	/// <param name="cancellationToken">Token used to cancel the operation</param>
 	/// <returns>a new instance of <see cref="Task"/> that can be awaited.</returns>
-	Task SaveAsync(string modelFile);
+	Task SaveAsync(string modelFile, CancellationToken cancellationToken = default);
 
 	/// <summary>
 	/// Gets the score from evaluation on the training data.

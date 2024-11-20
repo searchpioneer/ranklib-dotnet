@@ -163,12 +163,12 @@ public class Split
 
 	// Internal functions (ONLY used during learning)
 	//*DO NOT* attempt to call them once the training is done
-	internal async Task<bool> TrySplitAsync(double[] trainingLabels, int minLeafSupport)
+	internal async Task<bool> TrySplitAsync(double[] trainingLabels, int minLeafSupport, CancellationToken cancellationToken = default)
 	{
 		if (Histogram is null)
 			throw new InvalidOperationException("Histogram is null");
 
-		return await Histogram.FindBestSplitAsync(this, trainingLabels, minLeafSupport).ConfigureAwait(false);
+		return await Histogram.FindBestSplitAsync(this, trainingLabels, minLeafSupport, cancellationToken).ConfigureAwait(false);
 	}
 
 	public int[] GetSamples() => _sortedSampleIDs != null ? _sortedSampleIDs[0] : _samples;

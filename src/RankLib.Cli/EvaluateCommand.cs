@@ -468,7 +468,8 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 					tvSplit,
 					kcvModelDir!.FullName,
 					kcvModelFile!,
-					rankerParameters).ConfigureAwait(false);
+					rankerParameters,
+					cancellationToken).ConfigureAwait(false);
 			}
 			else
 			{
@@ -481,7 +482,8 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 						featureDescriptionFile?.FullName,
 						ttSplit,
 						options.ModelOutputFile?.FullName,
-						rankerParameters).ConfigureAwait(false);
+						rankerParameters,
+						cancellationToken).ConfigureAwait(false);
 				}
 				else if (tvSplit > 0.0)
 				{
@@ -492,7 +494,8 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 						testFiles.LastOrDefault(),
 						featureDescriptionFile?.FullName,
 						options.ModelOutputFile?.FullName,
-						rankerParameters).ConfigureAwait(false);
+						rankerParameters,
+						cancellationToken).ConfigureAwait(false);
 				}
 				else
 				{
@@ -503,7 +506,8 @@ public class EvaluateCommandOptionsHandler : ICommandOptionsHandler<EvaluateComm
 						testFiles.LastOrDefault(),
 						featureDescriptionFile?.FullName,
 						options.ModelOutputFile?.FullName,
-						rankerParameters).ConfigureAwait(false);
+						rankerParameters,
+						cancellationToken).ConfigureAwait(false);
 				}
 			}
 		}

@@ -65,7 +65,7 @@ public class MART : LambdaMART
 	public override string Name => RankerName;
 
 	/// <inheritdoc />
-	protected override Task ComputePseudoResponsesAsync()
+	protected override Task ComputePseudoResponsesAsync(CancellationToken cancellationToken = default)
 	{
 		for (var i = 0; i < MARTSamples.Length; i++)
 			PseudoResponses[i] = MARTSamples[i].Label - ModelScores[i];

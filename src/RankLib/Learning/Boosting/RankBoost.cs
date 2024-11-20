@@ -203,7 +203,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 		}
 	}
 
-	public override Task InitAsync()
+	public override Task InitAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Initializing...");
 
@@ -212,6 +212,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 		_totalCorrectPairs = 0;
 		for (var i = 0; i < Samples.Count; i++)
 		{
+			CheckCancellation(_logger, cancellationToken);
+
 			Samples[i] = Samples[i].GetCorrectRanking(); // Ensure training samples are correctly ranked
 			var rl = Samples[i];
 			for (var j = 0; j < rl.Count - 1; j++)
@@ -224,6 +226,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 		_sweight = new double[Samples.Count][][];
 		for (var i = 0; i < Samples.Count; i++)
 		{
+			CheckCancellation(_logger, cancellationToken);
+
 			var rl = Samples[i];
 			_sweight[i] = new double[rl.Count][];
 			for (var j = 0; j < rl.Count - 1; j++)
@@ -237,6 +241,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 		_potential = new double[Samples.Count][];
 		for (var i = 0; i < Samples.Count; i++)
 			_potential[i] = new double[Samples[i].Count];
+
+		CheckCancellation(_logger, cancellationToken);
 
 		if (Parameters.Threshold <= 0)
 		{
@@ -304,6 +310,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 		for (var i = 0; i < Features.Length; i++)
 			_tSortedIdx[i] = MergeSorter.Sort(_thresholds[i], false);
 
+		CheckCancellation(_logger, cancellationToken);
+
 		for (var i = 0; i < Features.Length; i++)
 		{
 			var idx = new List<int[]>();
@@ -316,7 +324,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 		return Task.CompletedTask;
 	}
 
-	public override Task LearnAsync()
+	public override Task LearnAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Training starts...");
 		_logger.PrintLog([7, 8, 9, 9, 9, 9], ["#iter",
@@ -331,6 +339,7 @@ public class RankBoost : Ranker<RankBoostParameters>
 
 		for (var t = 1; t <= Parameters.IterationCount; t++)
 		{
+			CheckCancellation(_logger, cancellationToken);
 			UpdatePotential();
 			var wr = LearnWeakRanker();
 			if (wr == null)
@@ -369,6 +378,8 @@ public class RankBoost : Ranker<RankBoostParameters>
 			}
 			bufferedLogger.FlushLog();
 		}
+
+		CheckCancellation(_logger, cancellationToken);
 
 		if (ValidationSamples != null && _bestModelRankers.Count > 0)
 		{

@@ -142,12 +142,14 @@ public class AdaRank : Ranker<AdaRankParameters>
 		return bestWeakRanker;
 	}
 
-	private int Learn(int startIteration, bool withEnqueue)
+	private int Learn(int startIteration, bool withEnqueue, CancellationToken cancellationToken)
 	{
 		var t = startIteration;
 		var bufferedLogger = new BufferedLogger(_logger, new StringBuilder());
 		for (; t <= Parameters.IterationCount; t++)
 		{
+			CheckCancellation(_logger, cancellationToken);
+
 			bufferedLogger.PrintLog([7], [t.ToString()]);
 
 			var bestWeakRanker = LearnWeakRanker();
@@ -266,7 +268,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 		return t;
 	}
 
-	public override Task InitAsync()
+	public override Task InitAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Initializing...");
 		_usedFeatures.Clear();
@@ -289,22 +291,24 @@ public class AdaRank : Ranker<AdaRankParameters>
 		return Task.CompletedTask;
 	}
 
-	public override Task LearnAsync()
+	public override Task LearnAsync(CancellationToken cancellationToken = default)
 	{
 		_logger.LogInformation("Training starts...");
 		_logger.PrintLog([7, 8, 9, 9, 9], ["#iter", "Sel. F.", Scorer.Name + "-T", Scorer.Name + "-V", "Status"]);
 
+		CheckCancellation(_logger, cancellationToken);
+
 		if (Parameters.TrainWithEnqueue)
 		{
-			var t = Learn(1, true);
+			var t = Learn(1, true, cancellationToken);
 			for (var i = _featureQueue.Count - 1; i >= 0; i--)
 			{
 				_featureQueue.RemoveAt(i);
-				t = Learn(t, false);
+				t = Learn(t, false, cancellationToken);
 			}
 		}
 		else
-			Learn(1, false);
+			Learn(1, false, cancellationToken);
 
 		if (ValidationSamples != null && _bestModelRankers.Count > 0)
 		{
@@ -317,6 +321,8 @@ public class AdaRank : Ranker<AdaRankParameters>
 		TrainingDataScore = SimpleMath.Round(Scorer.Score(Rank(Samples)), 4);
 		_logger.LogInformation("Finished successfully.");
 		_logger.LogInformation($"{Scorer.Name} on training data: {TrainingDataScore}");
+
+		CheckCancellation(_logger, cancellationToken);
 
 		if (ValidationSamples != null)
 		{
@@ -369,7 +375,7 @@ public class AdaRank : Ranker<AdaRankParameters>
 			}
 
 			if (kvp == null)
-				throw new InvalidOperationException("Error in AdaRank::LoadFromString: Unable to load model");
+				throw new InvalidOperationException("No model data found.");
 
 			_rankerWeights = new List<double>();
 			_rankers = new List<AdaRankWeakRanker>();

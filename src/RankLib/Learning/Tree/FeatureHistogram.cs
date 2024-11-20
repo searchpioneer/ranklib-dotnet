@@ -39,7 +39,7 @@ public sealed class FeatureHistogram
 		_maxDegreesOfParallelism = maxDegreesOfParallelism ?? Environment.ProcessorCount;
 	}
 
-	public async Task ConstructAsync(DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, int[] features, float[][] thresholds, double[] impacts)
+	public async Task ConstructAsync(DataPoint[] samples, double[] labels, int[][] sampleSortedIdx, int[] features, float[][] thresholds, double[] impacts, CancellationToken cancellationToken = default)
 	{
 		_features = features;
 		_thresholds = thresholds;
@@ -58,17 +58,17 @@ public sealed class FeatureHistogram
 				Partitioner.PartitionEnumerable(_features.Length, _maxDegreesOfParallelism);
 			await Parallel.ForEachAsync(
 				partitions,
-				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism },
-				async (range, cancellationToken) =>
+				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism, CancellationToken = cancellationToken },
+				async (range, ct) =>
 				{
 					await Task.Run(
-						() => Construct(samples, labels, sampleSortedIdx, thresholds, range.Start.Value,
-							range.End.Value), cancellationToken).ConfigureAwait(false);
+						() => Construct(samples, labels, sampleSortedIdx, thresholds, range.Start.Value, range.End.Value),
+						ct).ConfigureAwait(false);
 				}).ConfigureAwait(false);
 		}
 	}
 
-		public async Task<bool> FindBestSplitAsync(Split sp, double[] labels, int minLeafSupport)
+	public async Task<bool> FindBestSplitAsync(Split sp, double[] labels, int minLeafSupport, CancellationToken cancellationToken = default)
 	{
 		if (sp.Deviance == 0)
 			return false; // No need to split
@@ -109,7 +109,8 @@ public sealed class FeatureHistogram
 					.Select<Range, Task<Config>>(range => new Task<Config>(() => FindBestSplit(usedFeatures, minLeafSupport, range.Start.Value, range.End.Value)))
 					.ToList();
 
-			await Parallel.ForEachAsync(tasks, new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism }, async (task, _) =>
+			// TODO: pass cancellation token...
+			await Parallel.ForEachAsync(tasks, new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism, CancellationToken = cancellationToken }, async (task, ct) =>
 			{
 				task.Start();
 				await task.ConfigureAwait(false);
@@ -157,9 +158,9 @@ public sealed class FeatureHistogram
 		_impacts[best.FeatureIdx] += best.ErrReduced;
 
 		var lh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
-		await lh.ConstructAsync(sp.Histogram!, left, labels).ConfigureAwait(false);
+		await lh.ConstructAsync(sp.Histogram!, left, labels, cancellationToken).ConfigureAwait(false);
 		var rh = new FeatureHistogram(_samplingRate, _maxDegreesOfParallelism);
-		await rh.ConstructAsync(sp.Histogram!, lh, !sp.IsRoot).ConfigureAwait(false);
+		await rh.ConstructAsync(sp.Histogram!, lh, !sp.IsRoot, cancellationToken).ConfigureAwait(false);
 
 		var var = _sqSumResponse - _sumResponse * _sumResponse / idx.Length;
 		var varLeft = lh._sqSumResponse - lh._sumResponse * lh._sumResponse / left.Length;
@@ -214,7 +215,7 @@ public sealed class FeatureHistogram
 		}
 	}
 
-	internal async Task UpdateAsync(double[] labels)
+	internal async Task UpdateAsync(double[] labels, CancellationToken cancellationToken = default)
 	{
 		_sumResponse = 0;
 		_sqSumResponse = 0;
@@ -227,10 +228,10 @@ public sealed class FeatureHistogram
 				Partitioner.PartitionEnumerable(_features.Length, _maxDegreesOfParallelism);
 			await Parallel.ForEachAsync(
 				partitions,
-				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism },
-				async (range, cancellationToken) =>
+				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism, CancellationToken = cancellationToken },
+				async (range, ct) =>
 				{
-					await Task.Run(() => Update(labels, range.Start.Value, range.End.Value), cancellationToken)
+					await Task.Run(() => Update(labels, range.Start.Value, range.End.Value), ct)
 						.ConfigureAwait(false);
 				}).ConfigureAwait(false);
 		}
@@ -276,7 +277,7 @@ public sealed class FeatureHistogram
 		}
 	}
 
-	private async Task ConstructAsync(FeatureHistogram parent, int[] soi, double[] labels)
+	private async Task ConstructAsync(FeatureHistogram parent, int[] soi, double[] labels, CancellationToken cancellationToken = default)
 	{
 		_features = parent._features;
 		_thresholds = parent._thresholds;
@@ -296,11 +297,12 @@ public sealed class FeatureHistogram
 
 			await Parallel.ForEachAsync(
 				partitions,
-				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism },
-				async (range, cancellationToken) =>
+				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism, CancellationToken = cancellationToken },
+				async (range, ct) =>
 				{
-					await Task.Run(() => Construct(soi, labels, range.Start.Value, range.End.Value),
-						cancellationToken).ConfigureAwait(false);
+					await Task.Run(
+						() => Construct(soi, labels, range.Start.Value, range.End.Value), ct)
+						.ConfigureAwait(false);
 				}).ConfigureAwait(false);
 		}
 	}
@@ -342,7 +344,7 @@ public sealed class FeatureHistogram
 		}
 	}
 
-	private async Task ConstructAsync(FeatureHistogram parent, FeatureHistogram leftSibling, bool reuseParent)
+	private async Task ConstructAsync(FeatureHistogram parent, FeatureHistogram leftSibling, bool reuseParent, CancellationToken cancellationToken = default)
 	{
 		_reuseParent = reuseParent;
 		_features = parent._features;
@@ -371,11 +373,12 @@ public sealed class FeatureHistogram
 				Partitioner.PartitionEnumerable(_features.Length, _maxDegreesOfParallelism);
 			await Parallel.ForEachAsync(
 				partitions,
-				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism },
-				async (range, cancellationToken) =>
+				new ParallelOptions { MaxDegreeOfParallelism = _maxDegreesOfParallelism, CancellationToken = cancellationToken },
+				async (range, ct) =>
 				{
-					await Task.Run(() => Construct(parent, leftSibling, range.Start.Value, range.End.Value),
-						cancellationToken).ConfigureAwait(false);
+					await Task.Run(
+						() => Construct(parent, leftSibling, range.Start.Value, range.End.Value),
+						ct).ConfigureAwait(false);
 				}).ConfigureAwait(false);
 		}
 	}
