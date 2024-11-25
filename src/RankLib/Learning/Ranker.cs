@@ -111,11 +111,9 @@ public abstract class Ranker<TRankerParameters> : IRanker<TRankerParameters>
 		await File.WriteAllTextAsync(modelFile, GetModel(), Encoding.ASCII);
 	}
 
-	/// <param name="cancellationToken"></param>
 	/// <inheritdoc />
 	public abstract Task InitAsync(CancellationToken cancellationToken = default);
 
-	/// <param name="cancellationToken"></param>
 	/// <inheritdoc />
 	public abstract Task LearnAsync(CancellationToken cancellationToken = default);
 

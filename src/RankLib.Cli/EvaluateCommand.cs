@@ -69,82 +69,210 @@ public class EvaluateCommandOptions : ICommandOptions
 public class EvaluateCommand : Command<EvaluateCommandOptions, EvaluateCommandOptionsHandler>
 {
 	public EvaluateCommand()
-	: base("eval", "Trains and evaluates a ranker, or evaluates a previously saved ranker model.")
+		: base("eval", "Trains and evaluates a ranker, or evaluates a previously saved ranker model.")
 	{
-		AddOption(new Option<FileInfo>(["-train", "--train-input-file"], "Training data file").ExistingOnly());
-		AddOption(new Option<RankerType>(["-ranker", "--ranker"], () => RankerType.CoordinateAscent, "Ranking algorithm to use"));
-		AddOption(new Option<FileInfo>(["-feature", "--feature-description-input-file"], "Feature description file. list features to be considered by the learner, each on a separate line. If not specified, all features will be used.").ExistingOnly());
-		AddOption(new Option<string>(["-metric2t", "--train-metric"], () => "ERR@10", "Metric to optimize on the training data. Supports MAP, NDCG@k, DCG@k, P@k, RR@k, ERR@k."));
-		AddOption(new Option<double?>(["-gmax", "--max-label"], $"Highest judged relevance label. It affects the calculation of ERR i.e. 5-point scale [0,1,2,3,4] where value used is 2^gmax [default: {ERRScorer.DefaultMax}"));
-		AddOption(new Option<FileInfo>(["-qrel", "--query-relevance-input-file"], "TREC-style relevance judgment file").ExistingOnly());
-		AddOption(new Option<bool>(["-missingZero", "--missing-zero"], "Substitute zero for missing feature values rather than throwing an exception."));
-		AddOption(new Option<FileInfo>(["-validate", "--validate-file"], "Specify if you want to tune your system on the validation data").ExistingOnly());
-		AddOption(new Option<float>(["-tvs", "--train-validation-split"], "If you don't have separate validation data, use this to set train-validation split to be. Must be between 0 and 1, where train=<value> and validate=(1.0 - <value>)"));
-		AddOption(new Option<FileInfo>(["-save", "--model-output-file"], "Save the model learned [default: no save]"));
-
-		AddOption(new Option<IEnumerable<FileInfo>>(["-test", "--test-input-files"], "Specify if you want to evaluate the trained model on this data").ExistingOnly());
-		AddOption(new Option<float>(["-tts", "--train-test-split"], "Set train-test split. Must be between 0 and 1, where train=<value> and test=(1.0 - <value>). Overrides --train-validation-split (-tvs)"));
-		AddOption(new Option<string>(["-metric2T", "--test-metric"], "Metric to evaluate on the test data [default: same as -metric2t]"));
-		AddOption(new Option<NormalizerType>(["-norm", "--norm"], "Type of normalizer to use to normalize all feature vectors [default: no normalization]"));
-
-		AddOption(new Option<int>(["-kcv", "--cross-validation-folds"], () => -1, "Specify how many folds to perform for k-fold cross validation using the specified training data. Defaults to no k-fold cross validation."));
-		AddOption(new Option<DirectoryInfo>(["-kcvmd", "--cross-validation-output-directory"], "Directory for models trained via cross-validation"));
-		AddOption(new Option<string>(["-kcvmn", "--cross-validation-model-name"], "Name for model learned in each fold. It will be prefix-ed with the fold-number"));
-
-		AddOption(new Option<IEnumerable<FileInfo>>(["-load", "--model-input-files"], "Load saved model file for evaluation").ExistingOnly());
-		AddOption(new Option<int?>(["-thread", "--thread"], "Number of threads to use. If unspecified, will use all available processors"));
-		AddOption(new Option<FileInfo>(["-rank", "--rank-input-file"], "Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly());
-		AddOption(new Option<FileInfo>(["-indri", "--rank-output-file"], "Indri ranking file"));
-		AddOption(new Option<bool>(["-sparse", "--use-sparse-representation"], "Use data points with sparse representation"));
-		AddOption(new Option<FileInfo>(["-idv", "--individual-ranklist-performance-output-file"], "Individual rank list model performance (in test metric). Has to be used with -test").ExistingOnly());
-		AddOption(new Option<FileInfo>(["-score", "--score"], "Store ranker's score for each object being ranked. Has to be used with -rank"));
+		var trainOption = new Option<FileInfo>(["-train", "--train-input-file"], "Training data file").ExistingOnly();
+		var rankerOption = new Option<RankerType>(["-ranker", "--ranker"], () => RankerType.CoordinateAscent,
+			"Ranking algorithm to use");
+		var featureOption = new Option<FileInfo>(["-feature", "--feature-description-input-file"],
+				"Feature description file. List features to be considered by the learner, each on a separate line. If not specified, all features will be used.")
+			.ExistingOnly();
+		var trainMetricOption = new Option<string>(["-metric2t", "--train-metric"], () => "ERR@10",
+			"Metric to optimize on the training data. Supports MAP, NDCG@k, DCG@k, P@k, RR@k, ERR@k.");
+		var maxLabelOption = new Option<double?>(["-gmax", "--max-label"],
+			$"Highest judged relevance label. It affects the calculation of ERR i.e. 5-point scale [0,1,2,3,4] where value used is 2^gmax [default: {ERRScorer.DefaultMax}]");
+		var queryRelevanceOption =
+			new Option<FileInfo>(["-qrel", "--query-relevance-input-file"], "TREC-style relevance judgment file")
+				.ExistingOnly();
+		var missingZeroOption = new Option<bool>(["-missingZero", "--missing-zero"],
+			"Substitute zero for missing feature values rather than throwing an exception.");
+		var validateOption = new Option<FileInfo>(["-validate", "--validate-file"],
+			"Specify if you want to tune your system on the validation data").ExistingOnly();
+		var trainValidationSplitOption = new Option<float>(["-tvs", "--train-validation-split"],
+			"If you don't have separate validation data, use this to set train-validation split. Must be between 0 and 1, where train=<value> and validate=(1.0 - <value>)");
+		var modelOutputOption =
+			new Option<FileInfo>(["-save", "--model-output-file"], "Save the model learned [default: no save]");
+		var testInputFilesOption = new Option<IEnumerable<FileInfo>>(["-test", "--test-input-files"],
+			"Specify if you want to evaluate the trained model on this data").ExistingOnly();
+		var trainTestSplitOption = new Option<float>(["-tts", "--train-test-split"],
+			"Set train-test split. Must be between 0 and 1, where train=<value> and test=(1.0 - <value>). Overrides --train-validation-split (-tvs)");
+		var testMetricOption = new Option<string>(["-metric2T", "--test-metric"],
+			"Metric to evaluate on the test data [default: same as -metric2t]");
+		var normalizerOption = new Option<NormalizerType>(["-norm", "--norm"],
+			"Type of normalizer to use to normalize all feature vectors [default: no normalization]");
+		var kcvOption = new Option<int>(["-kcv", "--cross-validation-folds"], () => -1,
+			"Specify how many folds to perform for k-fold cross validation using the specified training data. Defaults to no k-fold cross validation.");
+		var kcvOutputDirectoryOption = new Option<DirectoryInfo>(["-kcvmd", "--cross-validation-output-directory"],
+			"Directory for models trained via cross-validation");
+		var kcvModelNameOption = new Option<string>(["-kcvmn", "--cross-validation-model-name"],
+			"Name for model learned in each fold. It will be prefix-ed with the fold-number");
+		var modelInputFilesOption =
+			new Option<IEnumerable<FileInfo>>(["-load", "--model-input-files"], "Load saved model file for evaluation")
+				.ExistingOnly();
+		var threadOption = new Option<int?>(["-thread", "--thread"],
+			"Number of threads to use. If unspecified, will use all available processors");
+		var rankInputFileOption = new Option<FileInfo>(["-rank", "--rank-input-file"],
+			"Rank the samples in the specified file (specify either this or -test but not both)").ExistingOnly();
+		var rankOutputFileOption = new Option<FileInfo>(["-indri", "--rank-output-file"], "Indri ranking file");
+		var sparseOption = new Option<bool>(["-sparse", "--use-sparse-representation"],
+			"Use data points with sparse representation");
+		var individualPerformanceOption =
+			new Option<FileInfo>(["-idv", "--individual-ranklist-performance-output-file"],
+				"Individual rank list model performance (in test metric). Has to be used with -test").ExistingOnly();
+		var scoreOption = new Option<FileInfo>(["-score", "--score"],
+			"Store ranker's score for each object being ranked. Has to be used with -rank");
 
 		// RankNet specific parameters
-		AddOption(new Option<int?>(["-epoch", "--epoch"], "RankNet parameter: The number of epochs to train"));
-		AddOption(new Option<int?>(["-layer", "--layer"], "RankNet parameter: The number of hidden layers"));
-		AddOption(new Option<int?>(["-node", "--node"], "RankNet parameter: The number of hidden nodes per layer"));
-		AddOption(new Option<double?>(["-lr", "--learning-rate"], "RankNet parameter: Learning rate"));
+		var epochOption = new Option<int?>(["-epoch", "--epoch"], "RankNet parameter: The number of epochs to train");
+		var layerOption = new Option<int?>(["-layer", "--layer"], "RankNet parameter: The number of hidden layers");
+		var nodeOption =
+			new Option<int?>(["-node", "--node"], "RankNet parameter: The number of hidden nodes per layer");
+		var learningRateOption = new Option<double?>(["-lr", "--learning-rate"], "RankNet parameter: Learning rate");
 
 		// MART / LambdaMART / RankBoost specific parameters
-		AddOption(new Option<int?>(["-tc", "--threshold-candidates"], "MART|LambdaMART|RankBoost parameter: Number of threshold candidates to search or for tree splitting. -1 to use all feature values"));
+		var thresholdCandidatesOption = new Option<int?>(["-tc", "--threshold-candidates"],
+			"MART|LambdaMART|RankBoost parameter: Number of threshold candidates to search or for tree splitting. -1 to use all feature values");
 
 		// RankBoost / AdaRank specific parameters
-		AddOption(new Option<int?>(["-round", "--round"], $"RankBoost|AdaRank parameter: The number of rounds to train [default: RankBoost:{RankBoostParameters.DefaultIterationCount}, AdaRank:{AdaRankParameters.DefaultIterationCount}]"));
+		var roundOption = new Option<int?>(["-round", "--round"],
+			$"RankBoost|AdaRank parameter: The number of rounds to train [default: RankBoost:{RankBoostParameters.DefaultIterationCount}, AdaRank:{AdaRankParameters.DefaultIterationCount}]");
 
 		// AdaRank specific parameters
-		AddOption(new Option<bool?>(["-noeq", "--no-train-enqueue"], $"AdaRank parameter: Train without enqueuing too-strong features. [default: {AdaRankParameters.DefaultTrainWithEnqueue}]"));
-		AddOption(new Option<int?>(["-max", "--max-selections"], $"AdaRank parameter: The maximum number of times can a feature be consecutively selected without changing performance [default: {AdaRankParameters.DefaultMaximumSelectedCount}]"));
+		var noTrainEnqueueOption = new Option<bool?>(["-noeq", "--no-train-enqueue"],
+			$"AdaRank parameter: Train without enqueuing too-strong features. [default: {AdaRankParameters.DefaultTrainWithEnqueue}]");
+		var maxSelectionsOption = new Option<int?>(["-max", "--max-selections"],
+			$"AdaRank parameter: The maximum number of times a feature can be consecutively selected without changing performance [default: {AdaRankParameters.DefaultMaximumSelectedCount}]");
 
 		// AdaRank / Coordinate Ascent specific parameters
-		AddOption(new Option<double?>(["-tolerance", "--tolerance"], $"AdaRank|CoordinateAscent parameter: Tolerance between two consecutive rounds of learning. [default: to AdaRank:{AdaRankParameters.DefaultTolerance}, CoordinateAscent:{CoordinateAscentParameters.DefaultTolerance}]"));
+		var toleranceOption = new Option<double?>(["-tolerance", "--tolerance"],
+			$"AdaRank|CoordinateAscent parameter: Tolerance between two consecutive rounds of learning. [default: AdaRank:{AdaRankParameters.DefaultTolerance}, CoordinateAscent:{CoordinateAscentParameters.DefaultTolerance}]");
+		var randomRestartsOption = new Option<int?>(["-r", "--random-restarts"],
+			$"CoordinateAscent parameter: The number of random restarts [default: {CoordinateAscentParameters.DefaultRandomRestartCount}]");
 
 		// Coordinate Ascent specific parameters
-		AddOption(new Option<int?>(["-r", "--random-restarts"], $"CoordinateAscent parameter: The number of random restarts [default: {CoordinateAscentParameters.DefaultRandomRestartCount}]"));
-		AddOption(new Option<int?>(["-i", "--iterations"], $"CoordinateAscent parameter: The number of iterations to search in each dimension [default: {CoordinateAscentParameters.DefaultMaximumIterationCount}]"));
-		AddOption(new Option<double?>(["-reg", "--regularization"], "CoordinateAscent parameter: Regularization parameter [default: no regularization]"));
+		var iterationsOption = new Option<int?>(["-i", "--iterations"],
+			$"CoordinateAscent parameter: The number of iterations to search in each dimension [default: {CoordinateAscentParameters.DefaultMaximumIterationCount}]");
+		var regularizationOption = new Option<double?>(["-reg", "--regularization"],
+			"CoordinateAscent parameter: Regularization parameter [default: no regularization]");
 
 		// MART / LambdaMART specific parameters
-		AddOption(new Option<int?>(["-tree", "--tree"], $"MART|LambdaMART parameter: Number of trees [default: {LambdaMARTParameters.DefaultTreeCount}]"));
-		AddOption(new Option<int?>(["-leaf", "--leaf"], $"MART|LambdaMART parameter: Number of leaves for each tree [default: {LambdaMARTParameters.DefaultTreeLeavesCount}]"));
-		AddOption(new Option<float?>(["-shrinkage", "--shrinkage"], $"MART|LambdaMART parameter: Shrinkage, or learning rate [default: {LambdaMARTParameters.DefaultLearningRate}"));
-		AddOption(new Option<int?>(["-mls", "--minimum-leaf-support"], $"MART|LambdaMART parameter: Minimum leaf support. Minimum number of samples each leaf has to contain [default: {LambdaMARTParameters.DefaultMinimumLeafSupport}]"));
-		AddOption(new Option<int?>(["-estop", "--early-stop"], $"MART|LambdaMART parameter: Stop early when no improvement is observed on validation data in e consecutive rounds [default: {LambdaMARTParameters.DefaultStopEarlyRoundCount}"));
+		var treeOption = new Option<int?>(["-tree", "--tree"],
+			$"MART|LambdaMART parameter: Number of trees [default: {LambdaMARTParameters.DefaultTreeCount}]");
+		var leafOption = new Option<int?>(["-leaf", "--leaf"],
+			$"MART|LambdaMART parameter: Number of leaves for each tree [default: {LambdaMARTParameters.DefaultTreeLeavesCount}]");
+		var shrinkageOption = new Option<float?>(["-shrinkage", "--shrinkage"],
+			$"MART|LambdaMART parameter: Shrinkage, or learning rate [default: {LambdaMARTParameters.DefaultLearningRate}]");
+		var minimumLeafSupportOption = new Option<int?>(["-mls", "--minimum-leaf-support"],
+			$"MART|LambdaMART parameter: Minimum leaf support. Minimum number of samples each leaf has to contain [default: {LambdaMARTParameters.DefaultMinimumLeafSupport}]");
+		var earlyStopOption = new Option<int?>(["-estop", "--early-stop"],
+			$"MART|LambdaMART parameter: Stop early when no improvement is observed on validation data in consecutive rounds [default: {LambdaMARTParameters.DefaultStopEarlyRoundCount}]");
 
 		// Random Forests specific parameters
-		AddOption(new Option<int?>(["-bag", "--bag"], $"RandomForests parameter: Number of bags [default: {RandomForestsParameters.DefaultBagCount}]"));
-		AddOption(new Option<float?>(["-srate", "--sub-sampling-rate"], $"RandomForests parameter: Sub-sampling rate [default: {RandomForestsParameters.DefaultSubSamplingRate}]"));
-		AddOption(new Option<float?>(["-frate", "--feature-sampling-rate"], $"RandomForests parameter: Feature sampling rate [default: {RandomForestsParameters.DefaultFeatureSamplingRate}]"));
-		AddOption(new Option<string>(["-rtype", "--random-forests-ranker"], $"RandomForests parameter: Ranker type to bag. Random Forests only support MART/LambdaMART [default: {RandomForestsParameters.DefaultRankerType}]")
-			.FromAmong(RankerType.MART.ToString(), RankerType.LambdaMART.ToString()));
+		var bagOption = new Option<int?>(["-bag", "--bag"],
+			$"RandomForests parameter: Number of bags [default: {RandomForestsParameters.DefaultBagCount}]");
+		var subSamplingRateOption = new Option<float?>(["-srate", "--sub-sampling-rate"],
+			$"RandomForests parameter: Sub-sampling rate [default: {RandomForestsParameters.DefaultSubSamplingRate}]");
+		var featureSamplingRateOption = new Option<float?>(["-frate", "--feature-sampling-rate"],
+			$"RandomForests parameter: Feature sampling rate [default: {RandomForestsParameters.DefaultFeatureSamplingRate}]");
+		var randomForestsRankerOption = new Option<string>(["-rtype", "--random-forests-ranker"],
+				$"RandomForests parameter: Ranker type to bag. Random Forests only support MART/LambdaMART [default: {RandomForestsParameters.DefaultRankerType}]")
+			.FromAmong(RankerType.MART.ToString(), RankerType.LambdaMART.ToString());
+
+		// Linear Regression specific parameters
+		var l2Option = new Option<double?>(["-L2", "--l2"],
+			$"LinearRegression parameter: L2-norm regularization parameter [default: {LinearRegressionParameters.DefaultLambda}]");
+
+		var mustHaveRelevantDocsOption = new Option<bool?>(["-hr", "--must-have-relevant-docs"], () => false,
+			"Whether to ignore ranked list without any relevant document");
+		var randomSeedOption = new Option<int?>("--random-seed",
+			"A seed to use for random number generation. This is useful for internal testing purposes and should not be used for production.")
+		{
+			IsHidden = true
+		};
+
+		AddOption(trainOption);
+		AddOption(rankerOption);
+		AddOption(featureOption);
+		AddOption(trainMetricOption);
+		AddOption(maxLabelOption);
+		AddOption(queryRelevanceOption);
+		AddOption(missingZeroOption);
+		AddOption(validateOption);
+		AddOption(trainValidationSplitOption);
+		AddOption(modelOutputOption);
+		AddOption(testInputFilesOption);
+		AddOption(trainTestSplitOption);
+		AddOption(testMetricOption);
+		AddOption(normalizerOption);
+		AddOption(kcvOption);
+		AddOption(kcvOutputDirectoryOption);
+		AddOption(kcvModelNameOption);
+		AddOption(modelInputFilesOption);
+		AddOption(threadOption);
+		AddOption(rankInputFileOption);
+		AddOption(rankOutputFileOption);
+		AddOption(sparseOption);
+		AddOption(individualPerformanceOption);
+		AddOption(scoreOption);
+		AddOption(epochOption);
+		AddOption(layerOption);
+		AddOption(nodeOption);
+		AddOption(learningRateOption);
+		AddOption(thresholdCandidatesOption);
+		AddOption(roundOption);
+		AddOption(noTrainEnqueueOption);
+		AddOption(maxSelectionsOption);
+		AddOption(toleranceOption);
+		AddOption(randomRestartsOption);
+		AddOption(iterationsOption);
+		AddOption(regularizationOption);
+		AddOption(treeOption);
+		AddOption(leafOption);
+		AddOption(shrinkageOption);
+		AddOption(minimumLeafSupportOption);
+		AddOption(earlyStopOption);
+		AddOption(bagOption);
+		AddOption(subSamplingRateOption);
+		AddOption(featureSamplingRateOption);
+		AddOption(randomForestsRankerOption);
+		AddOption(l2Option);
+		AddOption(mustHaveRelevantDocsOption);
+		AddOption(randomSeedOption);
 
 
-		AddOption(new Option<double?>(["-L2", "--l2"], $"LinearRegression parameter: L2-norm regularization parameter [default: {LinearRegressionParameters.DefaultLambda}]"));
-		AddOption(new Option<bool?>(["-hr", "--must-have-relevant-docs"], () => false, "Whether to ignore ranked list without any relevant document"));
-		AddOption(new Option<int?>(
-			"--random-seed",
-			"A seed to use for random number generation. This is useful for internal " +
-			"testing purposes and should not be used for production.")
-		{ IsHidden = true });
+		AddValidator(result =>
+		{
+			// either -rank or -test but not both
+			if (result.FindResultFor(rankInputFileOption) is not null &&
+			    result.FindResultFor(testInputFilesOption) is not null)
+				result.ErrorMessage = $"Specify either {rankInputFileOption.Name} or {testInputFilesOption.Name}.";
+
+			// -idv can only be used with -test
+			if (result.FindResultFor(individualPerformanceOption) is not null &&
+			    result.FindResultFor(testInputFilesOption) is null)
+				result.ErrorMessage = $"{individualPerformanceOption.Name} can only be specified with {testInputFilesOption.Name}.";
+
+			// -score can only be used with -rank
+			if (result.FindResultFor(scoreOption) is not null &&
+			    result.FindResultFor(rankInputFileOption) is null)
+				result.ErrorMessage = $"{scoreOption.Name} can only be specified with {rankInputFileOption.Name}.";
+
+			// -kcvmd and kcvmn can only be used with -kcv
+			if (result.FindResultFor(kcvOption) is null)
+			{
+				if (result.FindResultFor(kcvOutputDirectoryOption) is not null)
+					result.ErrorMessage = $"{kcvOutputDirectoryOption.Name} can only be specified with {kcvOption.Name}.";
+
+				if (result.FindResultFor(kcvModelNameOption) is not null)
+					result.ErrorMessage = $"{kcvModelNameOption.Name} can only be specified with {kcvOption.Name}.";
+			}
+
+			var rankerType = result.GetValueForOption(rankerOption);
+
+			// TODO: validate that only specific parameters can be used with the right ranker type
+
+		});
+
 	}
 }
 

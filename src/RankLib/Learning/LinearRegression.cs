@@ -47,7 +47,6 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 	/// <inheritdoc />
 	public override string Name => RankerName;
 
-	/// <param name="cancellationToken"></param>
 	/// <inheritdoc />
 	public override Task InitAsync(CancellationToken cancellationToken = default)
 	{
@@ -55,7 +54,6 @@ public class LinearRegression : Ranker<LinearRegressionParameters>
 		return Task.CompletedTask;
 	}
 
-	/// <param name="cancellationToken"></param>
 	/// <inheritdoc />
 	public override Task LearnAsync(CancellationToken cancellationToken = default)
 	{
