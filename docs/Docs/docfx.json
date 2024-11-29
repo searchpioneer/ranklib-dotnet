@@ -40,8 +40,9 @@
     "fileMetadataFiles": [],
     "postProcessors": [ ],
     "globalMetadata": {
-      "_appName": "Search Pioneer",
-      "_description": "RankLib for .NET is a .NET port of RankLib, a Learning to Rank library",
+      "_appName": "RankLib for .NET",
+      "title": "Search Pioneer | RankLib for .NET",
+      "_description": "RankLib for .NET is a .NET port of RankLib, a Learning to Rank library. Use it from the command line, or incorporate into your C#, F#, and other .NET applications.",
       "_appTitle": "RankLib for .NET",
       "_appLogoPath": "images/ranklib_dotnet.svg",
       "_appFaviconPath": "images/ranklib_dotnet_favicon.png",
